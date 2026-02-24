@@ -1,0 +1,12 @@
+{% load static %}
+<nav>
+    <ul>
+        <a href="{% url 'primer_designer_app:snv_indel_index' %}"><li class="page-btn">SNVs & Indels</li></a>
+        <a href="{% url 'primer_designer_app:structural_variants_index' %}"><li class="page-btn">Structural Variation</li></a>
+        <!--- <li class="page-btn" style="margin-right:0;">Primer Search</li> -->
+        <!-- <li>Other Apps</li>
+        <li>Language</li> -->
+        <li class="bih-logo-li"><img src="{% static 'primer_designer_app/images/BIH_logo_new.png' %}" class="bih_logo" alt="Logo"></li>
+    </ul>
+</nav>
+<a href="{% url 'primer_designer_app:snv_indel_index' %}"><img src="{% static 'primer_designer_app/images/logo_PrimerDesigner.png' %}" alt="PrimerDesigner Logo" style="width: 32em;height: auto;"></a>

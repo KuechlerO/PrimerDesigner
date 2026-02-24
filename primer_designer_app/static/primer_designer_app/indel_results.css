@@ -1,0 +1,26 @@
+div#primer {
+    display: flex;
+    justify-content: space-between;
+}
+
+body{
+    margin: 4em;
+    margin-top: 0.5em;
+    margin-bottom: 2em;
+}
+
+p{
+    word-wrap: break-word;
+}
+
+.output-th{
+    font-size:1.3em;
+    padding: 0.3em 0.8em 0.3em 0.8em;
+    background-color: color(srgb 0.5338 0.7473 0.785);
+    color: white;
+    font-weight: 500;
+}
+
+#primer_results_table{
+    width: 100%;
+}

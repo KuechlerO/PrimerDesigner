@@ -1,0 +1,15 @@
+name: django_primer_designer_env
+channels:
+    - conda-forge
+    - bioconda
+dependencies:
+    - pip
+    - dicey
+    - pypandoc
+    - pandoc
+    - pip:
+        - django
+        - requests
+        - primer3-py
+        - python-docx
+        - python-decouple
