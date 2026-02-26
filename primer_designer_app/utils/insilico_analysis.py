@@ -17,7 +17,7 @@ DICEY_CONFIG = os.path.join(DICEY_DIR, "primer3_config")
 
 def prepare_context_path(primer_settings) -> dict[str, str]:
     """Prepare the reference file path based on the requested genome."""
-    dna_ref_file = f"{primer_settings.reference_genome}.primary_assembly.genome.fa.gz"
+    dna_ref_file = f"Homo_sapiens.{primer_settings.reference_genome}.dna.primary_assembly.fa.gz"
 
     if primer_settings.reference_genome == "GRCh37":
         cdna_ref_file = "gencode.v37lift37.transcripts.fa.gz"

@@ -24,33 +24,89 @@ Before using PrimerDesigner, ensure the following steps are completed:
    ```
 
 2. **Download and Prepare Reference Genome Files**:
-    - Change to the directory where you want to save the reference genome files:
-    ```bash
-    cd /path/to/your/reference_genome_files
-    ```
-    - Download the necessary reference genome files:
-    ```bash
-    wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/GRCh37_mapping/GRCh37.primary_assembly.genome.fa.gz
-    wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/GRCh37_mapping/gencode.v37lift37.transcripts.fa.gz
-    wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_49/GRCh38.primary_assembly.genome.fa.gz
-    wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_49/gencode.v49.transcripts.fa.gz
-    ```
+Currently the names of the reference files are hard-coded into the application. If you want to use different reference files, make sure to update the file names in the code accordingly.
+
+### Genomic reference files
+   - Change to the directory where you want to save the reference genome files (pre-built indices are available at https://gear-genomics.embl.de/data/tracy/, but you can also build them yourself):
+   ```bash
+   cd /path/to/your/reference_genome_files
+   ```
+
+   - Option 1: Download pre-built indices for the reference genome files:
+
+   ```bash
+   # GRCh37
+   wget https://gear-genomics.embl.de/data/tracy/Homo_sapiens.GRCh37.dna.primary_assembly.fa.fm9
+   wget https://gear-genomics.embl.de/data/tracy/Homo_sapiens.GRCh37.dna.primary_assembly.fa.fm9_check
+   wget https://gear-genomics.embl.de/data/tracy/Homo_sapiens.GRCh37.dna.primary_assembly.fa.gz
+   wget https://gear-genomics.embl.de/data/tracy/Homo_sapiens.GRCh37.dna.primary_assembly.fa.gz.fai
+   wget https://gear-genomics.embl.de/data/tracy/Homo_sapiens.GRCh37.dna.primary_assembly.fa.gz.gzi
+   wget https://gear-genomics.embl.de/data/tracy/Homo_sapiens.GRCh37.dna.primary_assembly.gtf.gz
+
+   # GRCh38
+   wget https://gear-genomics.embl.de/data/tracy/Homo_sapiens.GRCh38.dna.primary_assembly.fa.fm9
+   wget https://gear-genomics.embl.de/data/tracy/Homo_sapiens.GRCh38.dna.primary_assembly.fa.fm9_check
+   wget https://gear-genomics.embl.de/data/tracy/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
+   wget https://gear-genomics.embl.de/data/tracy/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz.fai
+   wget https://gear-genomics.embl.de/data/tracy/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz.gzi
+   wget https://gear-genomics.embl.de/data/tracy/Homo_sapiens.GRCh38.dna.primary_assembly.gtf.gz
+   ```
+
+   - Option 2: Download the necessary reference genome files and build
+
+   ```bash
+   wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/GRCh37_mapping/GRCh37.primary_assembly.genome.fa.gz
+   wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_49/GRCh38.primary_assembly.genome.fa.gz
+
+   gunzip GRCh37.primary_assembly.genome.fa.gz > Homo_sapiens.GRCh37.dna.primary_assembly.fa
+   gunzip GRCh38.primary_assembly.genome.fa.gz > Homo_sapiens.GRCh38.dna.primary_assembly.fa
+   bgzip Homo_sapiens.GRCh37.dna.primary_assembly.fa
+   bgzip Homo_sapiens.GRCh38.dna.primary_assembly.fa
+
+   dicey index -o Homo_sapiens.GRCh37.dna.primary_assembly.fa.fm9 Homo_sapiens.GRCh37.dna.primary_assembly.fa.gz
+   dicey index -o Homo_sapiens.GRCh38.dna.primary_assembly.fa.fm9 Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
+   samtools faidx Homo_sapiens.GRCh37.dna.primary_assembly.fa.gz
+   samtools faidx Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
+   ```
+
+### Transcriptomic reference files:
+If you want to do in-silico PCRs on the transcriptome, then transcriptome reference files need to be provided as well
+
+   ```bash
+   cd /path/to/your/reference_genome_files
+
+   # GRCh37
+   wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/GRCh37_mapping/gencode.v37lift37.transcripts.fa.gz
+   gunzip gencode.v37lift37.transcripts.fa.gz
+   bgzip gencode.v37lift37.transcripts.fa
+   dicey index -o gencode.v37lift37.transcripts.fa.fm9 GRCh37_mapping/gencode.v37lift37.transcripts.fa.gz
+   samtools faidx gencode.v37lift37.transcripts.fa.gz
+
+   # GRCh38
+   wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_49/gencode.v49.transcripts.fa.gz
+   gunzip gencode.v49.transcripts.fa.gz
+   bgzip gencode.v49.transcripts.fa
+   dicey index -o gencode.v49.transcripts.fa.fm9 GRCh37_mapping/gencode.v49.transcripts.fa.gz
+   samtools faidx gencode.v49.transcripts.fa.gz
+   ```
+
 
 3. **Index the Reference Genome Files**:
    - Use `dicey` and `samtools` to index the downloaded reference genome files:
-    ```bash
-    # Indexing the genome files
-    dicey index -o GRCh37.primary_assembly.genome.fa.fm9 GRCh37.primary_assembly.genome.fa.gz
-    dicey index -o GRCh38.primary_assembly.genome.fa.fm9 GRCh38.primary_assembly.genome.fa.gz
-    samtools faidx GRCh37.primary_assembly.genome.fa.gz
-    samtools faidx GRCh38.primary_assembly.genome.fa.gz
+      ```bash
+      # Compress genome files with bgzip and index with dicey and samtools
 
-    # Indexing the transcript files
-    dicey index -o gencode.v37lift37.transcripts.fa.fm9 gencode.v37lift37.transcripts.fa.gz
-    dicey index -o gencode.v49.transcripts.fa.fm9 gencode.v49.transcripts.fa.gz
-    samtools faidx gencode.v37lift37.transcripts.fa.gz
-    samtools faidx gencode.v49.transcripts.fa.gz
-    ```
+      # Compress transcript files with bgzip and index with dicey and samtools
+      gunzip gencode.v37lift37.transcripts.fa.gz
+      gunzip gencode.v49.transcripts.fa.gz
+      bgzip gencode.v37lift37.transcripts.fa
+      bgzip gencode.v49.transcripts.fa
+
+      dicey index -o gencode.v37lift37.transcripts.fa.fm9 gencode.v37lift37.transcripts.fa.gz
+      dicey index -o gencode.v49.transcripts.fa.fm9 gencode.v49.transcripts.fa.gz
+      samtools faidx gencode.v37lift37.transcripts.fa.gz
+      samtools faidx gencode.v49.transcripts.fa.gz
+      ```
 
 4. Set environment variables in the `.env` file:
    - `DJANGO_SECRET_KEY`: Generate a secret key using the following command:
@@ -77,6 +133,8 @@ python manage.py migrate primer_designer_app
 ```bash
 python manage.py runserver
 ```
+
+Then go an visit `http://127.0.0.1:8000/primer-designer/` in your web browser to access the application.
 
 ---
 
