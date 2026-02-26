@@ -51,7 +51,7 @@ LOGGING = {
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Path for large reference files; override with .env variable if needed
-REFERENCE_DATA_DIR = config("REFERENCE_DATA_DIR", default="srv/reference_data")
+REFERENCE_DATA_DIR = config("REFERENCE_DATA_DIR", default="/srv/reference_data")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/

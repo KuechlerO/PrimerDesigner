@@ -10,6 +10,7 @@ LOGGER = logging.getLogger(__name__)
 
 # Set all directory and file paths
 REFERENCE_DIR = settings.REFERENCE_DATA_DIR
+print(f"Reference directory set to: {REFERENCE_DIR}")
 DICEY_DIR = os.path.join(settings.BASE_DIR, "primer_designer_app", "dicey_extras")
 DICEY_CONFIG = os.path.join(DICEY_DIR, "primer3_config")
 
@@ -25,9 +26,10 @@ def prepare_context_path(primer_settings) -> dict[str, str]:
     else:
         raise ValueError(f"Unsupported reference genome: {primer_settings.reference_genome}")
     
+    LOGGER.debug("Prepared reference paths: cdna=%s, dna=%s", cdna_ref_file, dna_ref_file)
     return {
-        "cdna": f"{REFERENCE_DIR}{cdna_ref_file}",
-        "dna": f"{REFERENCE_DIR}{dna_ref_file}",
+        "cdna": os.path.join(REFERENCE_DIR, cdna_ref_file),
+        "dna": os.path.join(REFERENCE_DIR, dna_ref_file),
     }
 
 
@@ -114,11 +116,11 @@ def do_insilico_analysis(primer_settings, primer_pairs: list) -> None:
     elif primer_settings.context == "genomic":
         context_path = reference_paths["dna"]
     else:
-        LOGGER.error("Invalid context '%s' in primer settings", primer_settings.context)
-        return
+        raise ValueError(f"Unsupported context for insilico-analysis: {primer_settings.context}")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         for i, pair in enumerate(primer_pairs):
             result = process_primer_pair(pair, i, context_path, temp_dir)
             pair.amplicons = result["amplicons"]
+            LOGGER.debug("Amplicons for pair %d: %s", i, pair.amplicons)
             pair.insilico_seq = result["insilico_seq"]

@@ -39,9 +39,10 @@ class PrimerSettingsModel(models.Model):
     reference_genome = models.CharField(max_length=50)
     primer_size = models.IntegerField(null=True, blank=True)
     target = models.JSONField(null=True, blank=True)  # Store as a list [start, length]
+    # Context for insilico analysis: Either "transcriptomic" or "genomic"
     context = models.CharField(
-        max_length=20, null=True, blank=True
-    )  # e.g., "transcriptomic" or "genomic"
+        max_length=20, null=False, blank=False, default="genomic"
+    )
 
     def set_target(self, rel_pos):
         LOGGER.debug(

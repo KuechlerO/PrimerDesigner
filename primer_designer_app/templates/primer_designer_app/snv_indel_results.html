@@ -1,8 +1,12 @@
 {% load static %}
 {% load seq_tags %}
+{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="de">
-{% include "primer_designer_app/header.html" %}
+<head>
+    {% include "primer_designer_app/header.html" %}
+    <link rel="stylesheet" href = "{% static 'primer_designer_app/indel_results.css' %}">
+</head>
 <body>
     {% include "primer_designer_app/body_nav.html" %}
     <main>
@@ -89,7 +93,8 @@
                                 {% if pair_res.amplicons and pair_res.amplicons != "N/A" %}
                                     <div class="tooltip">
                                         {% for amplicon in pair_res.amplicons %}
-                                            {{ amplicon.Chrom }}: {{ amplicon.ForPos }} - {{ amplicon.RevEnd }}<br>
+                                            {{ amplicon | extract_amplicon_info}}
+                                            <br>
                                         {% endfor %}
                                     </div>
                                 {% endif %}

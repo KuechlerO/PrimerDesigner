@@ -1060,35 +1060,3 @@ color: color(srgb 0.5362 0.7911 0.8346);
     text-align: left;
     letter-spacing: 0.05ch;
 }
-
-.tooltip {
-    display: none;
-    position: absolute;
-    background-color: #f9f9f9;
-    border: 1px solid #ccc;
-    padding: 10px;
-    border-radius: 5px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    white-space: nowrap;
-    max-width: 300px; /* Limit the tooltip width */
-    overflow-wrap: break-word; /* Break long words if necessary */
-}
-
-td:hover .tooltip {
-    display: block;
-    top: 100%; /* Position below the cell */
-    left: 50%; /* Center horizontally relative to the cell */
-    transform: translateX(-50%); /* Adjust for centering */
-}
-
-.tooltip[data-overflow="right"] {
-    left: auto;
-    right: 0; /* Align to the right edge of the browser window */
-    transform: none;
-}
-
-.tooltip[data-overflow="left"] {
-    left: 0; /* Align to the left edge of the browser window */
-    transform: none;
-}
