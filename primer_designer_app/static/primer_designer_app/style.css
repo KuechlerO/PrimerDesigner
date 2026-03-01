@@ -908,22 +908,17 @@ opacity: 1; /* Safari braucht das manchmal */
   padding: 0.3rem 0.6rem;
   border-radius:1em 1em 0em 0em;
   font-size: 1.3em;
-  opacity: 0;
+  opacity: 1;
   pointer-events: none;
   transition: opacity 0.2s ease;
   white-space: nowrap;
   will-change: opacity, transform;
 }
 
-
 .hover-label-highlight{
   background-color: rgb(195, 226, 231) !important;
   /* transition: all 0.2s ease; */
   
-}
-/* Sichtbar bei Hover */
-#Identifier:hover .hover-label, #Genomic_Position:hover .hover-label,#Sequence:hover .hover-label   {
-  opacity: 1;
 }
 
 .output-table tr:nth-child(even){background-color: #e2fbff}
