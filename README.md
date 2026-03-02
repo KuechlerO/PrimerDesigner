@@ -8,7 +8,7 @@ PrimerDesigner is a primer design application that automates primer generation a
 1. [Prerequisites](#prerequisites)
 2. [Starting the Application](#starting-the-application)
 3. [Input Categories](#input-categories)
-4. [Documentation](#documentation)
+4. [Primer Pair Documentation](#primer-pair-documentation)
 5. [Tools Used](#tools-used)
 
 ---
