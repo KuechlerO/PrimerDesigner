@@ -160,9 +160,8 @@ PrimerDesigner accepts input classified into three categories. You can only find
 
 ---
 
-## Documentation
-The documentation is created at runtime. The output interface provides a basic overview of the primer design process. 
-A detailed version of the documentation can be downloaded as a Word document.
+## Primer Pair Documentation
+The documentation for the designed primer pairs is created at runtime and is available for download as a Word document.
 
 ---
 
