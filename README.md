@@ -18,23 +18,28 @@ PrimerDesigner is a primer design application that automates primer generation a
 Before using PrimerDesigner, ensure the following steps are completed:
 
 1. **Install Conda Environment**:
+This is only necessary if you want to run the application locally.
+If you are using Docker, the environment will be set up automatically (and you can skip this step).
+
    ```bash
    conda env create -f environment.yml
    conda activate django_primer_designer_env
    ```
 
-2. **Download and Prepare Reference Genome Files**:
-Currently the names of the reference files are hard-coded into the application. If you want to use different reference files, make sure to update the file names in the code accordingly.
+2. **Download and Prepare Reference Files**:
+Currently the names of the reference files are hard-coded into the application. 
+If you want to use different reference files, make sure to update the file names in the code accordingly.
+
+**If you're using Docker:**
+The Docker container will mount the directory containing the reference files to `/app/references`.
+Thus you have to save the reference files in a directory on your local machine and then provide the path to that directory through the `REFERENCE_DATA_DIR` environment variable in the `.env` file.
 
 ### Genomic reference files
-   - Change to the directory where you want to save the reference genome files (pre-built indices are available at https://gear-genomics.embl.de/data/tracy/, but you can also build them yourself):
+- Option 1: Download pre-built indices for the reference genome files (available at https://gear-genomics.embl.de/data/tracy/)
+
    ```bash
    cd /path/to/your/reference_genome_files
-   ```
 
-   - Option 1: Download pre-built indices for the reference genome files:
-
-   ```bash
    # GRCh37
    wget https://gear-genomics.embl.de/data/tracy/Homo_sapiens.GRCh37.dna.primary_assembly.fa.fm9
    wget https://gear-genomics.embl.de/data/tracy/Homo_sapiens.GRCh37.dna.primary_assembly.fa.fm9_check
@@ -52,9 +57,11 @@ Currently the names of the reference files are hard-coded into the application. 
    wget https://gear-genomics.embl.de/data/tracy/Homo_sapiens.GRCh38.dna.primary_assembly.gtf.gz
    ```
 
-   - Option 2: Download the necessary reference genome files and build
+- Option 2: Download the necessary reference genome files and build index yourself
 
    ```bash
+   cd /path/to/your/reference_genome_files
+
    wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/GRCh37_mapping/GRCh37.primary_assembly.genome.fa.gz
    wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_49/GRCh38.primary_assembly.genome.fa.gz
 
@@ -90,24 +97,6 @@ If you want to do in-silico PCRs on the transcriptome, then transcriptome refere
    samtools faidx gencode.v49.transcripts.fa.gz
    ```
 
-
-3. **Index the Reference Genome Files**:
-   - Use `dicey` and `samtools` to index the downloaded reference genome files:
-      ```bash
-      # Compress genome files with bgzip and index with dicey and samtools
-
-      # Compress transcript files with bgzip and index with dicey and samtools
-      gunzip gencode.v37lift37.transcripts.fa.gz
-      gunzip gencode.v49.transcripts.fa.gz
-      bgzip gencode.v37lift37.transcripts.fa
-      bgzip gencode.v49.transcripts.fa
-
-      dicey index -o gencode.v37lift37.transcripts.fa.fm9 gencode.v37lift37.transcripts.fa.gz
-      dicey index -o gencode.v49.transcripts.fa.fm9 gencode.v49.transcripts.fa.gz
-      samtools faidx gencode.v37lift37.transcripts.fa.gz
-      samtools faidx gencode.v49.transcripts.fa.gz
-      ```
-
 4. Set environment variables in the `.env` file:
    - `DJANGO_SECRET_KEY`: Generate a secret key using the following command:
     ```bash
@@ -121,15 +110,33 @@ If you want to do in-silico PCRs on the transcriptome, then transcriptome refere
 
 ## Starting the Application
 
-### 1. Create and apply migrations
+### Run with Docker compose
+Make sure you have Docker and Docker Compose installed on your machine. Then, navigate to the project directory and run the following command:
+
 ```bash
+# Create django db folder & give write access
+mkdir -p django_data
+chmod 777 django_data
+
+docker compose build
+docker compose up -d
+```
+
+### Run locally
+Make sure you have completed the prerequisites and then follow these steps:
+#### 1. Create and apply migrations
+```bash
+# Create django db folder & give write access
+mkdir -p django_data
+chmod 777 django_data
+
 python manage.py makemigrations
 python manage.py migrate
 python manage.py makemigrations primer_designer_app
 python manage.py migrate primer_designer_app
 ```
 
-### 2. Start the Django server
+#### 2. Start the Django server
 ```bash
 python manage.py runserver
 ```

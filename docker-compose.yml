@@ -1,0 +1,16 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    # Load .env file into the container's environment
+    env_file:
+      - .env
+    volumes:
+      # Persistent database (don't lose users/results on restart)
+      - ./django_data:/app/django_data
+      # Reference data (Read-only)
+      - ${REFERENCE_DATA_DIR}:/app/references:ro
+    # Ensures Django uses the references folder we just mapped
+    environment:
+      - REFERENCE_DATA_DIR=/app/references
