@@ -17,7 +17,7 @@ PrimerDesigner is a primer design application that automates primer generation a
 
 Before using PrimerDesigner, ensure the following steps are completed:
 
-1. **Install Conda Environment**:
+### 1. **Install Conda Environment**:
 This is only necessary if you want to run the application locally.
 If you are using Docker, the environment will be set up automatically (and you can skip this step).
 
@@ -26,7 +26,7 @@ If you are using Docker, the environment will be set up automatically (and you c
    conda activate django_primer_designer_env
    ```
 
-2. **Download and Prepare Reference Files**:
+### 2. **Download and Prepare Reference Files**:
 Currently the names of the reference files are hard-coded into the application. 
 If you want to use different reference files, make sure to update the file names in the code accordingly.
 
@@ -34,7 +34,7 @@ If you want to use different reference files, make sure to update the file names
 The Docker container will mount the directory containing the reference files to `/app/references`.
 Thus you have to save the reference files in a directory on your local machine and then provide the path to that directory through the `REFERENCE_DATA_DIR` environment variable in the `.env` file.
 
-### Genomic reference files
+#### Genomic reference files
 - Option 1: Download pre-built indices for the reference genome files (available at https://gear-genomics.embl.de/data/tracy/)
 
    ```bash
@@ -76,7 +76,7 @@ Thus you have to save the reference files in a directory on your local machine a
    samtools faidx Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
    ```
 
-### Transcriptomic reference files:
+#### Transcriptomic reference files:
 If you want to do in-silico PCRs on the transcriptome, then transcriptome reference files need to be provided as well
 
    ```bash
@@ -97,7 +97,7 @@ If you want to do in-silico PCRs on the transcriptome, then transcriptome refere
    samtools faidx gencode.v49.transcripts.fa.gz
    ```
 
-4. Set environment variables in the `.env` file:
+### 3. Set environment variables in the `.env` file:
    - `DJANGO_SECRET_KEY`: Generate a secret key using the following command:
     ```bash
     python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
@@ -122,13 +122,15 @@ docker compose build
 docker compose up -d
 ```
 
+Then go an visit `http://localhost:8000/primer-designer/` in your web browser to access the application.
+If you want to map the application to a different port, you can change the port mapping in the `docker-compose.yml` file.
+
 ### Run locally
 Make sure you have completed the prerequisites and then follow these steps:
 #### 1. Create and apply migrations
 ```bash
 # Create django db folder & give write access
-mkdir -p django_data
-chmod 777 django_data
+mkdir -p django_datax
 
 python manage.py makemigrations
 python manage.py migrate
