@@ -1,0 +1,150 @@
+{% load static %}
+{% load seq_tags %}
+{% load custom_filters %}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    {% include "primer_designer_app/header.html" %}
+    <link rel="stylesheet" href = "{% static 'primer_designer_app/indel_details.css' %}">
+</head>
+<body>
+    {% include "primer_designer_app/body_nav.html" %}
+    <main>
+        <div style="display:flex; margin:0.5em; align-items: baseline;">
+            <h1 style="margin:0;">Final Primer Design Result: </h1>
+            <p class = "hgvs-info">{{hgvs_info}}</p>
+        </div>
+        <div class="sequence-container">
+            <ol class="seq-lines">
+                {% for line in highlighted_sequence|chunk_html:100 %}
+                <li class="seq-line">
+                    <span class="seq-num">{{ line.start }}</span>
+                    <span class="seq-chunk" data-original="{{ line.chunk|safe }}">{{ line.chunk|safe }}</span>
+                </li>
+                {% endfor %}
+            </ol>
+        </div>
+    
+        <div style="display:flex; justify-content: center; margin: 1em; cursor: default;">
+            <div class="final-output-table-div" style="margin-right: 1em;">
+                <table class="final-output-table">
+                    <thead>
+                        <tr>
+                            <th class="final-output-th"></th>
+                            <th class="final-output-th">Forward primer</th>
+                            <th class="final-output-th">Reverse primer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="final-output-td"></tdclass>Sequence</td>
+                            <td class="final-output-td">{{primer_pair.left_seq|safe}}</td>
+                            <td class="final-output-td">{{primer_pair.right_seq|safe}}</td>
+                        </tr>
+                        <tr>
+                            <td class="final-output-td">Relative start position</td>
+                            <td class="final-output-td" id="left_relPos_start">{{primer_pair.left_relPos_start}}</td>
+                            <td class="final-output-td" id="right_relPos_start">{{primer_pair.right_relPos_start}}</td>
+                        </tr>
+                        <tr>
+                            <td class="final-output-td">Relative end position</td>
+                            <td class="final-output-td" id="left_relPos_end">{{primer_pair.left_relPos_end}}</td>
+                            <td class="final-output-td" id="right_relPos_end">{{primer_pair.right_relPos_end}}</td>
+                        </tr>
+                        <tr>
+                            <td class="final-output-td">Primer tm</td>
+                            <td class="final-output-td">{{primer_pair.tm.0}} °C</td>
+                            <td class="final-output-td">{{primer_pair.tm.1}} °C</td>
+                        </tr>
+                        <tr>
+                            <td class="final-output-td">Primer gc</td>
+                            <td class="final-output-td">{{primer_pair.gc.0}} %</td>
+                            <td class="final-output-td">{{primer_pair.gc.1}} %</td>
+                        </tr>
+                        <tr>
+                            <td class="final-output-td">Amplicons (in-silico)</td>
+                            <td class="final-output-td" colspan="2" style="color: {% if primer_pair.amplicons|length == 1 %}green{% else %}red{% endif %}; position: relative;">
+                                {% if primer_pair.amplicons.0 != "N/A" %}
+                                    {{ primer_pair.amplicons|length }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                                {% if primer_pair.amplicons and primer_pair.amplicons != "N/A" %}
+                                    <div class="tooltip">
+                                        {% for amplicon in primer_pair.amplicons %}
+                                            {{ amplicon | extract_amplicon_info}}
+                                            <br>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="final-output-td">Product size</td>
+                            <td class="final-output-td" colspan="2">{{ primer_pair.product_size }} bp</td>
+                        </tr>
+                        <tr>
+                            <td class="final-output-td">Product tm</td>
+                            <td class="final-output-td" colspan="2">{{ primer_pair.product_tm }} °C</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+            </div>
+            <div style ="display:flex; flex-direction: column;margin-left: 1em; align-items: center; justify-content: center; width: 25em;">
+                <div> 
+                    <a href="{% url 'primer_designer_app:snv_indel_generate_report' uuid=uuid selected_primer_index=selected_primer_index %}" class="copy-button">
+                        <img class="download-icon" src="{% static 'primer_designer_app/images/download_icon.png' %}" alt="download_icon" width="30" height="30">
+                        Download Report
+                    </a>
+                </div>
+                <div>
+                    <button type="button" class="copy-button" onclick="showLink()">
+                        <img class="link-icon" src="{% static 'primer_designer_app/images/link_icon.png' %}" alt="link_icon" width="30" height="30">Show link to all primers</button>
+                        <div id="linkText" class="styled-link">
+                            <a href="{% url 'primer_designer_app:snv_indel_primers_overview_with_uuid' uuid=uuid %}" target="_blank">Link back to Primer Overview</a>
+                        </div>
+                </div>
+                <div>
+                    <button type="button" class="back-button" onclick="history.back()">Back</button>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script type="text/javascript" src="{% static 'primer_designer_app/sequence_highlighting_utils.js' %}"></script>
+    <script>
+        function showLink() {
+            document.getElementById("linkText").style.display = "block";
+        }
+
+        function copyLinkText() {
+            const uuid = "{{ uuid }}";
+            console.log(uuid);
+            console.log("{{uuid}}");
+
+            const textToCopy = `s-bih-mantomias.charite.de/primer/snv-indel/load_primers/${uuid}`;
+            console.log(textToCopy);
+            navigator.clipboard.writeText(textToCopy);
+        }
+
+        // Function to initialize primer highlighting on page load
+        function initializePrimerHighlighting() {
+            // Get relative primer positions
+            const primerF_start = parseInt(document.getElementById("left_relPos_start").textContent, 10);
+            const primerF_end = parseInt(document.getElementById("left_relPos_end").textContent, 10);
+            const primerR_start = parseInt(document.getElementById("right_relPos_start").textContent, 10);
+            const primerR_end = parseInt(document.getElementById("right_relPos_end").textContent, 10);
+
+            // Highlight primers in the sequence
+            highlightPrimers(primerF_start, primerF_end, primerR_start, primerR_end);
+        }
+
+        window.onload = function() {
+            // Add primer highlighting
+            initializePrimerHighlighting();
+        }
+    </script>
+</body>
+</html>

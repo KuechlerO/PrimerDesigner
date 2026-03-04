@@ -1,0 +1,148 @@
+{% load static %}
+{% load seq_tags %}
+{% load custom_filters %}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    {% include "primer_designer_app/header.html" %}
+    <link rel="stylesheet" href = "{% static 'primer_designer_app/indel_results.css' %}">
+</head>
+<body>
+    {% include "primer_designer_app/body_nav.html" %}
+    <main>
+        <div style="display:flex; margin:0.5em; align-items: baseline;">
+            <h1 style="margin:0;">Primer Design Result: </h1>
+            <p class = "hgvs-info" style = "margin-left: 1em;">{{ hgvs_info }}</p>
+        </div>
+
+        <div class="sequence-container">
+            <ol class="seq-lines">
+                {% for line in highlighted_sequence|chunk_html:100 %}
+                <li class="seq-line">
+                    <span class="seq-num">{{ line.start }}</span>
+                    <span class="seq-chunk" data-original="{{ line.chunk|safe }}">{{ line.chunk|safe }}</span>
+                </li>
+                {% endfor %}
+            </ol>
+        </div>
+        <form id="primer_selection" method="post" action="{% url 'primer_designer_app:snv_indel_primer_details' uuid=result_sum_obj.id %}">
+            {% csrf_token %}
+            <div style="display:flex; align-items:center;">
+                <h2>Select your final primer pair: </h2>
+                <div class="output-info-icon">?</div>
+                <div class="output-info-overlay">
+                    <ul><li class="info-li" style="list-style: none;"><strong>Info:</strong></li>
+                        <li class="info-li">The sequence above shows a snippet of the relevant DNA including the <span style="color:color(srgb 0.1928 0.5967 0.665)">recommended primer pair</span> and <span style="color:color(srgb 0.83 0.4543 0.4482)">target region</span>.</li>
+                        <li class="info-li">Select one of the primer pairs <span style="font-weight:bold">or </span> click Back to adjust the primer settings and generate new suggestions if none of the options are suitable.</span></li>
+                        
+                        <br>
+                        <li class="info-li" style="list-style: none;"><strong>Penalty calculation:</strong></li>
+                        <li class="info-li">
+                            Primer3 calculates a penalty value for each primer.
+                            It presents he value of the objective function for this pair. (lower is better).
+                        </li>
+                        <li class="info-li">
+                            Best primer pairs: <span style="font-weight:bold; color:color(srgb 0.83 0.4543 0.4482)">lower score is better </span> 
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="output-table-div" >
+            <table style="width: 100%;" id="primer_results_table" class="output-table">
+                <thead>
+                    <tr>
+                        <th class="output-th">Primer-Pair (Forward + Reverse)</th>
+                        <th class="output-th" style="display: none">Positions (Fwd:Rev)</th>
+                        <th class="output-th">
+                            Penalty  
+                        </th>
+                        <th class="output-th">Product Size</th>
+                        <th class="output-th">Product Tm</th>
+                        <th class="output-th">Primer Tm</th>
+                        <th class="output-th">Primer GC</th>
+                        <th class="output-th">Amplicons</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pair_res in result_sum_obj.get_primer_search_results.primer_pairs %}
+ 
+                        <tr class="selectable-row" onclick="updateSelectedPrimer(this, 'primer-{{ forloop.counter }}')" style="cursor: pointer;">
+                            <td style="text-align: left; padding: 0.4em 0.5em">
+                                <input type="radio" class ="primer-selector" name="selected-primer" value="{{forloop.counter}}" 
+                                    id="primer-{{forloop.counter}}" style="margin:0; padding:0" required="true">
+                                <label for="primer-{{forloop.counter}}" class ="primer-selector" style="font-size:1.1em;">
+                                    {{pair_res.left_seq|safe}} + {{pair_res.right_seq|safe}}</label>
+                            </td>
+                            <td style ="font-size: 1.1em; display: none">
+                                {{ pair_res.left_relPos_start }},
+                                {{ pair_res.left_relPos_end }},
+                                {{ pair_res.right_relPos_start }},
+                                {{ pair_res.right_relPos_end }}
+                            </td>
+                            <td style ="font-size: 1.1em;">{{ pair_res.penalty }}</td>
+                            <td style ="font-size: 1.1em;">{{ pair_res.product_size }} bp</td>
+                            <td style ="font-size: 1.1em;">{{ pair_res.product_tm }} °C</td>
+                            <td style ="font-size: 1.1em;">{{pair_res.tm.0 }}, {{ pair_res.tm.1 }} °C</td>
+                            <td style ="font-size: 1.1em;">{{ pair_res.gc.0 }}, {{ pair_res.gc.1 }} %</td>
+                            <td style="font-size: 1.1em; color: {% if pair_res.amplicons|length == 1 %}green{% else %}red{% endif %}; position: relative;">
+                                {% if pair_res.amplicons.0 != "N/A" %}
+                                    {{ pair_res.amplicons|length }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                                {% if pair_res.amplicons and pair_res.amplicons != "N/A" %}
+                                    <div class="tooltip">
+                                        {% for amplicon in pair_res.amplicons %}
+                                            {{ amplicon | extract_amplicon_info}}
+                                            <br>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+        </form>
+        <div style="display:flex; justify-content:center; gap: 3em; margin-top: 1em;">
+        <button type="submit" class="submit-button" form="primer_selection" style="color: rgb(45, 133, 120); margin-top:0;background-color: #b4dfd9;">Submit</button>
+        <button type="button" class="reset-button"onclick="history.back()" style="margin-top:0;">Back</button>
+        </div>
+    </main>
+    <script type="text/javascript" src="{% static 'primer_designer_app/sequence_highlighting_utils.js' %}"></script>
+    <script>
+        // Function to update the selected primer and highlight it
+        function updateSelectedPrimer(row, id) {
+            document.getElementById(id).checked = true;
+
+            // Remove "selected" class from all rows and add it to the selected row
+            const allRows = document.querySelectorAll("tr.selectable-row");
+            allRows.forEach(r => r.classList.remove("selected"));
+            row.classList.add("selected");
+
+            // Add primer highlight to sequence in the table
+            const primerSelectors = document.querySelectorAll(".primer-selector");
+            primerSelectors.forEach(ps => ps.classList.remove("highlight-primer"));
+            document.querySelector(`label[for='${id}']`).classList.add("highlight-primer");
+
+            // Get primer positions from the hidden cell
+            const positions = row.cells[1].textContent.split(",").map(x => parseInt(x.trim(), 10));
+            const [primerF_start, primerF_end, primerR_start, primerR_end] = positions;
+
+            // Highlight primers in the sequence
+            highlightPrimers(primerF_start, primerF_end, primerR_start, primerR_end);
+        }
+
+        // Automatically select and highlight the recommended primer pair on page load
+        window.onload = function() {
+            const recommendedPrimer = document.getElementById("primer-1");
+            if (recommendedPrimer) {
+                const firstRow = recommendedPrimer.closest("tr.selectable-row");
+                updateSelectedPrimer(firstRow, "primer-1");
+            }
+        };
+    </script>
+</body>
+</html>

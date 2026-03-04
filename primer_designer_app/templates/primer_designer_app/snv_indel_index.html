@@ -1,0 +1,239 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="de">
+{% include "primer_designer_app/header.html" %}
+<body class="body-snv-indels">
+    {% include "primer_designer_app/body_nav.html" %}
+    <main>
+        <!-- <section class="curved"></section> -->
+        <form id="settings" method="post" action="{% url 'primer_designer_app:snv_indel_primers_overview' %}">
+            {% csrf_token %}
+
+            <div style="display: flex; justify-content: center; margin-top:0.5em;">
+                <!-- Use Case Container -->
+                <div class="settings-container">
+                    <h2>Reference genome</h2>
+                    <div class="button-cover"> 
+                        <div class="button r" id="genome-button">
+                            <input type="checkbox" class="checkbox" id="reference-genome-switch" onchange="updateReferenceGenome()"/>
+                            <div class="knobs">
+                            <span></span>
+                            </div>
+                                <div class="layer"></div>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" id="reference-genome" name="reference-genome" value="GRCh37" form="settings">
+        
+                <div class="settings-container">
+                    <h2>Use case</h2>
+                    <div class ="UseCaseDiv" style = "display:flex;  justify-content: center">
+                        <div class="PCR-button-cover"> 
+                            <div class="button r" id="PCR-button">
+                                <input type="checkbox" class="checkbox" id="usecase-switch" onchange="updateUsecase()"/>
+                                    <div class="knobs">
+                                    <span></span>
+                                    </div>
+                                        <div class="layer"></div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="usecase" name="usecase" value="PCR" form="settings">
+                    </div>
+                </div>
+        
+                <!-- Primer Settings Container -->
+                <div class="settings-container">
+                    <h2>Primer settings</h2>
+                    <div class="primer-settings-button-cover">
+                        <div class="button r" id="primer-settings-button">
+                            <input type="checkbox" class="checkbox" id="primer-settings-switch" onchange="togglePrimerSettings()">
+                            <div class="knobs">
+                                <span></span> <!-- Dynamischer Text -->
+                            </div>
+                            <div class="layer"></div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="primer-settings" name="primer-settings" value="default">
+                    <div id="primer-params" class="primer-params" style="display: none;">
+                        <label class="primer-parameters">Opt Primer tm: <input type="number" id="tm" name="tm" value="60"> °C</label>
+                        <label class="primer-parameters">GC-content: <input type="number" id="gc_content" name="gc_content" value="50"> %</label>
+                        <label class="primer-parameters">Max Poly-X: <input type="number" id="max_poly_X" name="max_poly_X" value="4"></label>
+                        <label class="primer-parameters">Product size range: <input type="number" id="product_size_min" name="product_size_min" value="400"> - <input type="number" id="product_size_max" name="product_size_max" value="800"></label>
+                    </div>
+                </div>
+               
+        
+                <!-- Example Button Container -->
+                <div class="settings-container">
+                    <button type="button" id="example-button" class="example-button" onclick="loadExampleData()">Load Example</button>
+                </div>
+                <div class="settings-container">
+                    <button type="reset" class="reset-button" form = "settings" onclick="clearAllInputs()">Reset</button>
+                </div>
+                <!-- Reset Button Container -->
+                
+            </div>
+           
+            <div id="in">
+                
+                <!-- 1. Genomic Position -->
+                <section id="Genomic_Position">
+                    <div id="Genomic-hover-label" class="hover-label">Via genomic positon</div>
+                    <div class="info-icon">?</div>
+                    <div class="info-overlay">
+                        <ul><li class="info-li" style="list-style: none;"><strong>Format/Info:</strong></li>
+                            <li class="info-li">Positions must correspond to the selected reference genome.</li>
+                            <li class="info-li">For SNVs, the position refers to the exact location of the variant.</li>
+                            <li class="info-li">For InDels, the two positions refer to the start and end position of the sequence region that is substituted with the given variant sequence.</li>
+                            <li class="info-li">Inserted bases can be specified either as a base sequence (e.g., AGT) or as the number of inserted bases (e.g., 3)</li>
+                            <li class="info-li">Allowed format: <span style ="color: color(srgb 0.095 0.4408 0.5);">ChrY:2655470</style></li>
+                        </ul>
+                    </div>
+                    <h2>Genomic position</h2>
+                    <div class="dual_input" id="SNV">
+                        <!-- Linke Spalte mit dem Text "SNV" -->
+                        <div class="column" >
+                            SNV
+                        </div>
+                        <!-- Mittlere Spalte mit dem ersten Eingabefeld -->
+                        <div class ="snv_column">
+                            <input type="text" id="genom_pos" name="genom_pos" placeholder="e.g. chrX:7187746" oninput="handleInputChange('genom_pos')">
+                            <!-- Rechte Spalte mit dem zweiten Eingabefeld -->
+                            <input type="text" id="new_base" name="new_base" placeholder="New base" oninput="handleInputChange('new_base')">
+                        </div>
+                    </div>
+                    
+                    <div class="dual_input" id = "InDel" style="margin-top: 0.5em; margin-bottom: 0.5em;">
+                        <!-- Linke Spalte mit dem Text "InDel" -->
+                        <div class="column">
+                            InDel
+                        </div>
+                        <!-- Rechte Spalte mit drei Zeilen von Input-Feldern -->
+                        <div class ="second_column"  style="width: 80%;">
+                            <input type="text" id="IndelChrom" name="IndelChrom" placeholder="Chromosome" oninput="handleInputChange('IndelChrom')" style="width: 100%;">
+                            <input type="text" id="IndelStart" name="IndelStart" placeholder="Wildtype start position" oninput="handleInputChange('IndelStart')" style="width: 100%;">
+                            <input type="text" id="IndelEnd" name="IndelEnd" placeholder="Wildtype end position" oninput="handleInputChange('IndelEnd')"style="width: 100%; ">
+                            <input type="text" id="IndelIns" name="IndelIns" placeholder="Inserted bases" oninput="handleInputChange('IndelIns')" style="width: 100%; border: none; ">
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- 2. Transcript Postion -->
+                <section id="Identifier">
+                    <div id="ID-hover-label" class="hover-label">Via transcript-ID</div>
+                    <div class="info-icon">?</div>
+                    <div class="info-overlay">
+                        <ul><li class="info-li" style="list-style: none;"><strong>Format/Info:</strong></li>
+                            <li class="info-li">Positions must correspond to the selected reference genome and sequence type.</li>
+                            <li class="info-li"><span style="color:color(srgb 0.1928 0.5967 0.665)">Check against: </span>
+                                In-Silico check for possible additional amplicons is going to be performed against the selected reference.
+                            </li> 
+                            <li class="info-li">For SNVs, the position refers to the exact location of the variant.</li>
+                            <li class="info-li">For InDels, the two positions refer to the start and end position of the sequence region that is substituted with the given variant sequence.</li>
+                            <li class="info-li">Inserted bases can be specified either as a base sequence (e.g., AGT) or as the number of inserted bases (e.g., 3)</li>
+                        </ul>
+                    </div>
+                    <div style = "display:flex; width: 95%; margin-top:0.2em; ">
+                        <h2 class="ID_h2" style="border-radius: 0.5em 0em 0em 0.5em; width:12em;">Transcript-ID</h2>
+                        <input type="text" id="Transcript-ID" name="Transcript-ID" placeholder="e.g. ENST00000340855" style ="border: none; box-shadow: 0 0em 1em -0.5em #8baaaa;" oninput="handleInputChange('Transcript-ID')" style = "border-radius: 0em 0.5em 0.5em 0em;">
+                    </div>
+                    <div style="display:flex; width: 95%;  gap:1em; margin-top: 1em;">
+                        <div style = "display:flex; flex-direction: column;width: 95%;">
+                            <h2 class="ID_h2">Check against</h2>
+                            <div style="display:flex; flex-direction: column; width: 100%; justify-content: center; border-radius: 0em 0em 0.5em 0.5em; background-color: color(srgb 0.9068 0.9645 0.975); box-shadow: 0 0em 1em -0.5em #8baaaa;">
+                                <input type="radio" name="context" value="genomic" id="genomic" onchange="handleInputChange('genomic')">
+                                <label for="genomic">Genome</label>
+                                <input type="radio" name="context" value="transcriptomic" id="transcriptomic" onchange="handleInputChange('transcriptomic')">
+                                <label for="transcriptomic">Transcriptome</label>
+                            </div>                    
+                        </div>
+
+                        <div style = "display:flex; flex-direction: column; width: 95%; ">
+                            <h2 class="ID_h2">Reference</h2>
+                            <div style="display:flex; flex-direction: column; width: 100%; justify-content: center; border-radius: 0em 0em 0.5em 0.5em; background-color: color(srgb 0.9068 0.9645 0.975); box-shadow: 0 0em 1em -0.5em #8baaaa;">
+                                <input type="radio" name="Reference" value="cdna" id="cdna" onchange="handleInputChange('cdna')">
+                                <label for="cdna">cDNA</label>
+                                <input type="radio" name="Reference" value="cds" id="cds" onchange="handleInputChange('cds')">
+                                <label for="cds">CDS</label>
+                                <!---
+                                <input type="radio" name="Reference" value="gdna" id="gdna" onchange="handleInputChange('gdna')">
+                                <label for="gdna">gDNA</label>
+                                -->
+                            </div>                    
+                        </div>
+                    </div>
+
+                    <h2>Relative position</h2>
+                    <div class="dual_input" id ="IdSNV">
+                        <!-- Linke Spalte mit dem Text "SNV" -->
+                        <div class="column">
+                            SNV
+                        </div>
+                        <!-- Mittlere Spalte mit dem ersten Eingabefeld -->
+                        <div class ="snv_column">
+                            <input type="text" id="Position" name="Position" placeholder="e.g. 2781" oninput="handleInputChange('Position')">
+                        <!-- Rechte Spalte mit dem zweiten Eingabefeld -->
+                            <input type="text" id="IDnew_base" name="IDnew_base" placeholder="New base" oninput="handleInputChange('IDnew_base')">
+                        </div>
+                    </div>
+                    
+                    <div class="dual_input" id = "IdInDel" style="margin-top: 0.5em; margin-bottom: 0.5em;">
+                        <!-- Linke Spalte mit dem Text "InDel" -->
+                        <div class="column">
+                            InDel
+                        </div>
+                        <!-- Rechte Spalte mit drei Zeilen von Input-Feldern -->
+                        <div class="second_column" style="width: 80%; ">
+                            <input type="text" id="IdIndelStart" name="IdIndelStart" placeholder="Wildtype start position" oninput="handleInputChange('IdIndelStart')"style="width: 100%;  ">
+                            <input type="text" id="IdIndelEnd" name="IdIndelEnd" placeholder="Wildtype end position" oninput="handleInputChange('IdIndelEnd')"sstyle="width: 100%; ">
+                            <input type="text" id="IdIndelIns" name="IdIndelIns" placeholder="Inserted bases" oninput="handleInputChange('IdIndelIns')" style="width: 100%; border:none;">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. Sequence Input -->
+                <section id="Sequence">
+                    <div class="info-icon">?</div>
+                    <div class="info-overlay" style="text-align: left; gap: 2em;">
+                        <p><strong>Accepted formats:</strong><br>
+                            CGACT[A>G]GC<br>
+                            CGACT[AC/-]GC<br>
+                            CGACT[-/TT]GC<br>
+                            CGACT[ACA/TT]GC
+                        </p>
+                        <p><br>
+                            A substituted by G (SNV)<br>
+                            AC deleted <br>
+                            TT inserted <br>
+                            ACA substituted by TT (DelIns)
+                        </p>
+                    </div>
+                    <div id ="Sequence-hover-label" class="hover-label">Via sequence input</div>
+                    <h2>Sequence</h2>
+                    <textarea id="sequence" name="sequence" placeholder="e.g. ATCGGTAGG[TCA/G]ACTGCGATAGT" rows="4" cols="50" oninput="handleInputChange('sequence')"></textarea><br>
+                </section>
+            </div>
+        </form>
+        <div style="display: flex; justify-content: center;">
+            <button type="submit" class="submit-button" form="settings" >Generate Primers</button>
+        </div>
+
+        <div id="loading-overlay">
+            <div class="loader-content">
+              <div class="spinner"></div>
+              <p>Data is being processed...</p>
+            </div>
+          </div>
+
+        <script>
+              window.addEventListener('pageshow', function(event) {
+                document.getElementById("loading-overlay").style.display = "none";
+              });
+            document.getElementById("settings").addEventListener("submit", function() {
+                document.getElementById("loading-overlay").style.display = "flex";
+            });
+        </script>
+    </main>
+    <script src="{% static 'primer_designer_app/snv_indels_script.js' %}"></script>
+</body>
+</html>
