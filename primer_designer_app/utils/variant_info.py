@@ -13,30 +13,30 @@ VARIANT_FLANKING = 1000
 
 
 class IndelType(Enum):
-    INS = "INS"
-    DEL = "DEL"
-    DELINS = "DelIns"
-    SNV = "SNV"
-    NONE = ""
+    INS = 'INS'
+    DEL = 'DEL'
+    DELINS = 'DelIns'
+    SNV = 'SNV'
+    NONE = ''
 
 
 class ReferenceType(Enum):
-    CDS = "cds"
-    CDNA = "cdna"
-    PROTEIN = "protein"
-    NONE = ""
+    CDS = 'cds'
+    CDNA = 'cdna'
+    PROTEIN = 'protein'
+    NONE = ''
 
 
 @dataclass
 class VariantInfo:
     """Information for a variant (provided by user throught web app interface)"""
 
-    ref_seq: str = ""
-    ref_bases: str = ""
-    new_bases: str = ""
-    gene_ID: str = ""
-    gene_symbol: str = ""
-    ref_genome: str = ""
+    ref_seq: str = ''
+    ref_bases: str = ''
+    new_bases: str = ''
+    gene_ID: str = ''
+    gene_symbol: str = ''
+    ref_genome: str = ''
     indel_type: IndelType = IndelType.NONE
     # relative position within seq (0-based, inclusive)
     relative_pos: Optional[Tuple[int, int]] = (
@@ -60,7 +60,7 @@ class VariantInfo:
 
     def __post_init__(self):
         if self.relative_pos is None:
-            raise ValueError("relative_pos must be provided for VariantInfo")
+            raise ValueError('relative_pos must be provided for VariantInfo')
 
     def set_attribute(self, key, value):
         setattr(self, key, value)
@@ -84,7 +84,7 @@ class VariantInfo:
                 return IndelType.DEL
         else:
             raise ValueError(
-                "Could not determine indel type from provided bases and positions."
+                'Could not determine indel type from provided bases and positions.'
             )
 
     def _load_geneDetails(self, ensembl_client: EnsemblClient) -> Tuple[str, str]:
@@ -94,20 +94,20 @@ class VariantInfo:
             Optional[str]: gene ID and symbol tuple if found, else None
         """
 
-        if not self.genomic_pos or not self.genomic_pos.get("pos"):
+        if not self.genomic_pos or not self.genomic_pos.get('pos'):
             raise ValueError(
                 "Genomic position with 'pos' key must be provided to load gene details"
             )
 
-        chr_label = self.genomic_pos["chr"]
-        if chr_label == "23":
-            chr_label = "X"
-        elif chr_label == "24":
-            chr_label = "Y"
+        chr_label = self.genomic_pos['chr']
+        if chr_label == '23':
+            chr_label = 'X'
+        elif chr_label == '24':
+            chr_label = 'Y'
 
-        start = self.genomic_pos["pos"][0]
-        if len(self.genomic_pos["pos"]) > 1:
-            end = self.genomic_pos["pos"][-1]
+        start = self.genomic_pos['pos'][0]
+        if len(self.genomic_pos['pos']) > 1:
+            end = self.genomic_pos['pos'][-1]
         else:
             end = start
 
@@ -121,11 +121,11 @@ class VariantInfo:
                     if gene_ID and gene_symbol:
                         return (gene_ID, gene_symbol)
         except Exception:
-            LOGGER.exception("Ensembl lookup failed")
-        return ("", "")
+            LOGGER.exception('Ensembl lookup failed')
+        return ('', '')
 
     def get_genomic_pos(self):
-        return self.genomic_pos["pos"]
+        return self.genomic_pos['pos']
 
     def get_seq(self, output_type: str) -> str:
         """Construct the mutated or input sequence based on the reference sequence and variant information
@@ -136,7 +136,7 @@ class VariantInfo:
         Returns:
             str: The constructed sequence based on the specified output type
         """
-        if output_type == "mutated":
+        if output_type == 'mutated':
             if self.indel_type == IndelType.SNV:
                 return (
                     self.ref_seq[: self.relative_pos[0]]
@@ -162,41 +162,41 @@ class VariantInfo:
                 )
             else:
                 raise ValueError(f"Invalid indel type: {self.indel_type}")
-        elif output_type == "input":
+        elif output_type == 'input':
             if self.indel_type == IndelType.SNV:
                 return (
                     self.ref_seq[: self.relative_pos[0]]
-                    + "["
+                    + '['
                     + self.ref_bases
-                    + ">"
+                    + '>'
                     + self.new_bases
-                    + "]"
+                    + ']'
                     + self.ref_seq[self.relative_pos[0] + 1 :]
                 )
             elif self.indel_type == IndelType.INS:
                 return (
                     self.ref_seq[: self.relative_pos[0]]
-                    + "[-/"
+                    + '[-/'
                     + self.new_bases
-                    + "]"
+                    + ']'
                     + self.ref_seq[self.relative_pos[0] :]
                 )
             elif self.indel_type == IndelType.DEL:
                 return (
                     self.ref_seq[: self.relative_pos[0]]
-                    + "["
+                    + '['
                     + self.ref_bases
-                    + "/-]"
+                    + '/-]'
                     + self.ref_seq[self.relative_pos[1] + 1 :]
                 )
             elif self.indel_type == IndelType.DELINS:
                 return (
                     self.ref_seq[: self.relative_pos[0]]
-                    + "["
+                    + '['
                     + self.ref_bases
-                    + "/"
+                    + '/'
                     + self.new_bases
-                    + "]"
+                    + ']'
                     + self.ref_seq[self.relative_pos[1] + 1 :]
                 )
             else:
@@ -239,13 +239,13 @@ class GenomicVariantInfo(VariantInfo):
         """Fetch seq snippet using a Django model (injected) with a substring helper."""
         if not self.genomic_pos:
             raise ValueError(
-                "Genomic position must be provided to fetch sequence snippet"
+                'Genomic position must be provided to fetch sequence snippet'
             )
 
-        start_position = max(1, self.genomic_pos["pos"][0] - flank)
-        end_position = self.genomic_pos["pos"][-1] + flank
+        start_position = max(1, self.genomic_pos['pos'][0] - flank)
+        end_position = self.genomic_pos['pos'][-1] + flank
         seq = ensembl_client.get_genomic_sequence(
-            self.genomic_pos["chr"], start_position, end_position
+            self.genomic_pos['chr'], start_position, end_position
         )
         return seq
 
@@ -265,9 +265,11 @@ class TranscriptVariantInfo(VariantInfo):
 
         # Fetch data from Ensembl
         ensembl_client = EnsemblClient(ref_genome=self.ref_genome)
-        self.gene_symbol = ensembl_client.get_gene_symbol_for_transcriptID(
+        self.gene_symbol, used_transcript_id = ensembl_client.get_gene_symbol_for_transcriptID(
             self.transcript_id
         )
+        self.transcript_id = used_transcript_id
+
         self.ref_seq = ensembl_client.get_transcript_sequence(
             self.transcript_id, self.reference_type.value
         )
@@ -275,7 +277,7 @@ class TranscriptVariantInfo(VariantInfo):
         LOGGER.debug(
             f"Before extracting ref_bases, ref_seq: {self.ref_seq}, relative_pos: {self.relative_pos}, ref_bases: {self.ref_bases}"
         )
-        if not self.ref_bases or self.ref_bases == "":
+        if not self.ref_bases or self.ref_bases == '':
             self.ref_bases = self.ref_seq[
                 self.relative_pos[0] : self.relative_pos[1] + 1
             ]
@@ -313,25 +315,25 @@ class TranscriptVariantInfo(VariantInfo):
             self.reference_type.value,
         )
 
-        if len(data["mappings"]) == 1:
+        if len(data['mappings']) == 1:
             pos = [
-                int(data["mappings"][0]["start"]) - 1,
-                int(data["mappings"][0]["end"]) - 1,
+                int(data['mappings'][0]['start']) - 1,
+                int(data['mappings'][0]['end']) - 1,
             ]
         else:
             pos = []
-            for i in range(len(data["mappings"])):
+            for i in range(len(data['mappings'])):
                 pos.append(
-                    [int(data["mappings"][i]["start"]), int(data["mappings"][i]["end"])]
+                    [int(data['mappings'][i]['start']), int(data['mappings'][i]['end'])]
                 )
 
-        chromosome = data["mappings"][0]["seq_region_name"]
-        strand_type = "antisense" if data["mappings"][0]["strand"] == -1 else "sense"
+        chromosome = data['mappings'][0]['seq_region_name']
+        strand_type = 'antisense' if data['mappings'][0]['strand'] == -1 else 'sense'
 
         genomic_pos = {
-            "chr": chromosome,
-            "pos": pos,
-            "strand_type": strand_type,
+            'chr': chromosome,
+            'pos': pos,
+            'strand_type': strand_type,
         }
         return genomic_pos
 
@@ -351,27 +353,27 @@ class SequenceVariantInfo(VariantInfo):
 
     def _parse_input_sequence(self, input_seq: str):
         """Parse variant information from sequence annotation"""
-        if "[" not in input_seq or "]" not in input_seq:
-            raise ValueError("Sequence annotation missing brackets")
+        if '[' not in input_seq or ']' not in input_seq:
+            raise ValueError('Sequence annotation missing brackets')
 
-        start = input_seq.index("[")
-        end = input_seq.index("]")
+        start = input_seq.index('[')
+        end = input_seq.index(']')
         var_input = input_seq[start + 1 : end]
 
-        if ">" in var_input:  # SNV like [A>G]
-            left, right = var_input.split(">")
+        if '>' in var_input:  # SNV like [A>G]
+            left, right = var_input.split('>')
             ref_bases = left
             new_bases = right
             relative_pos = (start, start)
-        elif "/" in var_input:  # indel like [A/T] or [-/T]
-            left, right = var_input.split("/")
-            ref_bases = left if left not in ["-", None, ""] else ""
-            new_bases = right if right not in ["-", None, ""] else ""
+        elif '/' in var_input:  # indel like [A/T] or [-/T]
+            left, right = var_input.split('/')
+            ref_bases = left if left not in ['-', None, ''] else ''
+            new_bases = right if right not in ['-', None, ''] else ''
 
             LOGGER.debug(
                 f"Calculating relative position for deletion with ref_bases: {ref_bases}, new_bases: {new_bases}"
             )
-            if ref_bases == "" and new_bases != "":
+            if ref_bases == '' and new_bases != '':
                 relative_pos = (start, start)  # Insertion at this position
             else:
                 # Deletion of these bases
