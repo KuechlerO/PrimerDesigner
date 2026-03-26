@@ -1,5 +1,9 @@
 import requests
 from requests.adapters import HTTPAdapter, Retry
+from primer_designer_app.exceptions import (
+    InvalidTranscriptIdError,
+    InvalidTranscriptVersionError,
+)
 
 server37 = 'https://grch37.rest.ensembl.org'
 server38 = 'http://rest.ensembl.org'
@@ -111,9 +115,9 @@ class EnsemblClient:
         r.raise_for_status()
         return r.json().get('display_name', '')
 
-    def get_gene_symbol_for_transcriptID(self, transcript_id: str) -> str:
+    def get_gene_symbol_for_transcriptID(self, transcript_id: str) -> tuple[str, str]:
         if 'ENST' not in transcript_id:
-            raise ValueError(f"Provided transcript_id is not an Ensembl Transcript ID. Received: {transcript_id}")
+            raise InvalidTranscriptIdError(f"Provided transcript_id is not an Ensembl Transcript ID. Received: {transcript_id}")
         base_id, requested_version = self.split_transcript_id(transcript_id)
 
         ext = f"/lookup/id/{base_id}"
@@ -126,7 +130,7 @@ class EnsemblClient:
         full_transcript_id = f"{base_id}.{returned_version}" if returned_version else base_id
 
         if requested_version is not None and returned_version != requested_version:
-            raise ValueError(
+            raise InvalidTranscriptVersionError(
                 f"Transcript version mismatch: requested {base_id}.{requested_version}, "
                 f"but Ensembl returned version {base_id}.{returned_version}"
             )

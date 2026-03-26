@@ -1,0 +1,35 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    {% include "primer_designer_app/header.html" %}
+</head>
+<body>
+    {% include "primer_designer_app/body_nav.html" %}
+
+    <main>
+        <p class="hgvs-info">
+            Status code: {{ status_code|default:"-" }}
+        </p>
+
+        <div class="divider"></div>
+
+        <h2>{{ title|default:"An error occurred" }}</h2>
+
+        <p>
+            {{ message|default:"The request could not be processed." }}
+        </p>
+
+        {% if hint %}
+            <p>
+                <strong>Hint:</strong> {{ hint }}
+            </p>
+        {% endif %}
+
+        <div>
+            <a href="/" class="copy-button">Home</a>
+            <a href="javascript:history.back()" class="back-button">Go back</a>
+        </div>
+    </main>
+</body>
+</html>
