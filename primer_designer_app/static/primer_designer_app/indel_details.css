@@ -3,24 +3,23 @@ div#primer {
     justify-content: center;
 }
 
-body{
+body {
     margin: 4em;
     margin-top: 0.5em;
     margin-bottom: 2em;
 }
 
-p{
+p {
     word-wrap: break-word;
-    font-size: 1.3em;;
+    font-size: 1.3em;
     cursor: default;
-
 }
 
-.highlighted_sequence{
-    font-size :1vw;
+.highlighted_sequence {
+    font-size: 1vw;
 }
 
-h2{
+h2 {
     padding: 10px;
 }
 
@@ -31,37 +30,37 @@ div#in {
     margin-top: 20px;
 }
 
-h1{
-    padding: 0px;
+h1 {
+    padding: 0;
     cursor: default;
 }
 
-.final-output-th{
-    font-size:1.3em;
-    padding: 0.3em 0.8em 0.3em 0.8em;
+.final-output-th {
+    font-size: 1.3em;
+    padding: 0.3em 0.8em;
     background-color: color(srgb 0.5338 0.7473 0.785);
     color: white;
     font-weight: 500;
 }
 
-.final-ouput-table{
+.final-output-table {
     width: 100%;
 }
 
-.final-output-td{
-    padding: 0.3em 1em 0.3em 1em;
+.final-output-td {
+    padding: 0.3em 1em;
     font-size: 1.2em;
 }
 
-.final-output-table tr:nth-child(even){background-color: #cfecf1 }
-.final-output-table tr:nth-child(odd){background-color: #e2fbff}
+.final-output-table tr:nth-child(even) { background-color: #cfecf1; }
+.final-output-table tr:nth-child(odd)  { background-color: #e2fbff; }
 
 #linkText {
-    display: none; /* Anfangs versteckt */
+    display: none;
     margin-top: 10px;
 }
 
-.styled-link{
+.styled-link {
     width: 25em;
     word-wrap: break-word;
 }
@@ -77,34 +76,13 @@ h1{
     text-decoration: underline;
 }
 
-
-.tooltip {
-    display: none;
-    position: absolute;
-    background-color: #f9f9f9;
-    border: 1px solid #ccc;
-    padding: 10px;
-    border-radius: 5px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    white-space: nowrap;
-    overflow-wrap: break-word; /* Break long words if necessary */
+.final-output-table-div {
+    overflow-x: auto;
 }
 
 td:hover .tooltip {
     display: block;
-    top: 100%; /* Position below the cell */
-    left: 50%; /* Center horizontally relative to the cell */
-    transform: translateX(-50%); /* Adjust for centering */
-}
-
-.tooltip[data-overflow="right"] {
-    left: auto;
-    right: 0; /* Align to the right edge of the browser window */
-    transform: none;
-}
-
-.tooltip[data-overflow="left"] {
-    left: 0; /* Align to the left edge of the browser window */
-    transform: none;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
 }
