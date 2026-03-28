@@ -11,7 +11,7 @@
     --color-bg-light:       #e2fbff;
     --color-bg-medium:      #cfecf1;
     --color-bg-section:     rgb(213, 237, 241);
-    --color-header:         color(srgb 0.6263 0.8042 0.835);
+    --color-header:         rgb(160, 205, 213);
     --color-danger:         #c30d12;
     --color-success:        #6aef90;
     --font-main:            'Poppins', Arial, sans-serif;
