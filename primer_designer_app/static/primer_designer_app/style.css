@@ -593,10 +593,15 @@ input::placeholder, textarea::placeholder {
     cursor: pointer;
 }
 
+.PCR-button-cover {
+    width: 11em;
+}
+
 /* ============================================================
    Toggle switch base styles
    ============================================================ */
 .button-cover,
+.PCR-button-cover,
 .knobs,
 .layer {
     top: 0;
@@ -748,14 +753,6 @@ input::placeholder, textarea::placeholder {
     background-color: #fcebeb;
 }
 
-.PCR-button-cover {
-    box-shadow: var(--shadow-light);
-    border-radius: var(--radius-md);
-    height: 3em;
-    width: 11em;
-    background-color: white;
-}
-
 /* ============================================================
    Primer-settings toggle
    ============================================================ */
@@ -820,17 +817,6 @@ input::placeholder, textarea::placeholder {
 .toggle-primer-settings-button-cover {
     position: relative;
     box-sizing: border-box;
-}
-
-.primer-settings-button-cover {
-    display: flex;
-    justify-content: center;
-    flex-direction: column;
-    box-shadow: var(--shadow-light);
-    border-radius: var(--radius-md);
-    height: 3em;
-    width: 15em;
-    background-color: white;
 }
 
 /* ============================================================

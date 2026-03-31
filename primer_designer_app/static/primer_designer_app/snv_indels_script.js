@@ -8,7 +8,6 @@ function updateReferenceGenome() {
     console.log("Selected Reference Genome:", hiddenInput.value); // Debugging
 }
 
-
 function updateUsecase() {
     const switchButton = document.getElementById("usecase-switch");
     const hiddenInput = document.getElementById("usecase");
