@@ -16,13 +16,16 @@
 
         <h2>{{ title|default:"An error occurred" }}</h2>
 
-        <p>
+        <p style="color: red;">
             {{ message|default:"The request could not be processed." }}
         </p>
 
         {% if hint %}
             <p>
                 <strong>Hint:</strong> {{ hint }}
+                <br>
+                <strong>Contact us if you need help:</strong>
+                <a href="mailto:oliver.kuechler@charite.de">oliver.kuechler@charite.de</a>
             </p>
         {% endif %}
 
