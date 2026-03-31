@@ -5,11 +5,14 @@ class PrimerDesignerError(Exception):
 class InvalidTranscriptIdError(PrimerDesignerError):
     pass
 
+
 class InvalidTranscriptVersionError(PrimerDesignerError):
     pass
 
+
 class InvalidTranscriptInputError(PrimerDesignerError):
     pass
+
 
 class ExonExonJunctionError(PrimerDesignerError):
     pass
