@@ -1,18 +1,14 @@
 nav {
     display: flex;
-    align-items: center; 
-    justify-content: center;/* Zentriert die Elemente vertikal */ /* Hintergrundfarbe der Navigation */
+    align-items: center;
+    justify-content: center;
     margin-bottom: 0.5em;
 }
 
 nav ul {
     list-style-type: none;
-    list-style-type: none;
     font-size: 1.3em;
     padding: 0;
-    /* padding-inline-start: 1em; */
-    /* margin-bottom: 28px;; */
-    
 }
 
 nav ul li {
@@ -32,17 +28,49 @@ nav ul li.page-btn:hover {
     background-color: #0097B2;
 }
 
-.bih_logo{
-    position: absolute;
+.bih_logo {
     position: absolute;
     right: 2em;
     top: 0.4em;
     height: 4.4em;
     width: auto;
-    width: auto
 }
-li.bih-logo-li{
-  margin: 0;
+
+li.bih-logo-li { margin: 0; }
+
+.ui-scale-fab {
+    position: fixed;
+    right: 1.1em;
+    bottom: 1.1em;
+    z-index: 9999;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7em;
+    padding: 0.45em 0.7em;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(2, 117, 138, 0.18);
+    box-shadow: 0 0.7em 1.8em -1.3em rgba(39, 52, 56, 0.45);
+    backdrop-filter: blur(8px);
+}
+
+.ui-scale-fab-label {
+    font-size: 1.0em;
+    font-weight: 700;
+    color: #02758A;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.ui-scale-fab .ui-scale-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+}
+
+.ui-scale-fab .ui-scale-btn {
+    padding: 0.35em 0.75em;
+    box-shadow: none;
 }
 
 /* GitHub positioning (Mirror of your BIH logo) */

@@ -16,8 +16,19 @@
         <!-- <li>Other Apps</li>
         <li>Language</li> -->
         <li class="bih-logo-li">
-            <a href="https://www.bihealth.org/en/"><img src="{% static 'primer_designer_app/images/BIH_logo.png' %}" class="bih_logo" alt="Logo"></a>
+            <a href="https://www.bihealth.org/en/">
+                <img src="{% static 'primer_designer_app/images/BIH_logo.png' %}" class="bih_logo" alt="Logo">
+            </a>
         </li>
     </ul>
 </nav>
 <a href="{% url 'primer_designer_app:snv_indel_index' %}"><img src="{% static 'primer_designer_app/images/logo_PrimerDesigner.png' %}" alt="PrimerDesigner Logo" style="width: 32em;height: auto;"></a>
+
+<div class="ui-scale-fab" role="group" aria-label="UI size controls">
+    <div class="ui-scale-fab-label" aria-hidden="true">UI size</div>
+    <div class="ui-scale-controls">
+        <button type="button" class="ui-scale-btn" id="ui-scale-down" aria-label="Decrease UI size">A−</button>
+        <button type="button" class="ui-scale-btn" id="ui-scale-reset" aria-label="Reset UI size">A</button>
+        <button type="button" class="ui-scale-btn" id="ui-scale-up" aria-label="Increase UI size">A+</button>
+    </div>
+</div>

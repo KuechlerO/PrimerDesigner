@@ -1,33 +1,59 @@
 @import "fonts.css";
 
-body.body-snv-indels {    
-  margin-bottom: 1em;
+/* ============================================================
+   CSS custom properties
+   ============================================================ */
+:root {
+    --color-primary:        #02758A;
+    --color-primary-light:  #0097B2;
+    --color-accent:         rgb(114, 180, 191);
+    --color-bg:             rgb(240, 253, 255);
+    --color-bg-light:       #e2fbff;
+    --color-bg-medium:      #cfecf1;
+    --color-bg-section:     rgb(213, 237, 241);
+    --color-header:         rgb(160, 205, 213);
+    --color-danger:         #c30d12;
+    --color-success:        #6aef90;
+    --font-main:            'Poppins', Arial, sans-serif;
+    --font-mono:            'Fira Code', monospace;
+    --shadow-light:         0 0em 1em -0.5em #95b6b6;
+    --shadow-button:        0 10px 20px -8px #c5d6d6;
+    --radius-sm:            0.3em;
+    --radius-md:            0.4em;
+    --radius-pill:          2em;
+    --ui-scale:             1;
 }
 
-body{
-    font-family: 'Poppins', Arial, sans-serif;
+/* ============================================================
+   Base
+   ============================================================ */
+body.body-snv-indels {
+    margin-bottom: 1em;
+}
+
+body {
+    font-family: var(--font-main);
     text-align: center;
     margin: 2em;
     margin-top: 0.5em;
-    background-color:rgb(240, 253, 255);/* rgb(247, 254, 255);*/
-    font-size: 1vw;
+    background-color: var(--color-bg);
+    font-size: calc(clamp(14px, 0.85vw + 10px, 18px) * var(--ui-scale));
 }
 
 h2 {
-    font-family: "Poppins", Arial;
+    font-family: var(--font-main);
     font-weight: 600;
     cursor: default;
     margin: 0.5em;
     font-size: 1.4em;
 }
 
-.hgvs-info{
-  color: color(srgb 0.535 0.535 0.535);
-  font-size: 1.5em;
-  margin: 0;
-  font-weight: 600;
-  margin-left: 1em;
-
+.hgvs-info {
+    color: color(srgb 0.535 0.535 0.535);
+    font-size: 1.5em;
+    margin: 0;
+    font-weight: 600;
+    margin-left: 1em;
 }
 
 
@@ -40,7 +66,7 @@ div#PCR, div#qPCR{
     width: 40%;
 }
 
-input#Transcript-ID, input#Gene-ID, textarea, input#pos_pcr, input#pos_qpcr{
+input#Transcript-ID, input#Gene-ID, textarea, input#pos_pcr, input#pos_qpcr {
     padding: 0.4em;
     width: 95%;
     border: 1px solid #ccc;
@@ -49,7 +75,7 @@ input#Transcript-ID, input#Gene-ID, textarea, input#pos_pcr, input#pos_qpcr{
     font-size: 1.3em;
     word-wrap: break-word;
     max-width: 95%;
-    font-family: "Poppins", Arial;
+    font-family: var(--font-main);
 }
 
 textarea {
@@ -57,77 +83,56 @@ textarea {
     width:92%;
 }
 
-.resize{
+.resize {
     height: 100%;
 }
 
-/* button {
-    padding: 1em 1.5em;
-    margin: 1em auto;
-    /* background-color: #02758A;
-    color: white; 
-    border: none;
-    border-radius: 0.3em;
-    cursor: pointer;
-    display: block;
-    font-size: 1.3em;
-    font-family: 'Poppins', Arial, sans-serif;
-    box-shadow: 0 10px 20px -8px #c5d6d6;
-} */
-
 .copy-button {
-  display: inline-flex;
-  align-items: center; /* vertikal mittig */
-  gap: 8px; /* Abstand zwischen Icon und Text */
-  background-color: color(srgb 0.4033 0.6913 0.74);
-  cursor: pointer;
-  font-size: 1.3em;
-  font-weight: 600;
-  text-decoration: none; 
-  color: color(srgb 1 1 1);
-  box-shadow: 0 10px 20px -8px #c5d6d6;
-  border: none;
-  border-radius: 2em;
-  margin: 0.5em;
-  padding: 0.6em 1.3em;
-  font-family: 'Poppins', Arial, sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: color(srgb 0.4033 0.6913 0.74);
+    cursor: pointer;
+    font-size: 1.3em;
+    font-weight: 600;
+    text-decoration: none;
+    color: white;
+    box-shadow: var(--shadow-button);
+    border: none;
+    border-radius: var(--radius-pill);
+    margin: 0.5em;
+    padding: 0.6em 1.3em;
+    font-family: var(--font-main);
 }
 
 .copy-button:hover {
-  transform: scale(1.02);
-  box-shadow: 0 0.3em 0.8em -0.1em #2734384d;
-  background-color: color(srgb 0.4745 0.7975 0.855);
-  transition: transform 0.3s ease;
+    transform: scale(1.02);
+    box-shadow: 0 0.3em 0.8em -0.1em #2734384d;
+    background-color: color(srgb 0.4745 0.7975 0.855);
+    transition: transform 0.3s ease;
 }
 
-.submit-button{
+.submit-button {
     font-size: 1.6em;
-    display:block;
-    font-weight: 500;
+    display: block;
+    font-weight: 600;
     border-radius: 4em;
-    border:none;
+    border: none;
     cursor: pointer;
-    font-weight: 600;
-    margin:0;
-    background-color: color(srgb 1 1 1);
-    font-weight: 600;
+    margin: 0;
+    background-color: white;
     margin-top: 0.8em;
     color: #52afa2;
     box-shadow: 0 0 0.4em 0.01em color(srgb 0.774 0.8522 0.86 / 0.69) inset;
     padding: 0.5em 1.3em;
 }
 
-
-.submit-button:hover{
-    background-color: #3ca697!important;
+.submit-button:hover {
+    background-color: #3ca697 !important;
     transform: scale(1.02);
     box-shadow: 0 0.3em 0.8em -0.1em #2734384d;
-    color: white !important;;
+    color: white !important;
     transition: transform 0.3s ease;
-}
-
-button:not(.example-button):not(.reset-button)hover {
-    background-color: #0097B2;
 }
 
 
@@ -137,37 +142,36 @@ button:not(.example-button):not(.reset-button)hover {
     display: block;
     font-size: 1.3em;
     font-weight: 600;
-    color: color(srgb 1 1 1);
-    box-shadow: 0 10px 20px -8px #c5d6d6;
+    color: white;
+    box-shadow: var(--shadow-button);
     border: none;
-    border-radius: 2em;
+    border-radius: var(--radius-pill);
     margin-top: 2.52em;
     padding: 0.4em 1.5em;
-    font-family: 'Poppins', Arial, sans-serif;
+    font-family: var(--font-main);
 }
 
-.reset-button, .back-button{
-    background-color: #027589ff;
+.reset-button, .back-button {
+    background-color: #c30d1299;
     font-weight: 600;
-    background-color:#c30d1299;
-    box-shadow: 0 10px 20px -8px #c5d6d6;
+    box-shadow: var(--shadow-button);
     cursor: pointer;
     display: block;
     font-size: 1.3em;
     color: white;
     border: none;
-    border-radius: 2em;
+    border-radius: var(--radius-pill);
     margin-top: 2.52em;
     padding: 0.4em 1.5em;
-    font-family: 'Poppins', Arial, sans-serif;
+    font-family: var(--font-main);
 }
 
-.back-button{
-  margin: 0.5em;
+.back-button {
+    margin: 0.5em;
 }
 
-.reset-button:hover, .back-button:hover{
-    background-color:#ed898c;
+.reset-button:hover, .back-button:hover {
+    background-color: #ed898c;
 }
 
 .example-button:hover {
@@ -178,19 +182,18 @@ input[type="radio"] {
     opacity: 0;
     pointer-events: none;
     height: 0;
-    margin:0;
-    padding:0;
+    margin: 0;
+    padding: 0;
     width: 0;
-
-}      
+}
 
 input[type="radio"] + label {
     position: relative;
-    font-family: "Poppins", sans-serif;
+    font-family: var(--font-main);
     font-size: 1.3em;
     cursor: pointer;
     color: color(srgb 0.3477 0.5336 0.57);
-    border-radius: 0.4em;
+    border-radius: var(--radius-md);
 }
 
 input[type="radio"] + label:not(.primer-selector) {
@@ -249,60 +252,57 @@ label.primer-selector {
   vertical-align: middle;
 }
 
-/* Stil für den "aktivierten" Kreis */
+/* Selected radio button indicator */
 input[type="radio"]:checked + label.primer-selector::before {
-  animation: clickEffect 0.2s ease-out;
-  background-color: rgb(45, 133, 120);
-  outline: 0.1em solid white;
+    animation: clickEffect 0.2s ease-out;
+    background-color: rgb(45, 133, 120);
+    outline: 0.1em solid white;
 }
 
 @keyframes clickEffect {
-  0% { transform: scale(1); }
-  50% { transform: scale(0.8); }
-  100% { transform: scale(1); }
+    0%   { transform: scale(1); }
+    50%  { transform: scale(0.8); }
+    100% { transform: scale(1); }
 }
 
 div#in {
-    display: flex;
-    position:relative;
-    flex:1;
+    display: grid;
+    position: relative;
+    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
     justify-content: center;
-    gap: 1.5%;
-    margin-top: 1em;
+    gap: 1.5rem;
+    margin-top: 1.5em;
     box-sizing: border-box;
-    
 }
+
 .dual_input {
     display: flex;
     justify-content: center;
-    padding: 0.4em; /* Zentriert die Inputs innerhalb der Box */
+    padding: 0.4em;
     width: 92%;
     border: 1px solid #ccc;
     background-color: white;
     border-radius: 0.5em;
-    /* gap: 8px; */
 }
 
 .dual_input input {
-    text-align: center; 
-    padding: 0px;
+    text-align: center;
+    padding: 0;
     background-color: white;
-    /* border-radius: 5px; */
     font-size: 1.3em;
-} 
+}
 
 div.column {
-    display: flex; /* Flexbox aktivieren */
-    justify-content: center; /* Horizontal zentrieren */
-    align-items: center; /* Vertikal zentrieren */
-    height: 100%; /* Stellt sicher, dass die Höhe des Containers berücksichtigt wird */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
     text-align: center;
-    width: 20%; 
+    width: 20%;
     font-weight: 600;
     font-size: 1.3em;
     border-right: 1px solid #ccc;
     color: rgb(87, 163, 176);
-
 }
 
 .snv_column{
@@ -318,39 +318,42 @@ input#IndelChrom, input#IndelStart, input#IndelEnd {
     border-bottom: 1px solid #ccc;
     box-sizing: border-box;
 }
-input#IndelStart, input#IndelEnd, input#IndelIns{
-    padding-top:0.4em;
+
+input#IndelStart, input#IndelEnd, input#IndelIns {
+    padding-top: 0.4em;
 }
 
 input#IdIndelStart, input#IdIndelEnd {
     width: 100%;
-    padding-bottom:0.4em;
+    padding-bottom: 0.4em;
     border: none;
     border-bottom: 1px solid #ccc;
     box-sizing: border-box;
 }
+
 input#IdIndelEnd, input#IdIndelIns {
     padding-top: 0.4em;
 }
 
-input#Position, input#genom_pos{
-    width: 65%; 
+input#Position, input#genom_pos {
+    width: 65%;
     border: none;
     border-right: 1px solid #ccc;
     padding-left: 0.4em;
-    padding-right:0.4em;
+    padding-right: 0.4em;
     margin-right: 1px;
-    font-family: "Poppins", Arial;
+    font-family: var(--font-main);
 }
 
-input#new_base, input#IDnew_base{
-    width: 35%; 
-    border: none; 
+input#new_base, input#IDnew_base {
+    width: 35%;
+    border: none;
     box-sizing: border-box;
 }
+
 .settings div {
     display: flex;
-    justify-content: center; /* Zentrieren *//* Abstand zwischen den Radiobuttons */
+    justify-content: center;
 }
 
 .divider {
@@ -361,16 +364,49 @@ input#new_base, input#IDnew_base{
 }
 
 .settings-container {
-    margin: 0 1em;
+    margin: 0.5em 1em 2em;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center; 
-    margin-top:0.5em;
-    padding-bottom: 2em;
+    justify-content: center;
 }
 
-input#tm, input#gc_content, input#max_poly_X, input#product_size_min, input#product_size_max{
+.ui-scale-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+    padding: 0.35em 0.5em;
+    border-radius: var(--radius-pill);
+    background-color: white;
+    box-shadow: var(--shadow-light);
+}
+
+.ui-scale-btn {
+    appearance: none;
+    border: none;
+    background-color: rgb(153, 199, 207);
+    color: white;
+    font-weight: 700;
+    font-family: var(--font-main);
+    border-radius: 999px;
+    padding: 0.45em 0.9em;
+    cursor: pointer;
+    box-shadow: var(--shadow-button);
+}
+
+.ui-scale-btn:hover:enabled {
+    transform: scale(1.02);
+    transition: transform 0.2s ease;
+    background-color: rgb(172, 231, 242);
+}
+
+.ui-scale-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+input#tm, input#gc_content, input#max_poly_X, input#product_size_min, input#product_size_max {
     width: 3em;
     font-size: 1em;
 }
@@ -380,115 +416,111 @@ input#tm, input#gc_content, input#max_poly_X, input#product_size_min, input#prod
     background-color: rgb(210, 249, 250);
     color: rgb(24, 128, 117);
     font-size: 1.3em;
-    /* font-weight: 500; */
     padding: 0.3em 1em;
-    /* border: 1px solid #2d5d5e; */
-    /* border-radius: 5px; */
-    font-family: "Poppins", Arial, Helvetica, sans-serif;
+    font-family: var(--font-main);
     cursor: pointer;
 }
 
-select#primer-settings:hover{
+select#primer-settings:hover {
     background-color: rgb(224, 251, 252);
 }
 
-.primer-parameters{
+.primer-parameters {
     margin: 0.2em;
     font-size: 1.1em;
 }
 
-#Identifier, #Genomic_Position, #Sequence{
+#Identifier, #Genomic_Position, #Sequence {
     position: relative;
     display: flex;
     flex-direction: column;
-    flex: 1;
     padding: 1rem;
     overflow: visible;
-    border-radius: 0.4em;
+    border-radius: var(--radius-md);
     text-align: center;
     align-items: center;
     transform: scale(1);
     transition: all 0.2s ease;
-    max-width: 32%;
-    background-color: rgb(213, 237, 241)
+    background-color: var(--color-bg-section);
 }
 
-/* Positionierung der Info-Box */
-.info-icon, .output-info-icon{
-  position: absolute;
-  bottom: 1em;
-  right: 1em;
-  background-color: rgb(232, 247, 250);
-  color: color(srgb 0.2429 0.5607 0.615);
-  border-radius: 50%;
-  width: 2em;
-  height: 2em;
-  text-align: center;
-  line-height: 2em;
-  font-weight: bold;
-  cursor: pointer;
-  z-index: 11;
+/* Info icon and overlay */
+.info-icon, .output-info-icon {
+    position: absolute;
+    bottom: 1em;
+    right: 1em;
+    background-color: rgb(232, 247, 250);
+    color: color(srgb 0.2429 0.5607 0.615);
+    border-radius: 50%;
+    width: 2em;
+    height: 2em;
+    text-align: center;
+    line-height: 2em;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 11;
 }
 
-.output-info-icon{
-  position: relative;
-  background-color: rgb(208, 240, 246);
-  bottom: 0;
-  right: 0;
-}
-.info-icon:hover, .output-info-icon:hover{
-  background-color: color(srgb 0.5005 0.7303 0.77);
-  color: white;
+.output-info-icon {
+    position: relative;
+    background-color: rgb(208, 240, 246);
+    bottom: 0;
+    right: 0;
 }
 
-.info-li{
-  text-align: left;
-  margin: 1em;
-  padding-left: 1em;
-}
-/* Overlay: anfänglich versteckt */
-.info-overlay, .output-info-overlay{
-  display: none;
-  position: absolute;
-  color: #000;
-  border-radius: 0.4em;
-  box-sizing: border-box;
-  z-index: 10;
+.info-icon:hover, .output-info-icon:hover {
+    background-color: color(srgb 0.5005 0.7303 0.77);
+    color: white;
 }
 
-.info-overlay{
-  top:0;
-  padding: 1em;
-  width: 100%;
-  height: 100%;
-  background: rgb(214, 237, 241);
+.info-li {
+    text-align: left;
+    margin: 1em;
+    padding-left: 1em;
 }
 
-.output-info-overlay{
-  position: absolute;
-  padding:0;
-  left: 30em;
-  width: 40em;
-  height: auto;
-  background-color: rgba(214, 237, 241, 0.97);
+/* Overlay – hidden by default */
+.info-overlay, .output-info-overlay {
+    display: none;
+    position: absolute;
+    color: #000;
+    border-radius: var(--radius-md);
+    box-sizing: border-box;
+    z-index: 10;
 }
 
-/* Wenn man über das Icon hovert, soll das Overlay sichtbar werden */
-.info-icon:hover + .info-overlay, .output-info-icon:hover + .output-info-overlay{
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.info-overlay {
+    top: 0;
+    padding: 1em;
+    width: 100%;
+    height: 100%;
+    background: rgb(214, 237, 241);
+}
+
+.output-info-overlay {
+    padding: 0;
+    left: 30em;
+    width: min(40em, 80vw);
+    height: auto;
+    background-color: rgba(214, 237, 241, 0.97);
+}
+
+.info-icon:hover + .info-overlay,
+.output-info-icon:hover + .output-info-overlay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 
-.highlight{
+.highlight {
     background-color: rgb(195, 226, 231) !important;
-    transform: scale(1.01)!important;
+    box-shadow: 0 0.3em 1.1em -0.4em rgba(39, 52, 56, 0.30);
+    outline: 0.12em solid rgba(87, 163, 176, 0.35);
     transition: all 0.2s ease;
-    
 }
 
- /*Transparent für nicht gewählte Eingabecontainer*/
+/* Dim unselected input containers */
 .grey-transparent {
     opacity: 0.3;
     color: rgb(127, 165, 174);
@@ -496,88 +528,80 @@ select#primer-settings:hover{
 }
 
 .highlight-target {
-    background-color: rgba(241, 129, 123, 0.587); /* Rot für den gesamten Target-Bereich */
+    background-color: rgba(241, 129, 123, 0.587);
     word-break: break-word;
-    /* font-weight: bold; */
 }
 
 .highlight-mutation {
-    background-color:  rgba(242, 90, 82, 0.658); /* Grün für die Basenposition */
+    background-color: rgba(242, 90, 82, 0.658);
     color: black;
     word-break: break-word;
     font-weight: bold;
 }
 
-.highlight-primer{
+.highlight-primer {
     background-color: #89cad5;
-    
-    /* font-weight: bold; */
-}
-.green{
-    background-color: #6aef90;
-    padding: 0em 0.5em 0em 0.5em;
 }
 
-.red{
-  background-color: rgba(255, 143, 143, 1);
-  padding: 0em 0.5em 0em 0.5em;
+.green {
+    background-color: var(--color-success);
+    padding: 0 0.5em;
+}
+
+.red {
+    background-color: rgba(255, 143, 143, 1);
+    padding: 0 0.5em;
 }
 
 .curved {
-  position: absolute; /* Entfernt die Kurve aus dem normalen Fluss */
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 50em;/* Höhe der Kurve */
-  background:   rgb(247, 254, 255);/* Hintergrundfarbe der Kurve */
-  z-index: -1; /* Stellt sicher, dass die Kurve hinter dem Inhalt liegt */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 50em;
+    background: rgb(247, 254, 255);
+    z-index: -1;
 }
 
-/* Kurveneffekt */
 .curved::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 2.5em;/* Höhe der Kurve */
-  background: rgb(215, 249, 251); /* Farbe der Kurve */
-  border-top-left-radius: 50% 100%; /* Kurve links */
-  border-top-right-radius: 50% 100%; /* Kurve rechts */
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2.5em;
+    background: rgb(215, 249, 251);
+    border-top-left-radius: 50% 100%;
+    border-top-right-radius: 50% 100%;
 }
 
 .ID_h2 {
-margin: 0;
-display: flex;
-justify-content: center;
-border-radius: 0.5em 0.5em 0em 0em;
-background-color: color(srgb 0.6263 0.8042 0.835);
-color: white;
-align-items: center;
-/* margin-top: 0.5em; */
-padding-right: 0.2em;
-padding-left: 0.2em;
-padding-top: 0.3em;
-padding-bottom: 0.3em;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 0.5em 0.5em 0 0;
+    background-color: var(--color-header);
+    color: white;
+    padding: 0.3em 0.2em;
 }
 
-input::placeholder, textarea::placeholder{
-color: rgb(206, 206, 206);/* z. B. grau */
-font-family: "Poppins";
-text-align: center;
-opacity: 1; /* Safari braucht das manchmal */
+input::placeholder, textarea::placeholder {
+    color: rgb(206, 206, 206);
+    font-family: var(--font-main);
+    text-align: center;
+    opacity: 1;
 }
 
 * {
     -webkit-tap-highlight-color: transparent;
-  }
-  
-  *:focus {
+}
+
+*:focus {
     outline: none;
-  }
+}
 
-
-  .checkbox {
+.checkbox {
     position: relative;
     width: 100%;
     height: 100%;
@@ -586,28 +610,33 @@ opacity: 1; /* Safari braucht das manchmal */
     opacity: 0;
     cursor: pointer;
     z-index: 3;
-  }
+}
 
- 
 .toggle-button-cover, .toggle-PCR-button-cover {
     position: relative;
     box-sizing: border-box;
-    
-  }
-  
-  .button-cover{
-    box-shadow: 0 0em 1em -0.5em #95b6b6;
-    border-radius: 0.4em; 
+}
+
+.button-cover {
+    box-shadow: var(--shadow-light);
+    border-radius: var(--radius-md);
     height: 3em;
     width: 15em;
     background-color: white;
     cursor: pointer;
-  }
-  
-  .button-cover,
-  .knobs,
-  .layer {
-    /* position: absolute; */
+}
+
+.PCR-button-cover {
+    width: 11em;
+}
+
+/* ============================================================
+   Toggle switch base styles
+   ============================================================ */
+.button-cover,
+.PCR-button-cover,
+.knobs,
+.layer {
     top: 0;
     right: 0;
     bottom: 0;
@@ -616,408 +645,361 @@ opacity: 1; /* Safari braucht das manchmal */
     text-align: center;
     display: flex;
     justify-content: center;
-  }
-  
-  .button {
+}
+
+.button {
     position: relative;
-    /* top: 50%; */
-
     height: 2.5em;
-    /* margin: -20px auto 0 auto; */
     overflow: hidden;
-  }
-  
-  .button.r,
-  .button.r .layer {
+}
+
+.button.r,
+.button.r .layer {
     border-radius: 10%;
-  }
+}
 
-  .button.b2 {
+.button.b2 {
     border-radius: 2px;
-  }
+}
 
-  .knobs {
+.knobs {
     z-index: 2;
-  }
-  
-  .layer {
+}
+
+.layer {
     width: 100%;
     background-color: #ebf7fc;
     transition: 0.3s ease all;
     z-index: 1;
-  }
+}
+
+/* ============================================================
+   Genome / PCR toggle knob shared styles
+   ============================================================ */
 #genome-button .knobs:before,
 #genome-button .knobs:after,
 #genome-button .knobs span,
 #PCR-button .knobs:before,
 #PCR-button .knobs:after,
 #PCR-button .knobs span {
-  position: absolute;
-  top: 0.1em;
-  bottom:0.1em;
-  width: 5em;
-  /* height: 10px; */
-  font-size: 1.3em;
-  font-weight: 500;
-  text-align: center;
-  line-height: 1;
-  /* padding: 9px 4px; */
-  padding: 3%;
-  border-radius: 0.3em;
-  transition: 0.4s cubic-bezier(0.18, 0.89, 0.35, 1.15) all;
+    position: absolute;
+    top: 0.1em;
+    bottom: 0.1em;
+    width: 5em;
+    font-size: 1.3em;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1;
+    padding: 3%;
+    border-radius: var(--radius-sm);
+    transition: 0.4s cubic-bezier(0.18, 0.89, 0.35, 1.15) all;
 }
 
-#genome-button .knobs:after {
-  content: "GRCh38";
-  top: 0.25em;
-  right: -5.5em;
-  /* top:1em;
-  bottom:1em; */
-}
-
+/* Genome button */
 #genome-button .knobs:before {
-  content: "GRCh37";
-  left: 0.2em;
-  top: 0.25em;
-  z-index: 2;
-  color:white;
-  /* top:1em;
-  bottom:1em; */
+    content: "GRCh37";
+    left: 0.2em;
+    top: 0.25em;
+    z-index: 2;
+    color: white;
 }
 
 #genome-button .knobs:after {
-  color:color(srgb 0.6649 0.8122 0.84);
-  z-index: 2;
-  right: 0.1em;
+    content: "GRCh38";
+    top: 0.25em;
+    color: color(srgb 0.6649 0.8122 0.84);
+    z-index: 2;
+    right: 0.1em;
 }
-
 
 #genome-button .knobs span {
-  left: 0.5em;
-  right:0.5em;
-  background-color: rgb(114, 180, 191);
-  box-shadow: 0 0em 1em -0.5em #334747;
-  z-index: 1;
-  width:4.5em;
+    left: 0.5em;
+    right: 0.5em;
+    background-color: var(--color-accent);
+    box-shadow: 0 0em 1em -0.5em #334747;
+    z-index: 1;
+    width: 4.5em;
 }
 
 #genome-button .checkbox:checked + .knobs:before {
-  left: 0;
-  color: color(srgb 0.6649 0.8122 0.84);
+    left: 0;
+    color: color(srgb 0.6649 0.8122 0.84);
 }
 
 #genome-button .checkbox:checked + .knobs:after {
-  right: 0.2em;
-  color: white;
+    right: 0.2em;
+    color: white;
 }
 
 #genome-button .checkbox:checked + .knobs span {
-  left: 5.8em;
-  background-color: rgb(114, 180, 191);
+    left: 5.8em;
+    background-color: var(--color-accent);
 }
 
 #genome-button .checkbox:checked ~ .layer {
-  background-color: #fcebeb;
+    background-color: #fcebeb;
 }
 
+/* PCR button */
 #PCR-button .knobs:before {
-  content: "PCR";
-  left: -0.5em;
-  top: 0.25em;
-  color: color(srgb 0.3416 0.6391 0.69 / 0.52);
-  /* top:1em;
-  bottom:1em; */
-}
-
-#PCR-button .knobs:before {
-  content: "PCR";
-  left: -0.5em;
-  top: 0.25em;
-  color: color(srgb 0.3416 0.6391 0.69 / 0.52);
-  /* top:1em;
-  bottom:1em; */
+    content: "PCR";
+    left: -0.5em;
+    top: 0.25em;
+    color: white;
+    z-index: 2;
 }
 
 #PCR-button .knobs:after {
-  content: "qPCR";
-  top: 0.25em;
-  color: color(srgb 0.3416 0.6391 0.69 / 0.52);
-  right: -0.5em;
-  /* top:1em;
-  bottom:1em; */
-}
-
-#PCR-button .knobs:before,
-#PCR-button .knobs:after {
-  z-index: 2;
-}
-
-#PCR-button .knobs:before{
-  color:white;
+    content: "qPCR";
+    top: 0.25em;
+    color: color(srgb 0.3416 0.6391 0.69 / 0.52);
+    z-index: 2;
+    right: -0.5em;
 }
 
 #PCR-button .knobs span {
-  left: 0.5em;
-  right:0.5em;
-  width: 3.2em;
-  background-color: rgb(114, 180, 191);
-  box-shadow: 0 0em 1em -0.5em #334747;
-  z-index: 1;
+    left: 0.5em;
+    right: 0.5em;
+    width: 3.2em;
+    background-color: var(--color-accent);
+    box-shadow: 0 0em 1em -0.5em #334747;
+    z-index: 1;
 }
 
 #PCR-button .checkbox:checked + .knobs:before {
-  left: -0.5em;
-  color: color(srgb 0.3416 0.6391 0.69 / 0.52);
+    left: -0.5em;
+    color: color(srgb 0.3416 0.6391 0.69 / 0.52);
 }
 
 #PCR-button .checkbox:checked + .knobs:after {
-  right: -0.4em;
-  color:white;
+    right: -0.4em;
+    color: white;
 }
 
 #PCR-button .checkbox:checked + .knobs span {
     left: 4.4em;
     width: 3em;
-    background-color: rgb(114, 180, 191);
+    background-color: var(--color-accent);
 }
 
 #PCR-button .checkbox:checked ~ .layer {
-  background-color: #fcebeb;
-}
-  
-.PCR-button-cover {
-    box-shadow: 0 0em 1em -0.5em #95b6b6;
-    border-radius: 0.4em; 
-    height: 3em;
-    width: 11em;
-    background-color: white;
+    background-color: #fcebeb;
 }
 
-.PCR-button-cover,
-.knobs,
-.layer {
-/* position: absolute; */
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    flex-direction: column;
-    text-align: center;
-    display: flex;
-    justify-content: center;
-}
-
-/*=====================================================*/
-
+/* ============================================================
+   Primer-settings toggle
+   ============================================================ */
 #primer-settings-button .knobs:before,
 #primer-settings-button .knobs:after,
 #primer-settings-button .knobs span {
-  position: absolute;
-  top: 0.1em;
-  bottom:0.1em;
-  width: 5em;
-  /* height: 10px; */
-  font-size: 1.3em;
-  font-weight: 500;
-  text-align: center;
-  line-height: 1;
-  /* padding: 9px 4px; */
-  padding: 3%;
-  border-radius: 0.3em;
-  transition: 0.4s cubic-bezier(0.18, 0.89, 0.35, 1.15) all;
+    position: absolute;
+    top: 0.1em;
+    bottom: 0.1em;
+    width: 5em;
+    font-size: 1.3em;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1;
+    padding: 3%;
+    border-radius: var(--radius-sm);
+    transition: 0.4s cubic-bezier(0.18, 0.89, 0.35, 1.15) all;
 }
-
-#primer-settings-button .knobs:after {
-  content: "custom";
-  right: -5.5em;
-  /* top:1em;
-  bottom:1em; */
-}
-
 
 #primer-settings-button .knobs:before {
-  content: "default";
-  left: 0.2em;
-  z-index: 2;
-  color:white;
-  /* top:1em;
-  bottom:1em; */
+    content: "default";
+    left: 0.2em;
+    z-index: 2;
+    color: white;
 }
 
 #primer-settings-button .knobs:after {
-  color:color(srgb 0.6649 0.8122 0.84);
-  z-index: 2;
-  right: 0.1em;
+    content: "custom";
+    color: color(srgb 0.6649 0.8122 0.84);
+    z-index: 2;
+    right: 0.1em;
 }
 
 #primer-settings-button .knobs span {
-  left: 0.5em;
-  right:0.5em;
-  background-color: rgb(114, 180, 191);
-  box-shadow: 0 0em 1em -0.5em #334747;
-  z-index: 1;
-  width:4.5em;
+    left: 0.5em;
+    right: 0.5em;
+    background-color: var(--color-accent);
+    box-shadow: 0 0em 1em -0.5em #334747;
+    z-index: 1;
+    width: 4.5em;
 }
 
 #primer-settings-button .checkbox:checked + .knobs:before {
-  left: 0;
-  color: color(srgb 0.6649 0.8122 0.84);
+    left: 0;
+    color: color(srgb 0.6649 0.8122 0.84);
 }
 
 #primer-settings-button .checkbox:checked + .knobs:after {
-  right: 0.2em;
-  color: white;
+    right: 0.2em;
+    color: white;
 }
 
 #primer-settings-button .checkbox:checked + .knobs span {
-  left: 5.8em;
-  background-color: rgb(114, 180, 191);
+    left: 5.8em;
+    background-color: var(--color-accent);
 }
 
 #primer-settings-button .checkbox:checked ~ .layer {
-  background-color: #fcebeb;
+    background-color: #fcebeb;
 }
 
 .toggle-primer-settings-button-cover {
-  position: relative;
-  box-sizing: border-box;
+    position: relative;
+    box-sizing: border-box;
 }
 
-.primer-settings-button-cover {
-  display: flex;
-  justify-content: center;
-  flex-direction: column;
-  box-shadow: 0 0em 1em -0.5em #95b6b6;
-  border-radius: 0.4em; 
-  height: 3em;
-  width: 15em;
-  background-color: white;
-}
-
-/* Das Textfeld über dem Container */
+/* ============================================================
+   Hover label above input sections
+   ============================================================ */
 .hover-label {
-  position: absolute;
-  width: 11em;
-  height: 4em;
-  z-index: -1;
-  top: -1.9em;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #d6edf1;
-  color: color(srgb 0.343 0.6385 0.6902);
-  padding: 0.3rem 0.6rem;
-  border-radius:1em 1em 0em 0em;
-  font-size: 1.3em;
-  opacity: 1;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-  white-space: nowrap;
-  will-change: opacity, transform;
+    position: absolute;
+    width: 11em;
+    height: 4em;
+    z-index: -1;
+    top: -1.9em;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #d6edf1;
+    color: color(srgb 0.343 0.6385 0.6902);
+    padding: 0.3rem 0.6rem;
+    border-radius: 1em 1em 0 0;
+    font-size: 1.3em;
+    opacity: 1;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    white-space: nowrap;
+    will-change: opacity, transform;
 }
 
-.hover-label-highlight{
-  background-color: rgb(195, 226, 231) !important;
-  /* transition: all 0.2s ease; */
-  
+.hover-label-highlight {
+    background-color: rgb(195, 226, 231) !important;
 }
 
-.output-table tr:nth-child(even){background-color: #e2fbff}
-.output-table tr:nth-child(odd){background-color: #cfecf1}
+/* ============================================================
+   Output / results table
+   ============================================================ */
+.output-table tr:nth-child(even) { background-color: var(--color-bg-light); }
+.output-table tr:nth-child(odd)  { background-color: var(--color-bg-medium); }
+.output-table tr:hover           { background-color: #bae6d9; }
 
-.output-table tr:hover {background-color: #bae6d9;}
-
-tr.selectable-row.selected{
+tr.selectable-row.selected {
     background-color: #9ad6c4;
     transition: transform 0.3s ease;
 }
 
-.output-li{
+.output-li {
     list-style-type: none;
     font-size: 1.1em;
     padding: 0.3em 1em;
 }
-.output-h2{
+
+.output-h2 {
     font-size: 1rem;
     margin: 0.1em;
 }
 
-
-input#primer-selection{
+input#primer-selection {
     font-size: 0.5rem;
 }
 
-div#in {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    margin-top: 30px;
-}
-
-div#primer-info{
+div#primer-info {
     padding-left: 0.5em;
     padding-right: 0.5em;
 }
-h1{
-    padding: 0px;
+
+h1 {
+    padding: 0;
 }
 
-.output-table-div{
-    display:flex;
+.output-table-div {
+    display: flex;
     justify-content: center;
 }
 
-p.output-legend{
-font-size: 1.3em;
-margin: 0;
-color: color(srgb 0.5362 0.7911 0.8346);
+p.output-legend {
+    font-size: 1.3em;
+    margin: 0;
+    color: color(srgb 0.5362 0.7911 0.8346);
 }
 
+/* ============================================================
+   Tooltip
+   ============================================================ */
+.tooltip {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    white-space: nowrap;
+    overflow-wrap: break-word;
+}
 
+.tooltip[data-overflow="right"] {
+    left: auto;
+    right: 0;
+    transform: none;
+}
+
+.tooltip[data-overflow="left"] {
+    left: 0;
+    transform: none;
+}
+
+/* ============================================================
+   Loading overlay
+   ============================================================ */
 #loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.6); /* halb transparentes Schwarz */
-  z-index: 9999;
-  display: none;
-  justify-content: center;
-  align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+    display: none;
+    justify-content: center;
+    align-items: center;
 }
 
-/* Inhalt in der Mitte */
 .loader-content {
-  text-align: center;
-  color: white;
-  font-size: 1.2rem;
+    text-align: center;
+    color: white;
+    font-size: 1.2rem;
 }
 
-/* Spinner (kannst du anpassen oder durch ein GIF ersetzen) */
 .spinner {
-  border: 6px solid #f3f3f3;
-  border-top: 6px solid #3498db;
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 15px auto;
+    border: 6px solid #f3f3f3;
+    border-top: 6px solid #3498db;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px auto;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
-/* ---- Sequence chunking ---- */
-/* Add these rules (tune colors/sizes as needed) */
+/* ============================================================
+   Sequence display
+   ============================================================ */
 .sequence-container {
-    font-family: "Fira Code", monospace;
+    font-family: var(--font-mono);
     margin: 2em auto;
     display: flex;
     justify-content: center;
-    width: 95%;            /* Use most of the screen width */
-    overflow-x: auto;      /* Add a scrollbar if the sequence is too wide */
+    width: 95%;
+    overflow-x: auto;
     padding: 1em 0;
 }
 
@@ -1026,14 +1008,14 @@ color: color(srgb 0.5362 0.7911 0.8346);
     padding: 0;
     margin: 0;
     display: inline-block;
-    min-width: min-content; /* Ensures the background/centering respects the content size */
+    min-width: min-content;
 }
 
 .seq-line {
     display: flex;
-    align-items: flex-start; /* Align numbers to the top of the line */
+    align-items: flex-start;
     gap: 1.5ch;
-    white-space: nowrap;     /* Prevents DNA from wrapping mid-chunk */
+    white-space: nowrap;
     margin-bottom: 0.1em;
 }
 
@@ -1044,14 +1026,34 @@ color: color(srgb 0.5362 0.7911 0.8346);
     color: #88aeb5;
     font-weight: 600;
     flex: 0 0 auto;
-    user-select: none;       /* Prevents numbers from being copied with the DNA */
+    user-select: none;
 }
 
 .seq-chunk {
     display: inline-block;
-    /* font-size: 0.9rem;       /* Slightly smaller to fit more bases on screen */
-    font-size: 1vw;
+    font-size: calc(clamp(14px, 0.85vw + 10px, 18px) * var(--ui-scale));
     font-variant-ligatures: none;
     text-align: left;
     letter-spacing: 0.05ch;
+}
+
+/* ============================================================
+   Responsive adjustments
+   ============================================================ */
+@media (max-width: 900px) {
+    body {
+        margin: 1em;
+    }
+
+    div#in {
+        grid-template-columns: 1fr;
+    }
+
+    #Identifier, #Genomic_Position, #Sequence {
+        width: 100%;
+    }
+
+    .seq-chunk {
+        font-size: calc(clamp(14px, 0.85vw + 10px, 18px) * var(--ui-scale));
+    }
 }
