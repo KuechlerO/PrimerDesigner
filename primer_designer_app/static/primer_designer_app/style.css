@@ -21,6 +21,7 @@
     --radius-sm:            0.3em;
     --radius-md:            0.4em;
     --radius-pill:          2em;
+    --ui-scale:             1;
 }
 
 /* ============================================================
@@ -36,7 +37,7 @@ body {
     margin: 2em;
     margin-top: 0.5em;
     background-color: var(--color-bg);
-    font-size: 1vw;
+    font-size: calc(clamp(14px, 0.85vw + 10px, 18px) * var(--ui-scale));
 }
 
 h2 {
@@ -265,13 +266,12 @@ input[type="radio"]:checked + label.primer-selector::before {
 }
 
 div#in {
-    display: flex;
+    display: grid;
     position: relative;
-    flex: 1;
-    flex-wrap: wrap;
+    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
     justify-content: center;
-    gap: 1.5%;
-    margin-top: 1em;
+    gap: 1.5rem;
+    margin-top: 1.5em;
     box-sizing: border-box;
 }
 
@@ -371,6 +371,41 @@ input#new_base, input#IDnew_base {
     justify-content: center;
 }
 
+.ui-scale-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+    padding: 0.35em 0.5em;
+    border-radius: var(--radius-pill);
+    background-color: white;
+    box-shadow: var(--shadow-light);
+}
+
+.ui-scale-btn {
+    appearance: none;
+    border: none;
+    background-color: rgb(153, 199, 207);
+    color: white;
+    font-weight: 700;
+    font-family: var(--font-main);
+    border-radius: 999px;
+    padding: 0.45em 0.9em;
+    cursor: pointer;
+    box-shadow: var(--shadow-button);
+}
+
+.ui-scale-btn:hover:enabled {
+    transform: scale(1.02);
+    transition: transform 0.2s ease;
+    background-color: rgb(172, 231, 242);
+}
+
+.ui-scale-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
 input#tm, input#gc_content, input#max_poly_X, input#product_size_min, input#product_size_max {
     width: 3em;
     font-size: 1em;
@@ -399,7 +434,6 @@ select#primer-settings:hover {
     position: relative;
     display: flex;
     flex-direction: column;
-    flex: 1;
     padding: 1rem;
     overflow: visible;
     border-radius: var(--radius-md);
@@ -407,8 +441,6 @@ select#primer-settings:hover {
     align-items: center;
     transform: scale(1);
     transition: all 0.2s ease;
-    min-width: 18em;
-    max-width: 32%;
     background-color: var(--color-bg-section);
 }
 
@@ -483,7 +515,8 @@ select#primer-settings:hover {
 
 .highlight {
     background-color: rgb(195, 226, 231) !important;
-    transform: scale(1.01) !important;
+    box-shadow: 0 0.3em 1.1em -0.4em rgba(39, 52, 56, 0.30);
+    outline: 0.12em solid rgba(87, 163, 176, 0.35);
     transition: all 0.2s ease;
 }
 
@@ -998,7 +1031,7 @@ p.output-legend {
 
 .seq-chunk {
     display: inline-block;
-    font-size: 1vw;
+    font-size: calc(clamp(14px, 0.85vw + 10px, 18px) * var(--ui-scale));
     font-variant-ligatures: none;
     text-align: left;
     letter-spacing: 0.05ch;
@@ -1009,22 +1042,18 @@ p.output-legend {
    ============================================================ */
 @media (max-width: 900px) {
     body {
-        font-size: 1.5vw;
         margin: 1em;
     }
 
     div#in {
-        flex-direction: column;
-        align-items: center;
+        grid-template-columns: 1fr;
     }
 
     #Identifier, #Genomic_Position, #Sequence {
-        max-width: 90%;
-        min-width: unset;
-        width: 90%;
+        width: 100%;
     }
 
     .seq-chunk {
-        font-size: 1.5vw;
+        font-size: calc(clamp(14px, 0.85vw + 10px, 18px) * var(--ui-scale));
     }
 }
