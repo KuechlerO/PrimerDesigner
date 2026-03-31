@@ -1,11 +1,38 @@
 @import "fonts.css";
 
-body.body-snv-indels {
-  margin-bottom: 1em;
+/* ============================================================
+   CSS custom properties
+   ============================================================ */
+:root {
+    --color-primary:        #02758A;
+    --color-primary-light:  #0097B2;
+    --color-accent:         rgb(114, 180, 191);
+    --color-bg:             rgb(240, 253, 255);
+    --color-bg-light:       #e2fbff;
+    --color-bg-medium:      #cfecf1;
+    --color-bg-section:     rgb(213, 237, 241);
+    --color-header:         rgb(160, 205, 213);
+    --color-danger:         #c30d12;
+    --color-success:        #6aef90;
+    --font-main:            'Poppins', Arial, sans-serif;
+    --font-mono:            'Fira Code', monospace;
+    --shadow-light:         0 0em 1em -0.5em #95b6b6;
+    --shadow-button:        0 10px 20px -8px #c5d6d6;
+    --radius-sm:            0.3em;
+    --radius-md:            0.4em;
+    --radius-pill:          2em;
+    --ui-scale:             1;
 }
 
-body{
-    font-family: 'Poppins', Arial, sans-serif;
+/* ============================================================
+   Base
+   ============================================================ */
+body.body-snv-indels {
+    margin-bottom: 1em;
+}
+
+body {
+    font-family: var(--font-main);
     text-align: center;
     margin: 2em;
     margin-top: 0.5em;
@@ -60,35 +87,22 @@ textarea {
     height: 100%;
 }
 
-/* button {
-    padding: 1em 1.5em;
-    margin: 1em auto;
-    /* background-color: #02758A;
-    color: white;
-    border: none;
-    border-radius: 0.3em;
+.copy-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: color(srgb 0.4033 0.6913 0.74);
     cursor: pointer;
     font-size: 1.3em;
-    font-family: 'Poppins', Arial, sans-serif;
-    box-shadow: 0 10px 20px -8px #c5d6d6;
-} */
-
-.copy-button {
-  display: inline-flex;
-  align-items: center; /* vertikal mittig */
-  gap: 8px; /* Abstand zwischen Icon und Text */
-  background-color: color(srgb 0.4033 0.6913 0.74);
-  cursor: pointer;
-  font-size: 1.3em;
-  font-weight: 600;
-  text-decoration: none;
-  color: color(srgb 1 1 1);
-  box-shadow: 0 10px 20px -8px #c5d6d6;
-  border: none;
-  border-radius: 2em;
-  margin: 0.5em;
-  padding: 0.6em 1.3em;
-  font-family: 'Poppins', Arial, sans-serif;
+    font-weight: 600;
+    text-decoration: none;
+    color: white;
+    box-shadow: var(--shadow-button);
+    border: none;
+    border-radius: var(--radius-pill);
+    margin: 0.5em;
+    padding: 0.6em 1.3em;
+    font-family: var(--font-main);
 }
 
 .copy-button:hover {
@@ -153,6 +167,15 @@ textarea {
 }
 
 .back-button {
+    margin: 0.5em;
+}
+
+.error-back-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    text-decoration: none;
     margin: 0.5em;
 }
 
@@ -273,7 +296,7 @@ div#in {
 
 .dual_input input {
     text-align: center;
-    padding: 0px;
+    padding: 0;
     background-color: white;
     font-size: 1.3em;
 }
@@ -321,7 +344,7 @@ input#IdIndelEnd, input#IdIndelIns {
     padding-top: 0.4em;
 }
 
-input#Position, input#genom_pos{
+input#Position, input#genom_pos {
     width: 65%;
     border: none;
     border-right: 1px solid #ccc;
@@ -331,7 +354,7 @@ input#Position, input#genom_pos{
     font-family: var(--font-main);
 }
 
-input#new_base, input#IDnew_base{
+input#new_base, input#IDnew_base {
     width: 35%;
     border: none;
     box-sizing: border-box;
@@ -355,8 +378,16 @@ input#new_base, input#IDnew_base{
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    margin-top:0.5em;
-    padding-bottom: 2em;
+}
+
+.ui-scale-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+    padding: 0.35em 0.5em;
+    border-radius: var(--radius-pill);
+    background-color: white;
+    box-shadow: var(--shadow-light);
 }
 
 .ui-scale-btn {
@@ -519,7 +550,6 @@ select#primer-settings:hover {
 
 .highlight-primer {
     background-color: #89cad5;
-    /* font-weight: bold; */
 }
 
 .green {
@@ -574,11 +604,7 @@ input::placeholder, textarea::placeholder {
 
 * {
     -webkit-tap-highlight-color: transparent;
-  }
-
-  *:focus {
-    outline: none;
-  }
+}
 
 *:focus {
     outline: none;
@@ -598,22 +624,28 @@ input::placeholder, textarea::placeholder {
 .toggle-button-cover, .toggle-PCR-button-cover {
     position: relative;
     box-sizing: border-box;
+}
 
-  }
-
-  .button-cover{
-    box-shadow: 0 0em 1em -0.5em #95b6b6;
-    border-radius: 0.4em;
+.button-cover {
+    box-shadow: var(--shadow-light);
+    border-radius: var(--radius-md);
     height: 3em;
     width: 15em;
     background-color: white;
     cursor: pointer;
-  }
+}
 
-  .button-cover,
-  .knobs,
-  .layer {
-    /* position: absolute; */
+.PCR-button-cover {
+    width: 11em;
+}
+
+/* ============================================================
+   Toggle switch base styles
+   ============================================================ */
+.button-cover,
+.PCR-button-cover,
+.knobs,
+.layer {
     top: 0;
     right: 0;
     bottom: 0;
@@ -622,20 +654,16 @@ input::placeholder, textarea::placeholder {
     text-align: center;
     display: flex;
     justify-content: center;
-  }
-
-  .button {
-    position: relative;
-    /* top: 50%; */
+}
 
 .button {
     position: relative;
     height: 2.5em;
     overflow: hidden;
-  }
+}
 
-  .button.r,
-  .button.r .layer {
+.button.r,
+.button.r .layer {
     border-radius: 10%;
 }
 
@@ -645,9 +673,9 @@ input::placeholder, textarea::placeholder {
 
 .knobs {
     z-index: 2;
-  }
+}
 
-  .layer {
+.layer {
     width: 100%;
     background-color: #ebf7fc;
     transition: 0.3s ease all;
@@ -764,29 +792,7 @@ input::placeholder, textarea::placeholder {
 }
 
 #PCR-button .checkbox:checked ~ .layer {
-  background-color: #fcebeb;
-}
-
-.PCR-button-cover {
-    box-shadow: 0 0em 1em -0.5em #95b6b6;
-    border-radius: 0.4em;
-    height: 3em;
-    width: 11em;
-    background-color: white;
-}
-
-.PCR-button-cover,
-.knobs,
-.layer {
-/* position: absolute; */
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    flex-direction: column;
-    text-align: center;
-    display: flex;
-    justify-content: center;
+    background-color: #fcebeb;
 }
 
 /* ============================================================
@@ -855,50 +861,41 @@ input::placeholder, textarea::placeholder {
     box-sizing: border-box;
 }
 
-.primer-settings-button-cover {
-  display: flex;
-  justify-content: center;
-  flex-direction: column;
-  box-shadow: 0 0em 1em -0.5em #95b6b6;
-  border-radius: 0.4em;
-  height: 3em;
-  width: 15em;
-  background-color: white;
-}
-
-/* Das Textfeld über dem Container */
+/* ============================================================
+   Hover label above input sections
+   ============================================================ */
 .hover-label {
-  position: absolute;
-  width: 11em;
-  height: 4em;
-  z-index: -1;
-  top: -1.9em;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #d6edf1;
-  color: color(srgb 0.343 0.6385 0.6902);
-  padding: 0.3rem 0.6rem;
-  border-radius:1em 1em 0em 0em;
-  font-size: 1.3em;
-  opacity: 1;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-  white-space: nowrap;
-  will-change: opacity, transform;
+    position: absolute;
+    width: 11em;
+    height: 4em;
+    z-index: -1;
+    top: -1.9em;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #d6edf1;
+    color: color(srgb 0.343 0.6385 0.6902);
+    padding: 0.3rem 0.6rem;
+    border-radius: 1em 1em 0 0;
+    font-size: 1.3em;
+    opacity: 1;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    white-space: nowrap;
+    will-change: opacity, transform;
 }
 
-.hover-label-highlight{
-  background-color: rgb(195, 226, 231) !important;
-  /* transition: all 0.2s ease; */
-
+.hover-label-highlight {
+    background-color: rgb(195, 226, 231) !important;
 }
 
-.output-table tr:nth-child(even){background-color: #e2fbff}
-.output-table tr:nth-child(odd){background-color: #cfecf1}
+/* ============================================================
+   Output / results table
+   ============================================================ */
+.output-table tr:nth-child(even) { background-color: var(--color-bg-light); }
+.output-table tr:nth-child(odd)  { background-color: var(--color-bg-medium); }
+.output-table tr:hover           { background-color: #bae6d9; }
 
-.output-table tr:hover {background-color: #bae6d9;}
-
-tr.selectable-row.selected{
+tr.selectable-row.selected {
     background-color: #9ad6c4;
     transition: transform 0.3s ease;
 }
@@ -1049,11 +1046,23 @@ p.output-legend {
     letter-spacing: 0.05ch;
 }
 
-.error-back-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-    text-decoration: none;
-    margin: 0.5em;
+/* ============================================================
+   Responsive adjustments
+   ============================================================ */
+@media (max-width: 900px) {
+    body {
+        margin: 1em;
+    }
+
+    div#in {
+        grid-template-columns: 1fr;
+    }
+
+    #Identifier, #Genomic_Position, #Sequence {
+        width: 100%;
+    }
+
+    .seq-chunk {
+        font-size: calc(clamp(14px, 0.85vw + 10px, 18px) * var(--ui-scale));
+    }
 }
