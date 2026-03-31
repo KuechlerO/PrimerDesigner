@@ -15,34 +15,34 @@ from decouple import config
 
 
 LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "standard": {"format": "%(asctime)s %(levelname)s %(name)s: %(message)s"},
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'standard': {'format': '%(asctime)s %(levelname)s %(name)s: %(message)s'},
     },
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": "standard",
-            "stream": "ext://sys.stdout",
-            "level": "INFO",
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard',
+            'stream': 'ext://sys.stdout',
+            'level': 'INFO',
         },
-        "console_debug": {
-            "class": "logging.StreamHandler",
-            "formatter": "standard",
-            "" "stream": "ext://sys.stdout",
-            "level": "DEBUG",
+        'console_debug': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard',
+            '' 'stream': 'ext://sys.stdout',
+            'level': 'DEBUG',
         },
     },
-    "root": {"handlers": ["console"], "level": "INFO"},
-    "loggers": {
+    'root': {'handlers': ['console'], 'level': 'INFO'},
+    'loggers': {
         # keep Django noise reasonable
-        "django": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        'django': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
         # "primer_designer_app": {"handlers": ["console"], "level": "INFO", "propagate": True},
-        "primer_designer_app": {
-            "handlers": ["console_debug"],
-            "level": "DEBUG",
-            "propagate": True,
+        'primer_designer_app': {
+            'handlers': ['console_debug'],
+            'level': 'DEBUG',
+            'propagate': True,
         },
     },
 }
@@ -51,73 +51,75 @@ LOGGING = {
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Path for large reference files; override with .env variable if needed
-REFERENCE_DATA_DIR = config("REFERENCE_DATA_DIR", default="/srv/reference_data")
+REFERENCE_DATA_DIR = config('REFERENCE_DATA_DIR', default='/srv/reference_data')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config("DJANGO_SECRET_KEY")
+SECRET_KEY = config('DJANGO_SECRET_KEY')
 
 # --- Adjustment
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = True
-DEBUG = config("DEBUG", default=False, cast=bool)
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 # --- Adjustment: More dynamic behaviour to adjust for Docker and reverse proxy
 # ALLOWED_HOSTS = []
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="*").split(",")
-WEB_APP_HOST = config("WEB_APP_HOST", default="http://localhost:8000")
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
+WEB_APP_HOST = config('WEB_APP_HOST', default='http://localhost:8000')
 
 # Application definition
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-    "primer_designer_app",
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'primer_designer_app',
 ]
 
 MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'primer_designer_app.middleware.PrimerDesignerErrorMiddleware'
 ]
 
-ROOT_URLCONF = "main_project.urls"
+ROOT_URLCONF = 'main_project.urls'
 
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
-        "APP_DIRS": True,
-        "OPTIONS": {
-            "context_processors": [
-                "django.template.context_processors.debug",
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [BASE_DIR / 'templates'],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = "main_project.wsgi.application"
+WSGI_APPLICATION = 'main_project.wsgi.application'
 
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / 'django_data' / "db.sqlite3",
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'django_data' / 'db.sqlite3',
     }
 }
 
@@ -126,16 +128,16 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
     },
     {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
     },
     {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
     },
     {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
 
@@ -143,9 +145,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = "UTC"
+TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
@@ -154,7 +156,7 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
-STATIC_URL = "/static/"
+STATIC_URL = '/static/'
 
 # Additional locations of static files
 # STATICFILES_DIRS = [
@@ -162,9 +164,9 @@ STATIC_URL = "/static/"
 # ]
 
 # The directory where collectstatic will collect static files for deployment
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
