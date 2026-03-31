@@ -130,7 +130,7 @@ Make sure you have completed the prerequisites and then follow these steps:
 #### 1. Create and apply migrations
 ```bash
 # Create django db folder & give write access
-mkdir -p django_datax
+mkdir -p django_data
 
 python manage.py makemigrations
 python manage.py migrate

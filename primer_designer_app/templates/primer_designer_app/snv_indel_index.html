@@ -22,13 +22,13 @@
                                 <div class="layer"></div>
                         </div>
                     </div>
+                    <input type="hidden" id="reference-genome" name="reference-genome" value="GRCh37" form="settings">
                 </div>
-                <input type="hidden" id="reference-genome" name="reference-genome" value="GRCh37" form="settings">
         
                 <div class="settings-container">
                     <h2>Use case</h2>
                     <div class ="UseCaseDiv" style = "display:flex;  justify-content: center">
-                        <div class="PCR-button-cover"> 
+                        <div class="button-cover PCR-button-cover"> 
                             <div class="button r" id="PCR-button">
                                 <input type="checkbox" class="checkbox" id="usecase-switch" onchange="updateUsecase()"/>
                                     <div class="knobs">
@@ -37,14 +37,14 @@
                                         <div class="layer"></div>
                             </div>
                         </div>
-                        <input type="hidden" id="usecase" name="usecase" value="PCR" form="settings">
                     </div>
+                    <input type="hidden" id="usecase" name="usecase" value="PCR" form="settings">
                 </div>
         
                 <!-- Primer Settings Container -->
                 <div class="settings-container">
                     <h2>Primer settings</h2>
-                    <div class="primer-settings-button-cover">
+                    <div class="button-cover">
                         <div class="button r" id="primer-settings-button">
                             <input type="checkbox" class="checkbox" id="primer-settings-switch" onchange="togglePrimerSettings()">
                             <div class="knobs">
@@ -61,8 +61,7 @@
                         <label class="primer-parameters">Product size range: <input type="number" id="product_size_min" name="product_size_min" value="400"> - <input type="number" id="product_size_max" name="product_size_max" value="800"></label>
                     </div>
                 </div>
-               
-        
+
                 <!-- Example Button Container -->
                 <div class="settings-container">
                     <button type="button" id="example-button" class="example-button" onclick="loadExampleData()">Load Example</button>

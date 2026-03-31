@@ -3,56 +3,31 @@ div#primer {
     justify-content: space-between;
 }
 
-body{
+body {
     margin: 4em;
     margin-top: 0.5em;
     margin-bottom: 2em;
 }
 
-p{
+p {
     word-wrap: break-word;
 }
 
-.output-th{
-    font-size:1.3em;
-    padding: 0.3em 0.8em 0.3em 0.8em;
+.output-th {
+    font-size: 1.3em;
+    padding: 0.3em 0.8em;
     background-color: color(srgb 0.5338 0.7473 0.785);
     color: white;
     font-weight: 500;
 }
 
-#primer_results_table{
+#primer_results_table {
     width: 100%;
-}
-
-
-.tooltip {
-    display: none;
-    position: absolute;
-    background-color: #f9f9f9;
-    border: 1px solid #ccc;
-    padding: 10px;
-    border-radius: 5px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    white-space: nowrap;
-    overflow-wrap: break-word; /* Break long words if necessary */
 }
 
 td:hover .tooltip {
     display: block;
-    top: 100%; /* Position below the cell */
-    right: -100%; /* Position to the left of the cell */
-    transform: translateX(-50%); /* Adjust for centering */
-}
-
-.tooltip[data-overflow="right"] {
-    left: auto;
-    right: 0; /* Align to the right edge of the browser window */
-    transform: none;
-}
-
-.tooltip[data-overflow="left"] {
-    left: 0; /* Align to the left edge of the browser window */
-    transform: none;
+    top: 100%;
+    right: -100%;
+    transform: translateX(-50%);
 }
