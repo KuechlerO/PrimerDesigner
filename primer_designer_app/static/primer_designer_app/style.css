@@ -37,7 +37,8 @@ body {
     margin: 2em;
     margin-top: 0.5em;
     background-color: var(--color-bg);
-    font-size: calc(clamp(14px, 0.85vw + 10px, 18px) * var(--ui-scale));
+    /* Scales with viewport (vmin) so smaller windows shrink type; still clamped for readability */
+    font-size: calc(clamp(14px, 0.55vmin + 0.55rem, 18px) * var(--ui-scale));
 }
 
 h2 {
@@ -81,6 +82,11 @@ input#Transcript-ID, input#Gene-ID, textarea, input#pos_pcr, input#pos_qpcr {
 textarea {
     resize: none;
     width:92%;
+}
+
+/* Match sequence placeholder / text size to dual_input fields (Genomic / Transcript rows) */
+#Sequence textarea#sequence {
+    font-size: clamp(0.85em, 2.6vmin, 1.3em);
 }
 
 .resize {
@@ -277,7 +283,8 @@ input[type="radio"]:checked + label.primer-selector::before {
 div#in {
     display: grid;
     position: relative;
-    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+    /* min(100%, 22rem) prevents column min-width from forcing horizontal overflow on narrow viewports */
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
     justify-content: center;
     gap: 1.5rem;
     margin-top: 1.5em;
@@ -289,6 +296,8 @@ div#in {
     justify-content: center;
     padding: 0.4em;
     width: 92%;
+    max-width: 100%;
+    min-width: 0;
     border: 1px solid #ccc;
     background-color: white;
     border-radius: 0.5em;
@@ -298,7 +307,8 @@ div#in {
     text-align: center;
     padding: 0;
     background-color: white;
-    font-size: 1.3em;
+    min-width: 0;
+    font-size: clamp(0.85em, 2.6vmin, 1.3em);
 }
 
 div.column {
@@ -308,8 +318,10 @@ div.column {
     height: 100%;
     text-align: center;
     width: 20%;
+    min-width: 0;
+    flex-shrink: 0;
     font-weight: 600;
-    font-size: 1.3em;
+    font-size: clamp(0.85em, 2.6vmin, 1.3em);
     border-right: 1px solid #ccc;
     color: rgb(87, 163, 176);
 }
@@ -318,6 +330,8 @@ div.column {
     display:flex;
     flex-direction: row;
     width: 80%;
+    min-width: 0;
+    flex: 1 1 auto;
 }
 
 input#IndelChrom, input#IndelStart, input#IndelEnd {
@@ -450,7 +464,13 @@ select#primer-settings:hover {
     align-items: center;
     transform: scale(1);
     transition: all 0.2s ease;
+    min-width: 0;
     background-color: var(--color-bg-section);
+}
+
+/* Prevent long labels/text from breaking layout on narrow screens */
+label, h2, .hover-label, .info-li {
+    overflow-wrap: anywhere;
 }
 
 /* Info icon and overlay */
@@ -593,6 +613,83 @@ select#primer-settings:hover {
     background-color: var(--color-header);
     color: white;
     padding: 0.3em 0.2em;
+}
+
+/* Identifier section: prevent flex children from overflowing narrow containers */
+.identifier-transcript-row {
+    display: flex;
+    width: 95%;
+    max-width: 100%;
+    margin-top: 0.2em;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.identifier-transcript-row .ID_h2 {
+    border-radius: 0.5em 0 0 0.5em;
+    width: min(12em, 40%);
+    flex: 0 1 auto;
+    /* Match dynamic scaling of inputs in this section */
+    font-size: clamp(0.85em, 2.6vmin, 1.3em);
+    line-height: 1.25;
+}
+
+/* "Check against" / "Reference" headers — same viewport-linked sizing */
+#Identifier .identifier-two-col-wrap .ID_h2 {
+    font-size: clamp(0.85em, 2.6vmin, 1.3em);
+    line-height: 1.25;
+}
+
+/* Option labels (Genome, Transcriptome, cDNA, CDS) — match section typography */
+#Identifier .identifier-two-col-wrap input[type="radio"] + label:not(.primer-selector) {
+    font-size: clamp(0.85em, 2.6vmin, 1.3em);
+    line-height: 1.25;
+}
+
+.identifier-transcript-row input#Transcript-ID {
+    flex: 1 1 12em;
+    min-width: 0;
+    width: auto;
+    max-width: 100%;
+    border: none;
+    box-shadow: 0 0 1em -0.5em #8baaaa;
+    border-radius: 0 0.5em 0.5em 0;
+    font-size: clamp(0.85em, 2.6vmin, 1.3em);
+}
+
+.identifier-two-col-wrap {
+    display: flex;
+    width: 95%;
+    max-width: 100%;
+    gap: 1em;
+    margin-top: 1em;
+    min-width: 0;
+    box-sizing: border-box;
+    /* Keep "Check against" and "Reference" on one row within the Identifier card */
+    flex-wrap: nowrap;
+    align-items: stretch;
+}
+
+.identifier-two-col-wrap .identifier-col {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+}
+
+@media (max-width: 700px) {
+    .identifier-transcript-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .identifier-transcript-row .ID_h2 {
+        width: 100%;
+        border-radius: 0.5em 0.5em 0 0;
+    }
+    .identifier-transcript-row input#Transcript-ID {
+        border-radius: 0 0 0.5em 0.5em;
+    }
 }
 
 input::placeholder, textarea::placeholder {
@@ -1064,5 +1161,25 @@ p.output-legend {
 
     .seq-chunk {
         font-size: calc(clamp(14px, 0.85vw + 10px, 18px) * var(--ui-scale));
+    }
+}
+
+@media (max-width: 600px) {
+    body {
+        /* Allow slightly smaller text so inputs stay within their containers */
+        font-size: calc(clamp(12px, 0.65vmin + 0.45rem, 16px) * var(--ui-scale));
+        margin: 0.8em;
+    }
+
+    div#in {
+        gap: 1rem;
+    }
+
+    h2 {
+        font-size: 1.25em;
+    }
+
+    .dual_input {
+        width: 100%;
     }
 }
