@@ -2,6 +2,8 @@ from django.urls import path
 
 from .views import snv_indel
 from .views import structural_variant
+from .views import documentation_view
+
 
 
 app_name = 'primer_designer_app'
