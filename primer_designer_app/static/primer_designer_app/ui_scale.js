@@ -31,7 +31,6 @@
   };
 
   window.addEventListener("DOMContentLoaded", () => {
-    // Apply early so layout uses the right em sizing.
     setScale(getScale());
 
     const down = document.getElementById("ui-scale-down");
@@ -43,4 +42,3 @@
     if (reset) reset.addEventListener("click", () => setScale(1));
   });
 })();
-
