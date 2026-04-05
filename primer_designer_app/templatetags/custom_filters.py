@@ -1,5 +1,10 @@
 from django import template
 
+from primer_designer_app.utils.amplicon_display import (
+    amplicon_chrom_label,
+    extract_amplicon_summary,
+    format_penalty_score,
+)
 from primer_designer_app.utils.primer_utils import (
     INSILICO_ERROR,
     INSILICO_NOT_APPLICABLE,
@@ -8,11 +13,6 @@ from primer_designer_app.utils.primer_utils import (
 )
 
 register = template.Library()
-
-
-def _chrom_parts(amplicon_dict):
-    chrom = amplicon_dict.get('Chrom') or ''
-    return chrom.split('|')
 
 
 @register.filter
@@ -28,29 +28,12 @@ def insilico_cell_class(status):
 
 @register.filter
 def extract_amplicon_info(amplicon_dict, delimiter='|'):
-    parts = _chrom_parts(amplicon_dict)
-    if len(parts) == 1:
-        return f"{amplicon_dict['Chrom']}: {amplicon_dict['ForPos']} - {amplicon_dict['RevEnd']}"
-    elif len(parts) > 1:
-        transcript_id = parts[0]
-        gene_symbol = parts[-4]
-
-        return f"{gene_symbol} ({transcript_id}): {amplicon_dict['ForPos']} - {amplicon_dict['RevEnd']}"
-    else:
-        return 'Invalid amplicon information'
+    return extract_amplicon_summary(amplicon_dict)
 
 
 @register.filter
 def amplicon_chrom_display(amplicon_dict):
-    """Genomic: chromosome name. Transcriptome: gene (ENST…) only, matching summary semantics."""
-    parts = _chrom_parts(amplicon_dict)
-    if len(parts) == 1:
-        return parts[0]
-    if len(parts) > 1:
-        transcript_id = parts[0]
-        gene_symbol = parts[-4]
-        return f"{gene_symbol} ({transcript_id})"
-    return ''
+    return amplicon_chrom_label(amplicon_dict)
 
 
 @register.filter
@@ -66,9 +49,4 @@ def insilico_ok_variant_class(pair):
 
 @register.filter
 def penalty_two_decimals(value):
-    if value is None or value == '':
-        return ''
-    try:
-        return f"{float(value):.2f}"
-    except (TypeError, ValueError):
-        return value
+    return format_penalty_score(value)

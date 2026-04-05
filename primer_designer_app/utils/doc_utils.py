@@ -1,10 +1,18 @@
 import io
 from datetime import datetime
+from typing import Optional
 
 from primer_designer_app.models import PrimerSettingsModel, DesignResultsSummary
 from primer_designer_app.utils.variant_info import TranscriptVariantInfo, VariantInfo
 from primer_designer_app.utils.helpers import create_hgvs_notation
-from primer_designer_app.utils.primer_utils import PrimerPairResult
+from primer_designer_app.utils.amplicon_display import (
+    amplicon_chrom_label,
+    extract_amplicon_summary,
+    format_penalty_score,
+    truncate_product_seq,
+)
+from primer_designer_app.utils.insilico_analysis import insilico_reference_description
+from primer_designer_app.utils.primer_utils import INSILICO_OK, PrimerPairResult
 
 from django.conf import settings
 from django.urls import reverse
@@ -124,6 +132,75 @@ def add_hyperlink(paragraph, url, text, color='0000FF', underline=True):
     hyperlink.append(new_run)
     paragraph._p.append(hyperlink)
     return hyperlink
+
+
+def _set_cell_run(
+    cell, text: str, *, bold: bool = False, size_pt: Optional[float] = None
+):
+    """Replace cell content with a single run (for table cells)."""
+    cell.text = ''
+    paragraph = cell.paragraphs[0]
+    run = paragraph.add_run(str(text))
+    if bold:
+        run.bold = True
+    if size_pt is not None:
+        run.font.size = Pt(size_pt)
+
+
+def add_amplicon_detail_table_to_doc(doc, primer_pair: PrimerPairResult, prim_settings):
+    """
+    Append a Dicey-style amplicon table when the pair has hits (insilico_status ok).
+    """
+    if getattr(primer_pair, 'insilico_status', None) != INSILICO_OK:
+        return
+    amplicons = primer_pair.amplicons or []
+    if not amplicons:
+        return
+
+    doc.add_heading('In-silico amplicons (Dicey)', level=2)
+    ref_note = insilico_reference_description(prim_settings)
+    if ref_note:
+        note_p = doc.add_paragraph(ref_note)
+        note_p.paragraph_format.space_after = Pt(6)
+
+    headers = [
+        '#',
+        'Summary',
+        'Length',
+        'Penalty-Score',
+        'Chrom / Gene & Transcript',
+        'ForPos',
+        'ForEnd',
+        'RevPos',
+        'RevEnd',
+        'Seq (product)',
+    ]
+    ncols = len(headers)
+    table = doc.add_table(rows=1 + len(amplicons), cols=ncols)
+    table.style = 'Table Grid'
+
+    hdr_cells = table.rows[0].cells
+    for j, title in enumerate(headers):
+        _set_cell_run(hdr_cells[j], title, bold=True, size_pt=9)
+
+    for i, amp in enumerate(amplicons):
+        row_cells = table.rows[i + 1].cells
+        values = [
+            str(i + 1),
+            extract_amplicon_summary(amp),
+            str(amp.get('Length', '') or ''),
+            format_penalty_score(amp.get('Penalty')),
+            amplicon_chrom_label(amp),
+            str(amp.get('ForPos', '') or ''),
+            str(amp.get('ForEnd', '') or ''),
+            str(amp.get('RevPos', '') or ''),
+            str(amp.get('RevEnd', '') or ''),
+            truncate_product_seq(amp.get('Seq')),
+        ]
+        for j, val in enumerate(values):
+            _set_cell_run(row_cells[j], val, size_pt=8)
+
+    doc.add_paragraph()
 
 
 def create_primer_report(
@@ -252,6 +329,8 @@ def create_primer_report(
 
     for criteria, info in product_data:
         doc.add_paragraph(f"{criteria}: {info}", style='List Bullet')
+
+    add_amplicon_detail_table_to_doc(doc, primer_pair, prim_settings)
 
     # 3. Sequence visualization
     doc.add_heading('Sequence snippet:', level=1)
