@@ -86,14 +86,14 @@ If you want to do in-silico PCRs on the transcriptome, then transcriptome refere
    wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/GRCh37_mapping/gencode.v37lift37.transcripts.fa.gz
    gunzip gencode.v37lift37.transcripts.fa.gz
    bgzip gencode.v37lift37.transcripts.fa
-   dicey index -o gencode.v37lift37.transcripts.fa.fm9 GRCh37_mapping/gencode.v37lift37.transcripts.fa.gz
+   dicey index -o gencode.v37lift37.transcripts.fa.fm9 gencode.v37lift37.transcripts.fa.gz
    samtools faidx gencode.v37lift37.transcripts.fa.gz
 
    # GRCh38
    wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_49/gencode.v49.transcripts.fa.gz
    gunzip gencode.v49.transcripts.fa.gz
    bgzip gencode.v49.transcripts.fa
-   dicey index -o gencode.v49.transcripts.fa.fm9 GRCh37_mapping/gencode.v49.transcripts.fa.gz
+   dicey index -o gencode.v49.transcripts.fa.fm9 gencode.v49.transcripts.fa.gz
    samtools faidx gencode.v49.transcripts.fa.gz
    ```
 
