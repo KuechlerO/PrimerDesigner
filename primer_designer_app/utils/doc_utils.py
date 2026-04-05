@@ -12,7 +12,7 @@ from django.urls import reverse
 from docx import Document
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.shared import RGBColor, Inches, Pt
+from docx.shared import Inches, Pt
 
 import logging
 
@@ -27,7 +27,7 @@ def visualize_sequence_as_docx(
     line_length: int = 60,
 ):
 
-    seq = var_info.get_seq("input")
+    seq = var_info.get_seq('input')
 
     primerF_start, primerF_end = [
         selected_primer_pair.left_relPos_start,
@@ -41,8 +41,12 @@ def visualize_sequence_as_docx(
         selected_primer_pair.right_relPos_end + r_primers_offset,
     ]
     logger.debug(
-        f"Primer binding sites (relative to target region): "
-        f"Forward: {primerF_start}-{primerF_end}, Reverse: {primerR_start}-{primerR_end}"
+        'Primer binding sites (relative to target region): '
+        'Forward: %s-%s, Reverse: %s-%s',
+        primerF_start,
+        primerF_end,
+        primerR_start,
+        primerR_end,
     )
 
     start_target = max(prim_settings.target[0], primerF_end + 1)
@@ -55,7 +59,7 @@ def visualize_sequence_as_docx(
     in_mutation_region = False
     for i, char in enumerate(seq):
         run = paragraph.add_run(char)
-        run.font.name = "Courier New"  # Schriftart auf 'PT Mono' ändern
+        run.font.name = 'Courier New'  # Schriftart auf 'PT Mono' ändern
         run.font.size = Pt(11)
         if (i >= primerF_start and i <= primerF_end) or (
             i >= primerR_start and i <= primerR_end
@@ -64,12 +68,12 @@ def visualize_sequence_as_docx(
             # Highlight this region in the document
             run.font.highlight_color = 3
         elif i >= start_target and i < end_target:
-            if char == "[":
+            if char == '[':
                 in_mutation_region = True
-            elif char == "]":
+            elif char == ']':
                 in_mutation_region = False
 
-            if in_mutation_region or char in ["[", "]"]:
+            if in_mutation_region or char in ['[', ']']:
                 run.font.highlight_color = 4
             else:
                 # Highlight target region
@@ -81,39 +85,39 @@ def visualize_sequence_as_docx(
             counter = 0
 
 
-def add_hyperlink(paragraph, url, text, color="0000FF", underline=True):
+def add_hyperlink(paragraph, url, text, color='0000FF', underline=True):
     # Create the w:hyperlink tag and add needed values
     part = paragraph.part
     r_id = part.relate_to(
         url,
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+        'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink',
         is_external=True,
     )
-    hyperlink = OxmlElement("w:hyperlink")
-    hyperlink.set(qn("r:id"), r_id)
+    hyperlink = OxmlElement('w:hyperlink')
+    hyperlink.set(qn('r:id'), r_id)
 
     # Create a w:r element
-    new_run = OxmlElement("w:r")
+    new_run = OxmlElement('w:r')
 
     # Create a w:rPr element
-    rPr = OxmlElement("w:rPr")
+    rPr = OxmlElement('w:rPr')
 
     # Add color if provided
     if color:
-        c = OxmlElement("w:color")
-        c.set(qn("w:val"), color)
+        c = OxmlElement('w:color')
+        c.set(qn('w:val'), color)
         rPr.append(c)
 
     # Underline
     if underline:
-        u = OxmlElement("w:u")
-        u.set(qn("w:val"), "single")
+        u = OxmlElement('w:u')
+        u.set(qn('w:val'), 'single')
         rPr.append(u)
 
     new_run.append(rPr)
 
     # Create a w:t element and set the text
-    text_elem = OxmlElement("w:t")
+    text_elem = OxmlElement('w:t')
     text_elem.text = text
     new_run.append(text_elem)
 
@@ -128,11 +132,11 @@ def create_primer_report(
     def create_var_annotation_block(var_info: VariantInfo) -> list[str]:
         annotation = []
         if var_info.gene_ID:
-            annotation += [("Gene symbol", var_info.gene_symbol)]
-            annotation += [("Gene-ID", var_info.gene_ID)]
+            annotation += [('Gene symbol', var_info.gene_symbol)]
+            annotation += [('Gene-ID', var_info.gene_ID)]
         if isinstance(var_info, TranscriptVariantInfo):
-            annotation += [("Transcript-ID", var_info.transcript_id)]
-        annotation += [("HGVS", create_hgvs_notation(var_info))]
+            annotation += [('Transcript-ID', var_info.transcript_id)]
+        annotation += [('HGVS', create_hgvs_notation(var_info))]
         return annotation
 
     prim_settings = designResultsSummary_obj.primer_settings
@@ -148,9 +152,9 @@ def create_primer_report(
     section.bottom_margin = Inches(0.7)  # Unterer Rand
     section.left_margin = Inches(0.7)  # Linker Rand
     section.right_margin = Inches(0.7)  # Rechter Rand
-    style = doc.styles["Normal"]
+    style = doc.styles['Normal']
     font = style.font
-    font.name = "Calibri"
+    font.name = 'Calibri'
     font.size = Pt(11)  # oder deine Wunschgröße, z. B. 12 pt
 
     # Add creation date to header, right-aligned
@@ -159,65 +163,85 @@ def create_primer_report(
     paragraph.text = f"Created: {datetime.now().strftime('%d.%m.%Y %H:%M')}"
     paragraph.alignment = 2  # 2 = RIGHT
 
-    doc.add_heading("Primer Designer Results", level=0)
+    doc.add_heading('Primer Designer Results', level=0)
 
     # add a paragraph with the variant information
-    doc.add_heading("Input Variant:", level=1)
+    doc.add_heading('Input Variant:', level=1)
     for info, content in create_var_annotation_block(var_info):
-        p = doc.add_paragraph(style="List Bullet")
+        p = doc.add_paragraph(style='List Bullet')
         run = p.add_run(f"{info}: ")
         bold_run = p.add_run(content)
         bold_run.bold = True
 
     primer_data = (
-        ("Sequence", primer_pair.left_seq, primer_pair.right_seq),
+        ('Sequence', primer_pair.left_seq, primer_pair.right_seq),
         (
-            "(Relative) start, end",
+            '(Relative) start, end',
             (f"{primer_pair.left_relPos_start}, {primer_pair.left_relPos_end}"),
             (f"{primer_pair.right_relPos_start}, {primer_pair.right_relPos_end}"),
         ),
-        ("Tm", f"{primer_pair.tm[0]} °C", f"{primer_pair.tm[1]} °C"),
-        ("GC-content", f"{primer_pair.gc[0]} %", f"{primer_pair.gc[1]} %"),
+        ('Tm', f"{primer_pair.tm[0]} °C", f"{primer_pair.tm[1]} °C"),
+        ('GC-content', f"{primer_pair.gc[0]} %", f"{primer_pair.gc[1]} %"),
     )
 
     product_data = (
-        ("Product size", f"{primer_pair.product_size} bp"),
-        ("Product tm", f"{primer_pair.product_tm} °C "),
+        ('Product size', f"{primer_pair.product_size} bp"),
+        ('Product tm', f"{primer_pair.product_tm} °C "),
     )
 
-    if prim_settings.context == "genomic":
-        product_data += ("Nr of amplicons (in Genome):", len(primer_pair.amplicons))
-    elif prim_settings.context == "transcriptomic":
-        product_data += (
-            "Nr of amplicons (in Transcriptome):",
-            len(primer_pair.amplicons),
+    from primer_designer_app.utils.primer_utils import (
+        INSILICO_ERROR,
+        INSILICO_NOT_APPLICABLE,
+        INSILICO_OK,
+        INSILICO_OK_EMPTY,
+    )
+
+    def _insilico_report_line() -> str:
+        st = getattr(primer_pair, 'insilico_status', None)
+        if st == INSILICO_NOT_APPLICABLE:
+            return 'Not applicable'
+        if st == INSILICO_ERROR:
+            return 'Error (in-silico)'
+        if st == INSILICO_OK_EMPTY:
+            return '0'
+        if st == INSILICO_OK:
+            return str(len(primer_pair.amplicons or []))
+        return str(len(primer_pair.amplicons or []))
+
+    if prim_settings.context == 'genomic':
+        product_data = product_data + (
+            ('Nr of amplicons (in Genome)', _insilico_report_line()),
+        )
+    elif prim_settings.context == 'transcriptomic':
+        product_data = product_data + (
+            ('Nr of amplicons (in Transcriptome)', _insilico_report_line()),
         )
 
     # Creating a table object
-    doc.add_heading("Primer Selection:", level=1)
-    p = doc.add_paragraph("Link to all primer-pairs: ")
+    doc.add_heading('Primer Selection:', level=1)
+    p = doc.add_paragraph('Link to all primer-pairs: ')
     webAppHost = settings.WEB_APP_HOST  # Load WEB_APP_HOST from settings
     # Load primer overview URL from urls.py
     primer_overview_url = reverse(
-        "primer_designer_app:snv_indel_primers_overview_with_uuid",
-        kwargs={"uuid": designResultsSummary_obj.id},
+        'primer_designer_app:snv_indel_primers_overview_with_uuid',
+        kwargs={'uuid': designResultsSummary_obj.id},
     )
     add_hyperlink(
         p,
         f"{webAppHost}{primer_overview_url}",
-        "Primer results overview",
+        'Primer results overview',
     )
     table = doc.add_table(rows=1, cols=3)
 
     # Adding heading in the 1st row of the table
     row = table.rows[0].cells
-    row[1].text = ""
+    row[1].text = ''
     paragraph = row[1].paragraphs[0]
-    run = paragraph.add_run("Forward")
+    run = paragraph.add_run('Forward')
     run.bold = True
 
     paragraph = row[2].paragraphs[0]
-    run = paragraph.add_run("Reverse")
+    run = paragraph.add_run('Reverse')
     run.bold = True
 
     for criteria, Info_F, Info_R in primer_data:
@@ -227,19 +251,20 @@ def create_primer_report(
         row[2].text = Info_R
 
     for criteria, info in product_data:
-        doc.add_paragraph(f"{criteria}: {info}", style="List Bullet")
+        doc.add_paragraph(f"{criteria}: {info}", style='List Bullet')
 
     # 3. Sequence visualization
-    doc.add_heading("Sequence snippet:", level=1)
+    doc.add_heading('Sequence snippet:', level=1)
     doc.add_paragraph(
-        "Sequence snippet is soft-masked: UTRs and introns are shown in lowercase letters, exons in uppercase letters."
+        'Sequence snippet is soft-masked: UTRs and introns are shown in lowercase '
+        'letters, exons in uppercase letters.'
     )
 
-    doc.add_heading("Legend:", level=2)
-    legend_content = [["Primer", 3], ["Target-Region", 5], ["Variant", 4]]
+    doc.add_heading('Legend:', level=2)
+    legend_content = [['Primer', 3], ['Target-Region', 5], ['Variant', 4]]
 
     for region, color in legend_content:
-        list_obj = doc.add_paragraph(style="List Bullet")
+        list_obj = doc.add_paragraph(style='List Bullet')
         run = list_obj.add_run(region)
         run.font.highlight_color = color
 

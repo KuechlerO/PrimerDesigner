@@ -24,7 +24,7 @@
                 {% endfor %}
             </ol>
         </div>
-    
+
         <div style="display:flex; justify-content: center; margin: 1em; cursor: default;">
             <div class="final-output-table-div" style="margin-right: 1em;">
                 <table class="final-output-table">
@@ -63,15 +63,19 @@
                         </tr>
                         <tr>
                             <td class="final-output-td">Amplicons (in-silico)</td>
-                            <td class="final-output-td" colspan="2" style="color: {% if primer_pair.amplicons|length == 1 %}green{% else %}red{% endif %};">
+                            <td class="final-output-td {{ primer_pair.insilico_status|insilico_cell_class }} {{ primer_pair|insilico_ok_variant_class }}" colspan="2">
                                 <span class="amplicon-count-wrap">
-                                {% if primer_pair.amplicons.0 != "N/A" %}
+                                {% if primer_pair.insilico_status == 'ok' %}
                                     {{ primer_pair.amplicons|length }}
-                                {% else %}
-                                    N/A
-                                {% endif %}
-                                {% if primer_pair.amplicons and primer_pair.amplicons != "N/A" %}
                                     <button type="button" class="amplicon-details-btn" onclick="document.getElementById('amplicon-modal-detail').showModal();">Show details</button>
+                                {% elif primer_pair.insilico_status == 'ok_empty' %}
+                                    No amplicons
+                                {% elif primer_pair.insilico_status == 'not_applicable' %}
+                                    Not applicable
+                                {% elif primer_pair.insilico_status == 'error' %}
+                                    <span class="amplicon-error-label" title="{{ primer_pair.insilico_error_detail|default:'In-silico search failed' }}">Failed</span>
+                                {% else %}
+                                    —
                                 {% endif %}
                                 </span>
                             </td>
@@ -86,10 +90,10 @@
                         </tr>
                     </tbody>
                 </table>
-                
+
             </div>
             <div style ="display:flex; flex-direction: column;margin-left: 1em; align-items: center; justify-content: center; width: 25em;">
-                <div> 
+                <div>
                     <a href="{% url 'primer_designer_app:snv_indel_generate_report' uuid=uuid selected_primer_index=selected_primer_index %}" class="copy-button">
                         <img class="download-icon" src="{% static 'primer_designer_app/images/download_icon.png' %}" alt="download_icon" width="30" height="30">
                         Download Report
@@ -108,7 +112,7 @@
 
             </div>
         </div>
-        {% if primer_pair.amplicons and primer_pair.amplicons != "N/A" %}
+        {% if primer_pair.insilico_status == 'ok' %}
             {% include "primer_designer_app/_amplicon_modal.html" with amplicons=primer_pair.amplicons modal_suffix="detail" modal_title="In-silico amplicons" %}
         {% endif %}
     </main>
