@@ -13,6 +13,12 @@ from primer_designer_app.utils.insilico_analysis import do_insilico_analysis
 
 LOGGER = logging.getLogger(__name__)
 
+# In-silico (Dicey) outcome per primer pair — persisted on PrimerPairResult
+INSILICO_NOT_APPLICABLE = 'not_applicable'
+INSILICO_ERROR = 'error'
+INSILICO_OK_EMPTY = 'ok_empty'
+INSILICO_OK = 'ok'
+
 
 @dataclass
 class PrimerPairResult:
@@ -29,8 +35,10 @@ class PrimerPairResult:
     right_relPos_end: Optional[int] = None  # 0-based position
     gc: Optional[List[float]] = None
     tm: Optional[List[float]] = None
-    insilico_seq: Optional[str] = ""
+    insilico_seq: Optional[str] = ''
     amplicons: Optional[List[str]] = None
+    insilico_status: Optional[str] = None
+    insilico_error_detail: Optional[str] = None
 
     def to_dict(self):
         return asdict(self)
@@ -44,19 +52,18 @@ class PrimerSearchResults:
             # primer3_obj is the dict returned by primer3.bindings.design_primers
             self.primer_pairs = get_primers_from_primer3(primer3_obj)
 
-        self.mapped_primer_positions = {"primerF_starts": [], "primerR_ends": []}
+        self.mapped_primer_positions = {'primerF_starts': [], 'primerR_ends': []}
 
     @classmethod
     def from_dict(cls, data: dict):
         """Create a PrimerSearchResults object from a dictionary."""
         instance = cls()
         instance.mapped_primer_positions = data.get(
-            "mapped_primer_positions", {"primerF_starts": [], "primerR_ends": []}
+            'mapped_primer_positions', {'primerF_starts': [], 'primerR_ends': []}
         )
 
-        # Deserialize primer_pairs
         instance.primer_pairs = [
-            PrimerPairResult(**pair) for pair in data.get("primer_pairs", [])
+            primer_pair_from_dict(pair) for pair in data.get('primer_pairs', [])
         ]
         return instance
 
@@ -67,32 +74,56 @@ class PrimerSearchResults:
         """Calculate genomic positions of primers based on variant info."""
         gene_pos = varInfo.get_genomic_pos()[0]
         # clear existing mapped positions before filling
-        self.mapped_primer_positions["primerF_starts"].clear()
-        self.mapped_primer_positions["primerR_ends"].clear()
+        self.mapped_primer_positions['primerF_starts'].clear()
+        self.mapped_primer_positions['primerR_ends'].clear()
 
         for pair in self.primer_pairs:
             if pair.left_relPos_start is None or pair.right_relPos_end is None:
                 # skip malformed pair
-                self.mapped_primer_positions["primerF_starts"].append(None)
-                self.mapped_primer_positions["primerR_ends"].append(None)
+                self.mapped_primer_positions['primerF_starts'].append(None)
+                self.mapped_primer_positions['primerR_ends'].append(None)
                 continue
-            self.mapped_primer_positions["primerF_starts"].append(
+            self.mapped_primer_positions['primerF_starts'].append(
                 gene_pos - VARIANT_FLANKING + pair.left_relPos_start
             )
-            self.mapped_primer_positions["primerR_ends"].append(
+            self.mapped_primer_positions['primerR_ends'].append(
                 gene_pos - VARIANT_FLANKING + pair.right_relPos_end
             )
         return self.mapped_primer_positions
 
 
-def get_primers_from_primer3(dicey_primer) -> List["PrimerPairResult"]:
+def _infer_legacy_insilico_status(pair_dict: dict) -> str:
+    """Best-effort status for JSON saved before insilico_status existed."""
+    amps = pair_dict.get('amplicons')
+    if amps is None:
+        return INSILICO_OK_EMPTY
+    if amps == ['N/A'] or (
+        isinstance(amps, list) and len(amps) == 1 and amps[0] == 'N/A'
+    ):
+        return INSILICO_NOT_APPLICABLE
+    if isinstance(amps, list) and len(amps) > 0 and isinstance(amps[0], dict):
+        return INSILICO_OK
+    if amps == []:
+        return INSILICO_OK_EMPTY
+    return INSILICO_OK_EMPTY
+
+
+def primer_pair_from_dict(pair: dict) -> PrimerPairResult:
+    d = dict(pair)
+    if d.get('insilico_status') is None:
+        d['insilico_status'] = _infer_legacy_insilico_status(d)
+    d.setdefault('insilico_error_detail', None)
+    return PrimerPairResult(**d)
+
+
+def get_primers_from_primer3(dicey_primer) -> List['PrimerPairResult']:
     """
     Create a list of PrimerPairResult from a primer3/dicey result dict.
     :param dicey_primer: dict returned by primer3.bindings.design_primers
     :return: List of PrimerPairResult (ordered by penalty)
     """
     pairs: List[PrimerPairResult] = []
-    pair_count = int(dicey_primer.get("PRIMER_PAIR_NUM_RETURNED", 0))
+    pair_count = int(dicey_primer.get('PRIMER_PAIR_NUM_RETURNED', 0))
     for i in range(pair_count):
         left_key = f"PRIMER_LEFT_{i}"
         right_key = f"PRIMER_RIGHT_{i}"
@@ -139,7 +170,9 @@ def get_primers_from_primer3(dicey_primer) -> List["PrimerPairResult"]:
                     round(float(dicey_primer.get(right_tm_key, 0.0)), 1),
                 ],
                 amplicons=[],
-                insilico_seq="",
+                insilico_seq='',
+                insilico_status=None,
+                insilico_error_detail=None,
             )
             pairs.append(pair)
 
@@ -157,37 +190,37 @@ def primer3_design_primers(
     # Call primer3 to design primers
     primer3_obj = primer3.bindings.design_primers(
         seq_args={
-            "SEQUENCE_ID": "dummy_id",  # Sequence ID
-            "SEQUENCE_TEMPLATE": varInfo_obj.get_seq(
-                "mutated"
+            'SEQUENCE_ID': 'dummy_id',  # Sequence ID
+            'SEQUENCE_TEMPLATE': varInfo_obj.get_seq(
+                'mutated'
             ),  # full mutated sequence
-            "SEQUENCE_TARGET": primSet_obj.target,  # [80,100]
+            'SEQUENCE_TARGET': primSet_obj.target,  # [80,100]
         },
         # TODO: All these settings should be adjustable by the user
         global_args={
-            "PRIMER_OPT_SIZE": 20,
-            "PRIMER_PICK_INTERNAL_OLIGO": 0,  # internal oligo
-            "PRIMER_INTERNAL_MAX_SELF_END": 8,  # internal oligo -> TODO: Remove?!
-            "PRIMER_MIN_SIZE": 18,
-            "PRIMER_MAX_SIZE": 22,
-            "PRIMER_OPT_TM": opt_tm,
-            "PRIMER_MIN_TM": opt_tm - 2,
-            "PRIMER_MAX_TM": opt_tm + 2,
-            "PRIMER_OPT_GC_PERCENT": primSet_obj.gc,
-            "PRIMER_MIN_GC": 20.0,
-            "PRIMER_MAX_GC": 80.0,
-            "PRIMER_GC_CLAMP": 1,
-            "PRIMER_MAX_POLY_X": primSet_obj.max_poly_x,
-            "PRIMER_INTERNAL_MAX_POLY_X": 100,  # internal oligo -> TODO: Remove?! (default: 5)
-            "PRIMER_SALT_MONOVALENT": 50.0,
-            "PRIMER_DNA_CONC": 50.0,
-            "PRIMER_MAX_NS_ACCEPTED": 0,
-            "PRIMER_MAX_SELF_ANY": 12,
-            "PRIMER_MAX_SELF_END": 8,
-            "PRIMER_PAIR_MAX_COMPL_ANY": 12,
-            "PRIMER_PAIR_MAX_COMPL_END": 8,
-            "PRIMER_PRODUCT_SIZE_RANGE": primSet_obj.productsize_range,  # [100,500]
-            "PRIMER_INSIDE_PENALTY": 1.0,  # dont allow primers inside the target (default 0 -> favors primers overlapping the target)
+            'PRIMER_OPT_SIZE': 20,
+            'PRIMER_PICK_INTERNAL_OLIGO': 0,  # internal oligo
+            'PRIMER_INTERNAL_MAX_SELF_END': 8,  # internal oligo -> TODO: Remove?!
+            'PRIMER_MIN_SIZE': 18,
+            'PRIMER_MAX_SIZE': 22,
+            'PRIMER_OPT_TM': opt_tm,
+            'PRIMER_MIN_TM': opt_tm - 2,
+            'PRIMER_MAX_TM': opt_tm + 2,
+            'PRIMER_OPT_GC_PERCENT': primSet_obj.gc,
+            'PRIMER_MIN_GC': 20.0,
+            'PRIMER_MAX_GC': 80.0,
+            'PRIMER_GC_CLAMP': 1,
+            'PRIMER_MAX_POLY_X': primSet_obj.max_poly_x,
+            'PRIMER_INTERNAL_MAX_POLY_X': 100,  # internal oligo -> TODO: Remove?! (default: 5)
+            'PRIMER_SALT_MONOVALENT': 50.0,
+            'PRIMER_DNA_CONC': 50.0,
+            'PRIMER_MAX_NS_ACCEPTED': 0,
+            'PRIMER_MAX_SELF_ANY': 12,
+            'PRIMER_MAX_SELF_END': 8,
+            'PRIMER_PAIR_MAX_COMPL_ANY': 12,
+            'PRIMER_PAIR_MAX_COMPL_END': 8,
+            'PRIMER_PRODUCT_SIZE_RANGE': primSet_obj.productsize_range,  # [100,500]
+            'PRIMER_INSIDE_PENALTY': 1.0,  # dont allow primers inside the target (default 0 -> favors primers overlapping the target)
             # 'PRIMER_OUTSIDE_PENALTY': 0.0,
         },
     )
@@ -200,16 +233,20 @@ def primer3_design_primers(
     LOGGER.debug(f"Using context: {primSet_obj.context} for in-silico analysis")
     # run in-silico analysis and populate amplicon summary
     if isinstance(varInfo_obj, (TranscriptVariantInfo, GenomicVariantInfo)):
-        LOGGER.info("Loading primer start and end positions for genomic context")
+        LOGGER.info('Loading primer start and end positions for genomic context')
         prim3_res.load_primer_start_and_end_pos(varInfo_obj)
         # run in-silico per primer pair
-        LOGGER.info("Running in-silico analysis for designed primer pairs")
+        LOGGER.info('Running in-silico analysis for designed primer pairs')
         do_insilico_analysis(primSet_obj, prim3_res.primer_pairs)
-        LOGGER.info("In-silico analysis completed: ", prim3_res.primer_pairs)
+        LOGGER.info('In-silico analysis completed: ', prim3_res.primer_pairs)
     else:
-        # Set all amplicons to "N/A" for non-genomic/transcript variants (e.g. splicing)
+        LOGGER.debug(
+            'No genomic/transcript variant info; in-silico search not applicable'
+        )
         for pair in prim3_res.primer_pairs:
-            pair.amplicons = ["N/A"]
+            pair.amplicons = []
+            pair.insilico_status = INSILICO_NOT_APPLICABLE
+            pair.insilico_error_detail = None
 
     LOGGER.info(f"Primer positions: {prim3_res.mapped_primer_positions}")
     LOGGER.info(

@@ -34,7 +34,7 @@
                     <ul><li class="info-li" style="list-style: none;"><strong>Info:</strong></li>
                         <li class="info-li">The sequence above shows a snippet of the relevant DNA including the <span style="color:color(srgb 0.1928 0.5967 0.665)">recommended primer pair</span> and <span style="color:color(srgb 0.83 0.4543 0.4482)">target region</span>.</li>
                         <li class="info-li">Select one of the primer pairs <span style="font-weight:bold">or </span> click Back to adjust the primer settings and generate new suggestions if none of the options are suitable.</span></li>
-                        
+
                         <br>
                         <li class="info-li" style="list-style: none;"><strong>Penalty calculation:</strong></li>
                         <li class="info-li">
@@ -42,7 +42,7 @@
                             It presents he value of the objective function for this pair. (lower is better).
                         </li>
                         <li class="info-li">
-                            Best primer pairs: <span style="font-weight:bold; color:color(srgb 0.83 0.4543 0.4482)">lower score is better </span> 
+                            Best primer pairs: <span style="font-weight:bold; color:color(srgb 0.83 0.4543 0.4482)">lower score is better </span>
                         </li>
                     </ul>
                 </div>
@@ -54,7 +54,7 @@
                         <th class="output-th">Primer-Pair (Forward + Reverse)</th>
                         <th class="output-th" style="display: none">Positions (Fwd:Rev)</th>
                         <th class="output-th">
-                            Penalty  
+                            Penalty
                         </th>
                         <th class="output-th">Product Size</th>
                         <th class="output-th">Product Tm</th>
@@ -65,10 +65,10 @@
                 </thead>
                 <tbody>
                     {% for pair_res in result_sum_obj.get_primer_search_results.primer_pairs %}
- 
+
                         <tr class="selectable-row" onclick="updateSelectedPrimer(this, 'primer-{{ forloop.counter }}')" style="cursor: pointer;">
                             <td style="text-align: left; padding: 0.4em 0.5em">
-                                <input type="radio" class ="primer-selector" name="selected-primer" value="{{forloop.counter}}" 
+                                <input type="radio" class ="primer-selector" name="selected-primer" value="{{forloop.counter}}"
                                     id="primer-{{forloop.counter}}" style="margin:0; padding:0" required="true">
                                 <label for="primer-{{forloop.counter}}" class ="primer-selector" style="font-size:1.1em;">
                                     {{pair_res.left_seq|safe}} + {{pair_res.right_seq|safe}}</label>
@@ -84,15 +84,19 @@
                             <td style ="font-size: 1.1em;">{{ pair_res.product_tm }} °C</td>
                             <td style ="font-size: 1.1em;">{{pair_res.tm.0 }}, {{ pair_res.tm.1 }} °C</td>
                             <td style ="font-size: 1.1em;">{{ pair_res.gc.0 }}, {{ pair_res.gc.1 }} %</td>
-                            <td style="font-size: 1.1em; color: {% if pair_res.amplicons|length == 1 %}green{% else %}red{% endif %};">
+                            <td class="{{ pair_res.insilico_status|insilico_cell_class }} {{ pair_res|insilico_ok_variant_class }}" style="font-size: 1.1em;">
                                 <span class="amplicon-count-wrap">
-                                {% if pair_res.amplicons.0 != "N/A" %}
+                                {% if pair_res.insilico_status == 'ok' %}
                                     {{ pair_res.amplicons|length }}
-                                {% else %}
-                                    N/A
-                                {% endif %}
-                                {% if pair_res.amplicons and pair_res.amplicons != "N/A" %}
                                     <button type="button" class="amplicon-details-btn" onclick="event.stopPropagation(); document.getElementById('amplicon-modal-{{ forloop.counter }}').showModal();">Show details</button>
+                                {% elif pair_res.insilico_status == 'ok_empty' %}
+                                    No amplicons
+                                {% elif pair_res.insilico_status == 'not_applicable' %}
+                                    Not applicable
+                                {% elif pair_res.insilico_status == 'error' %}
+                                    <span class="amplicon-error-label" title="{{ pair_res.insilico_error_detail|default:'In-silico search failed' }}">Failed</span>
+                                {% else %}
+                                    —
                                 {% endif %}
                                 </span>
                             </td>
@@ -102,7 +106,7 @@
             </table>
             </div>
             {% for pair_res in result_sum_obj.get_primer_search_results.primer_pairs %}
-                {% if pair_res.amplicons and pair_res.amplicons != "N/A" %}
+                {% if pair_res.insilico_status == 'ok' %}
                     {% include "primer_designer_app/_amplicon_modal.html" with amplicons=pair_res.amplicons modal_suffix=forloop.counter %}
                 {% endif %}
             {% endfor %}
