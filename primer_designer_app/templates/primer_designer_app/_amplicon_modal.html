@@ -1,4 +1,6 @@
+{% load static %}
 {% load custom_filters %}
+<link rel="stylesheet" href = "{% static 'primer_designer_app/amplicon_modal.css' %}">
 <dialog class="amplicon-dialog" id="amplicon-modal-{{ modal_suffix }}">
     <div class="amplicon-dialog-panel">
         <button type="button" class="amplicon-dialog-x" aria-label="Close" onclick="this.closest('dialog').close()">&times;</button>
@@ -14,7 +16,7 @@
                         <th>Summary</th>
                         <th>Length</th>
                         <th>Penalty-Score</th>
-                        <th>Chrom / Gene Transcript</th>
+                        <th>Chrom / Gene &amp; Transcript</th>
                         <th>ForPos</th>
                         <th>ForEnd</th>
                         <th>RevPos</th>
