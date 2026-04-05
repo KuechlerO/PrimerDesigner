@@ -3,6 +3,9 @@
     <div class="amplicon-dialog-panel">
         <button type="button" class="amplicon-dialog-x" aria-label="Close" onclick="this.closest('dialog').close()">&times;</button>
         <h3 class="amplicon-dialog-title">{% if modal_title %}{{ modal_title }}{% else %}In-silico amplicons — primer pair {{ modal_suffix }}{% endif %}</h3>
+        {% if insilico_reference_note %}
+            <p class="amplicon-reference-note">{{ insilico_reference_note }}</p>
+        {% endif %}
         <div class="amplicon-dialog-scroll">
             <table class="amplicon-detail-table">
                 <thead>

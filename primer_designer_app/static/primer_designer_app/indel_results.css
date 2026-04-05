@@ -92,6 +92,14 @@ p {
     color: color(srgb 0.2 0.45 0.5);
 }
 
+.amplicon-reference-note {
+    margin: 0 2em 1em 0;
+    font-size: 0.95em;
+    line-height: 1.45;
+    color: #444;
+    max-width: 55em;
+}
+
 .amplicon-dialog-scroll {
     overflow: auto;
     max-height: min(70vh, 560px);

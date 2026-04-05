@@ -10,6 +10,7 @@ from primer_designer_app.utils.helpers import (
     create_hgvs_notation,
 )
 from primer_designer_app.utils.doc_utils import create_primer_report
+from primer_designer_app.utils.insilico_analysis import insilico_reference_description
 from primer_designer_app.views.view_utils import (
     _get_post,
     build_primer_settings,
@@ -105,6 +106,9 @@ def primers_overview(request, uuid=None):
             "highlighted_sequence": highlighted_seq_snippet,
             "result_sum_obj": designResults_obj,
             "hgvs_info": hgvs_info,
+            "insilico_reference_note": insilico_reference_description(
+                designResults_obj.primer_settings
+            ),
         },
     )
 
@@ -145,6 +149,9 @@ def primer_details(request, uuid):
                 "genome_version": genome_version,
                 "hgvs_info": hgvs_notation,
                 "selected_primer_index": selected_primer_index,
+                "insilico_reference_note": insilico_reference_description(
+                    retrieved_result.primer_settings
+                ),
             },
         )
 
