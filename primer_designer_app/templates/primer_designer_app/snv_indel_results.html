@@ -84,26 +84,28 @@
                             <td style ="font-size: 1.1em;">{{ pair_res.product_tm }} °C</td>
                             <td style ="font-size: 1.1em;">{{pair_res.tm.0 }}, {{ pair_res.tm.1 }} °C</td>
                             <td style ="font-size: 1.1em;">{{ pair_res.gc.0 }}, {{ pair_res.gc.1 }} %</td>
-                            <td style="font-size: 1.1em; color: {% if pair_res.amplicons|length == 1 %}green{% else %}red{% endif %}; position: relative;">
+                            <td style="font-size: 1.1em; color: {% if pair_res.amplicons|length == 1 %}green{% else %}red{% endif %};">
+                                <span class="amplicon-count-wrap">
                                 {% if pair_res.amplicons.0 != "N/A" %}
                                     {{ pair_res.amplicons|length }}
                                 {% else %}
                                     N/A
                                 {% endif %}
                                 {% if pair_res.amplicons and pair_res.amplicons != "N/A" %}
-                                    <div class="tooltip">
-                                        {% for amplicon in pair_res.amplicons %}
-                                            {{ amplicon | extract_amplicon_info}}
-                                            <br>
-                                        {% endfor %}
-                                    </div>
+                                    <button type="button" class="amplicon-details-btn" onclick="event.stopPropagation(); document.getElementById('amplicon-modal-{{ forloop.counter }}').showModal();">Show details</button>
                                 {% endif %}
+                                </span>
                             </td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
             </div>
+            {% for pair_res in result_sum_obj.get_primer_search_results.primer_pairs %}
+                {% if pair_res.amplicons and pair_res.amplicons != "N/A" %}
+                    {% include "primer_designer_app/_amplicon_modal.html" with amplicons=pair_res.amplicons modal_suffix=forloop.counter %}
+                {% endif %}
+            {% endfor %}
 
         </form>
         <div style="display:flex; justify-content:center; gap: 3em; margin-top: 1em;">
@@ -143,6 +145,12 @@
                 updateSelectedPrimer(firstRow, "primer-1");
             }
         };
+
+        document.querySelectorAll("dialog.amplicon-dialog").forEach(function (dialog) {
+            dialog.addEventListener("click", function (e) {
+                if (e.target === dialog) dialog.close();
+            });
+        });
     </script>
 </body>
 </html>
