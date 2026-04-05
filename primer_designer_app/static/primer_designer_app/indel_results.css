@@ -24,10 +24,3 @@ p {
 #primer_results_table {
     width: 100%;
 }
-
-td:hover .tooltip {
-    display: block;
-    top: 100%;
-    right: -100%;
-    transform: translateX(-50%);
-}

@@ -79,10 +79,3 @@ h1 {
 .final-output-table-div {
     overflow-x: auto;
 }
-
-td:hover .tooltip {
-    display: block;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-}

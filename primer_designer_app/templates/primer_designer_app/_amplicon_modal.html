@@ -1,0 +1,49 @@
+{% load static %}
+{% load custom_filters %}
+<link rel="stylesheet" href = "{% static 'primer_designer_app/amplicon_modal.css' %}">
+<dialog class="amplicon-dialog" id="amplicon-modal-{{ modal_suffix }}">
+    <div class="amplicon-dialog-panel">
+        <button type="button" class="amplicon-dialog-x" aria-label="Close" onclick="this.closest('dialog').close()">&times;</button>
+        <h3 class="amplicon-dialog-title">{% if modal_title %}{{ modal_title }}{% else %}In-silico amplicons — primer pair {{ modal_suffix }}{% endif %}</h3>
+        {% if insilico_reference_note %}
+            <p class="amplicon-reference-note">{{ insilico_reference_note }}</p>
+        {% endif %}
+        <div class="amplicon-dialog-scroll">
+            <table class="amplicon-detail-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Summary</th>
+                        <th>Length</th>
+                        <th>Penalty-Score</th>
+                        <th>Chrom / Gene &amp; Transcript</th>
+                        <th>ForPos</th>
+                        <th>ForEnd</th>
+                        <th>RevPos</th>
+                        <th>RevEnd</th>
+                        <th>Seq (product)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for amplicon in amplicons %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td class="amplicon-summary-cell">{{ amplicon|extract_amplicon_info }}</td>
+                            <td>{{ amplicon.Length|default:"" }}</td>
+                            <td>{{ amplicon.Penalty|penalty_two_decimals }}</td>
+                            <td class="amplicon-chrom-cell">{{ amplicon|amplicon_chrom_display }}</td>
+                            <td>{{ amplicon.ForPos|default:"" }}</td>
+                            <td>{{ amplicon.ForEnd|default:"" }}</td>
+                            <td>{{ amplicon.RevPos|default:"" }}</td>
+                            <td>{{ amplicon.RevEnd|default:"" }}</td>
+                            <td class="amplicon-seq-cell" title="{{ amplicon.Seq|default:'' }}">{{ amplicon.Seq|default:""|truncatechars:64 }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="amplicon-dialog-actions">
+            <button type="button" class="amplicon-dialog-close-btn" onclick="this.closest('dialog').close()">Close</button>
+        </div>
+    </div>
+</dialog>

@@ -17,7 +17,8 @@ DICEY_CONFIG = os.path.join(DICEY_DIR, "primer3_config")
 
 def prepare_context_path(primer_settings) -> dict[str, str]:
     """Prepare the reference file path based on the requested genome."""
-    dna_ref_file = f"Homo_sapiens.{primer_settings.reference_genome}.dna.primary_assembly.fa.gz"
+    rg = primer_settings.reference_genome
+    dna_ref_file = f"Homo_sapiens.{rg}.dna.primary_assembly.fa.gz"
 
     if primer_settings.reference_genome == "GRCh37":
         cdna_ref_file = "gencode.v37lift37.transcripts.fa.gz"
@@ -25,12 +26,35 @@ def prepare_context_path(primer_settings) -> dict[str, str]:
         cdna_ref_file = "gencode.v49.transcripts.fa.gz"
     else:
         raise ValueError(f"Unsupported reference genome: {primer_settings.reference_genome}")
-    
-    LOGGER.debug("Prepared reference paths: cdna=%s, dna=%s", cdna_ref_file, dna_ref_file)
+
+    LOGGER.debug(
+        "Prepared reference paths: cdna=%s, dna=%s", cdna_ref_file, dna_ref_file
+    )
     return {
         "cdna": os.path.join(REFERENCE_DIR, cdna_ref_file),
         "dna": os.path.join(REFERENCE_DIR, dna_ref_file),
     }
+
+
+def insilico_reference_description(primer_settings) -> str:
+    """
+    Short sentence for the amplicon modal: which reference file and mode Dicey used.
+    """
+    paths = prepare_context_path(primer_settings)
+    assembly = primer_settings.reference_genome
+    if primer_settings.context == "genomic":
+        fn = os.path.basename(paths["dna"])
+        return (
+            f"Genomic amplicons were identified using the reference genome file {fn} "
+            f"({assembly})."
+        )
+    if primer_settings.context == "transcriptomic":
+        fn = os.path.basename(paths["cdna"])
+        return (
+            "Transcriptomic amplicons were identified using the transcriptome "
+            f"reference file {fn} ({assembly})."
+        )
+    return ""
 
 
 def run_dicey(primer_file, reference, output_gz, output_json):
@@ -116,7 +140,9 @@ def do_insilico_analysis(primer_settings, primer_pairs: list) -> None:
     elif primer_settings.context == "genomic":
         context_path = reference_paths["dna"]
     else:
-        raise ValueError(f"Unsupported context for insilico-analysis: {primer_settings.context}")
+        raise ValueError(
+            f"Unsupported context for insilico-analysis: {primer_settings.context}"
+        )
 
     with tempfile.TemporaryDirectory() as temp_dir:
         for i, pair in enumerate(primer_pairs):

@@ -37,7 +37,7 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td class="final-output-td"></tdclass>Sequence</td>
+                            <td class="final-output-td">Sequence</td>
                             <td class="final-output-td">{{primer_pair.left_seq|safe}}</td>
                             <td class="final-output-td">{{primer_pair.right_seq|safe}}</td>
                         </tr>
@@ -63,20 +63,17 @@
                         </tr>
                         <tr>
                             <td class="final-output-td">Amplicons (in-silico)</td>
-                            <td class="final-output-td" colspan="2" style="color: {% if primer_pair.amplicons|length == 1 %}green{% else %}red{% endif %}; position: relative;">
+                            <td class="final-output-td" colspan="2" style="color: {% if primer_pair.amplicons|length == 1 %}green{% else %}red{% endif %};">
+                                <span class="amplicon-count-wrap">
                                 {% if primer_pair.amplicons.0 != "N/A" %}
                                     {{ primer_pair.amplicons|length }}
                                 {% else %}
                                     N/A
                                 {% endif %}
                                 {% if primer_pair.amplicons and primer_pair.amplicons != "N/A" %}
-                                    <div class="tooltip">
-                                        {% for amplicon in primer_pair.amplicons %}
-                                            {{ amplicon | extract_amplicon_info}}
-                                            <br>
-                                        {% endfor %}
-                                    </div>
+                                    <button type="button" class="amplicon-details-btn" onclick="document.getElementById('amplicon-modal-detail').showModal();">Show details</button>
                                 {% endif %}
+                                </span>
                             </td>
                         </tr>
                         <tr>
@@ -111,6 +108,9 @@
 
             </div>
         </div>
+        {% if primer_pair.amplicons and primer_pair.amplicons != "N/A" %}
+            {% include "primer_designer_app/_amplicon_modal.html" with amplicons=primer_pair.amplicons modal_suffix="detail" modal_title="In-silico amplicons" %}
+        {% endif %}
     </main>
 
     <script type="text/javascript" src="{% static 'primer_designer_app/sequence_highlighting_utils.js' %}"></script>
@@ -142,9 +142,14 @@
         }
 
         window.onload = function() {
-            // Add primer highlighting
             initializePrimerHighlighting();
-        }
+        };
+
+        document.querySelectorAll("dialog.amplicon-dialog").forEach(function (dialog) {
+            dialog.addEventListener("click", function (e) {
+                if (e.target === dialog) dialog.close();
+            });
+        });
     </script>
 </body>
 </html>
