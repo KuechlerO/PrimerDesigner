@@ -7,6 +7,7 @@ from primer_designer_app.utils.variant_info import (
     VariantInfo,
     TranscriptVariantInfo,
     GenomicVariantInfo,
+    SequenceVariantInfo,
     VARIANT_FLANKING,
 )
 from primer_designer_app.utils.insilico_analysis import do_insilico_analysis
@@ -256,6 +257,18 @@ def primer3_design_primers(
             LOGGER.info('In-silico analysis completed: ', prim3_res.primer_pairs)
         else:
             LOGGER.info('In-silico PCR disabled; skipping Dicey')
+            for pair in prim3_res.primer_pairs:
+                pair.amplicons = []
+                pair.insilico_status = INSILICO_NOT_APPLICABLE
+                pair.insilico_error_detail = None
+    elif isinstance(varInfo_obj, SequenceVariantInfo):
+        # No genomic coordinates: skip mapped primer positions; Dicey still searches
+        # the selected reference when the user enables amplicon check.
+        if getattr(primSet_obj, 'do_insilico_pcr', False):
+            LOGGER.info('Running in-silico analysis for sequence input')
+            do_insilico_analysis(primSet_obj, prim3_res.primer_pairs)
+        else:
+            LOGGER.debug('Sequence input: in-silico PCR disabled; skipping Dicey')
             for pair in prim3_res.primer_pairs:
                 pair.amplicons = []
                 pair.insilico_status = INSILICO_NOT_APPLICABLE
