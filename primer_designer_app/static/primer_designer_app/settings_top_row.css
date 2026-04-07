@@ -237,18 +237,18 @@
     margin: 0.35em 0 0.75em;
 }
 
-.primer-assay-preset-row .primer-usecase-btns {
+.primer-assay-preset-row .primer-assay-preset-btns {
     margin: 0;
 }
 
-.primer-usecase-btns {
+.primer-assay-preset-btns {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5em;
     margin: 0.35em 0 0.75em;
 }
 
-.primer-usecase-btn {
+.primer-assay-preset-btn {
     padding: 0.45em 1.25em;
     cursor: pointer;
     border-radius: 8px;
@@ -261,17 +261,17 @@
     transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-.primer-usecase-btn:hover {
+.primer-assay-preset-btn:hover {
     background: color(srgb 0.92 0.97 0.98);
 }
 
-.primer-usecase-btn.is-selected {
+.primer-assay-preset-btn.is-selected {
     background: color(srgb 0.5338 0.7473 0.785);
     border-color: color(srgb 0.35 0.55 0.58);
     color: #fff;
 }
 
-.primer-usecase-btn.is-selected:hover {
+.primer-assay-preset-btn.is-selected:hover {
     filter: brightness(0.97);
 }
 

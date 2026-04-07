@@ -10,31 +10,58 @@ function setProductSizeRange(min, max) {
     const dMax = document.getElementById("dlg_product_size_max");
     if (dMin) dMin.value = min;
     if (dMax) dMax.value = max;
+    syncPrimerOverview();
 }
 
 /**
- * PCR vs qPCR: sets hidden usecase for the server and applies the usual product
- * size range. Call only when the user explicitly chooses a preset (not on sync/submit).
+ * Update the index-page primer overview (top right) from dialog field values.
  */
-function applyUsecasePreset(mode) {
-    const hidden = document.getElementById("usecase");
-    if (hidden) {
-        hidden.value = mode === "qPCR" ? "qPCR" : "PCR";
-    }
-    if (mode === "qPCR") {
-        setProductSizeRange(80, 150);
-    } else {
-        setProductSizeRange(400, 800);
-    }
-    syncUsecaseButtonHighlight();
+function syncPrimerOverview() {
+    const box = document.getElementById("primer-param-overview");
+    if (!box) return;
+    const pad = document.getElementById("dlg_target_padding");
+    const tm = document.getElementById("dlg_tm");
+    const gc = document.getElementById("dlg_gc_content");
+    const pmin = document.getElementById("dlg_product_size_min");
+    const pmax = document.getElementById("dlg_product_size_max");
+    const setSpan = (id, raw) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const s = raw === undefined || raw === null || String(raw).trim() === "" ? "—" : String(raw).trim();
+        el.textContent = s;
+    };
+    setSpan("overview-target-padding", pad ? pad.value : "");
+    setSpan("overview-tm", tm ? tm.value : "");
+    setSpan("overview-gc", gc ? gc.value : "");
+    setSpan("overview-product-min", pmin ? pmin.value : "");
+    setSpan("overview-product-max", pmax ? pmax.value : "");
 }
 
-function syncUsecaseButtonHighlight() {
-    const hidden = document.getElementById("usecase");
-    if (!hidden) return;
-    const mode = hidden.value === "qPCR" ? "qPCR" : "PCR";
-    document.querySelectorAll(".primer-usecase-btn").forEach((btn) => {
-        const selected = btn.dataset.usecase === mode;
+/**
+ * PCR / qPCR presets: set target padding (bp per side) and usual product size range.
+ */
+function applyAssayPreset(mode) {
+    const padEl = document.getElementById("dlg_target_padding");
+    if (mode === "qPCR") {
+        if (padEl) padEl.value = "30";
+        setProductSizeRange(80, 150);
+    } else {
+        if (padEl) padEl.value = "50";
+        setProductSizeRange(400, 800);
+    }
+    syncAssayPresetButtonHighlight();
+}
+
+function syncAssayPresetButtonHighlight() {
+    const pad = parseInt(document.getElementById("dlg_target_padding")?.value, 10);
+    const pmin = parseInt(document.getElementById("dlg_product_size_min")?.value, 10);
+    const pmax = parseInt(document.getElementById("dlg_product_size_max")?.value, 10);
+    const pcrMatch = pad === 50 && pmin === 400 && pmax === 800;
+    const qpcrMatch = pad === 30 && pmin === 80 && pmax === 150;
+    document.querySelectorAll(".primer-assay-preset-btn").forEach((btn) => {
+        const preset = btn.dataset.preset;
+        const selected =
+            (preset === "PCR" && pcrMatch) || (preset === "qPCR" && qpcrMatch);
         btn.classList.toggle("is-selected", selected);
         btn.setAttribute("aria-pressed", selected ? "true" : "false");
     });
@@ -96,8 +123,8 @@ function initAmpliconToggle() {
  */
 function syncAllTopSettingsFromUi() {
     updateReferenceGenome();
-    // Intentionally do not touch usecase or product size here — those come from
-    // the primer dialog only; syncing would overwrite user edits before submit.
+    // Intentionally do not touch primer dialog fields here; syncing would overwrite
+    // user edits before submit.
     const root = document.getElementById("amplicon-button");
     if (root) {
         const pos = parseInt(root.dataset.position, 10);
@@ -108,18 +135,20 @@ function syncAllTopSettingsFromUi() {
 }
 
 /**
- * Reset primer dialog fields to application defaults for the current use case
- * (PCR: 400–800 bp product; qPCR: 80–150 bp) and Primer3 advanced defaults.
+ * Reset primer dialog fields to application defaults. Keeps qPCR-style (padding 30)
+ * vs PCR-style (padding 50) based on current target padding for product size range.
  */
 function restorePrimerDialogDefaults() {
-    const uc = document.getElementById("usecase");
-    const isQ = uc && uc.value === "qPCR";
+    const padEl = document.getElementById("dlg_target_padding");
+    const pad = padEl ? parseInt(padEl.value, 10) : 50;
+    const isQ = pad === 30;
     const pmin = isQ ? 80 : 400;
     const pmax = isQ ? 150 : 800;
     const setId = (id, val) => {
         const el = document.getElementById(id);
         if (el) el.value = val;
     };
+    setId("dlg_target_padding", isQ ? "30" : "50");
     setId("dlg_tm", "60");
     setId("dlg_gc_content", "50");
     setId("dlg_max_poly_X", "4");
@@ -155,11 +184,13 @@ function restorePrimerDialogDefaults() {
             }
         });
     }
-    syncUsecaseButtonHighlight();
+    syncAssayPresetButtonHighlight();
+    syncPrimerOverview();
 }
 
 function openPrimerCustomDialog() {
-    syncUsecaseButtonHighlight();
+    syncAssayPresetButtonHighlight();
+    syncPrimerOverview();
     const dlg = document.getElementById("primer-custom-dialog");
     if (dlg) dlg.showModal();
 }
@@ -221,7 +252,8 @@ function clearAllInputs() {
     enableInputField(idInputFields);
     enableInputField([sequenceField]);
 
-    document.getElementById("usecase").value = "PCR"; // Standardwert für Use Case
+    const tp = document.getElementById("dlg_target_padding");
+    if (tp) tp.value = "50";
     restorePrimerDialogDefaults();
     document.getElementById("reference-genome").value = "GRCh37"; // Standardwert für Reference Genome
     setAmpliconCheck("none");
@@ -387,7 +419,8 @@ document.addEventListener("DOMContentLoaded", function () {
     updateAmpliconCheckAria();
     initAmpliconToggle();
     syncAllTopSettingsFromUi();
-    syncUsecaseButtonHighlight();
+    syncAssayPresetButtonHighlight();
+    syncPrimerOverview();
     const settingsForm = document.getElementById("settings");
     if (settingsForm) {
         settingsForm.addEventListener(
@@ -400,13 +433,17 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     window.addEventListener("pageshow", function () {
         syncAllTopSettingsFromUi();
-        syncUsecaseButtonHighlight();
+        syncAssayPresetButtonHighlight();
+        syncPrimerOverview();
     });
     const dlg = document.getElementById("primer-custom-dialog");
     if (dlg) {
         dlg.addEventListener("click", function (e) {
             if (e.target === dlg) dlg.close();
         });
+        dlg.addEventListener("input", syncPrimerOverview);
+        dlg.addEventListener("change", syncPrimerOverview);
+        dlg.addEventListener("close", syncPrimerOverview);
     }
 });
 

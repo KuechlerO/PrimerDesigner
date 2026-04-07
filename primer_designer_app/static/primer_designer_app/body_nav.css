@@ -28,15 +28,25 @@ nav ul li.page-btn:hover {
     background-color: #0097B2;
 }
 
-.bih_logo {
+/* BIH logo — top left; top right kept clear for primer overview on SNV index */
+li.bih-logo-li {
     position: absolute;
-    right: 2em;
+    left: 2em;
     top: 0.4em;
+    margin: 0;
+    list-style: none;
+}
+
+.bih_logo {
+    display: block;
     height: 4.4em;
     width: auto;
 }
 
-li.bih-logo-li { margin: 0; }
+li.bih-logo-li a {
+    display: block;
+    line-height: 0;
+}
 
 .ui-scale-fab {
     position: fixed;
@@ -71,23 +81,4 @@ li.bih-logo-li { margin: 0; }
 .ui-scale-fab .ui-scale-btn {
     padding: 0.35em 0.75em;
     box-shadow: none;
-}
-
-/* GitHub positioning (Mirror of your BIH logo) */
-.github-logo-li {
-    position: absolute;
-    left: 2em;         /* Opposite of your right: 2em */
-    top: 0.8em;
-    margin: 0;
-    list-style: none;
-}
-
-.github-icon {
-    font-size: 2.5em;  /* Adjust size to match visual weight of BIH logo */
-    color: #333;       /* Standard GitHub dark grey */
-    transition: color 0.3s;
-}
-
-.github-icon:hover {
-    color: #02758A;    /* Matches your button color on hover */
 }

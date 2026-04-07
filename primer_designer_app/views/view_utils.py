@@ -102,10 +102,18 @@ def _parse_amplicon_check(request) -> Tuple[bool, str]:
     return True, 'transcriptomic'
 
 
+def _parse_target_padding(request) -> int:
+    try:
+        v = int(_get_post(request, 'target_padding', '50'))
+    except ValueError:
+        return 50
+    return max(1, min(500, v))
+
+
 def build_primer_settings(request) -> PrimerSettingsModel:
     do_insilico, context = _parse_amplicon_check(request)
     return PrimerSettingsModel(
-        use_case=_get_post(request, 'usecase', ''),
+        target_padding=_parse_target_padding(request),
         tm=int(_get_post(request, 'tm', '60')),
         gc=int(_get_post(request, 'gc_content', '50')),
         reference_genome=_get_post(request, 'reference-genome', 'GRCh37'),

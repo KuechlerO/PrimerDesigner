@@ -26,12 +26,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class PrimerSettingsModel(models.Model):
-    USE_CASE_CHOICES = [
-        ('PCR', 'PCR'),
-        ('qPCR', 'qPCR'),
-    ]
-
-    use_case = models.CharField(max_length=10, choices=USE_CASE_CHOICES)
+    # Bases on each side of the variant included in Primer3 SEQUENCE_TARGET (was PCR=50, qPCR=30).
+    target_padding = models.IntegerField(default=50)
     tm = models.IntegerField()
     gc = models.IntegerField()
     max_poly_x = models.IntegerField()
@@ -50,22 +46,22 @@ class PrimerSettingsModel(models.Model):
 
     def set_target(self, rel_pos):
         LOGGER.debug(
-            f"Reference genome: {self.reference_genome}, use case: {self.use_case}, relative position: {rel_pos}   "
+            'Reference genome: %s, target_padding: %s, relative position: %s',
+            self.reference_genome,
+            self.target_padding,
+            rel_pos,
         )
-        """Function to set the target range based on the input."""
-        if self.use_case == 'PCR':
-            offset = 50
-        elif self.use_case == 'qPCR':
-            offset = 30
-        else:
-            raise ValueError(f"Invalid use_case: {self.use_case}")
+        """Set Primer3 SEQUENCE_TARGET from variant interval and per-side padding (bp)."""
+        offset = int(self.target_padding)
+        if offset < 1 or offset > 500:
+            raise ValueError(f'Invalid target_padding: {offset}')
 
         nr_deleted_bases = rel_pos[1] - rel_pos[0]
         self.target = [rel_pos[0] - offset, nr_deleted_bases + 2 * offset]
         self.save()
 
     def set_context(self, context):
-        """Set the context for the primer design based on the use case."""
+        """Set genomic vs transcriptomic context for in-silico (Dicey) analysis."""
         if context in ['transcriptomic', 'genomic']:
             self.context = context
             self.save()

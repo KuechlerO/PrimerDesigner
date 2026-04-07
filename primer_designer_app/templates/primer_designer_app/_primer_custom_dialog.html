@@ -2,25 +2,26 @@
     <div class="primer-custom-dialog-panel">
         <button type="button" class="primer-dialog-x" aria-label="Close" onclick="document.getElementById('primer-custom-dialog').close()">&times;</button>
         <h3 class="primer-dialog-title">Primer parameters</h3>
-        <p class="primer-dialog-intro">These values are submitted with your design request. Choose PCR or qPCR to set the usual product size range (you can still edit min/max afterward). Advanced keys override the built-in Primer3 defaults when set; leave Tm min/max blank to derive from optimal Tm ±2 °C.</p>
+        <p class="primer-dialog-intro">These values are submitted with your design request. PCR / qPCR presets set target padding and the usual product size range (you can still edit afterward). Advanced keys override the built-in Primer3 defaults when set; leave Tm min/max blank to derive from optimal Tm ±2 °C.</p>
 
         <h4 class="primer-dialog-sub">Assay preset</h4>
-        <p class="primer-dialog-hint">Sets use case for Primer3 target placement and default product size: 400–800 bp (PCR) or 80–150 bp (qPCR).</p>
+        <p class="primer-dialog-hint">PCR: target padding 50 bp per side, product size 400–800 bp. qPCR: padding 30 bp per side, product size 80–150 bp.</p>
         <div class="primer-assay-preset-row">
-            <div class="primer-usecase-btns" role="group" aria-label="PCR or qPCR preset">
-                <button type="button" class="primer-usecase-btn is-selected" data-usecase="PCR" onclick="applyUsecasePreset('PCR')" aria-pressed="true">PCR</button>
-                <button type="button" class="primer-usecase-btn" data-usecase="qPCR" onclick="applyUsecasePreset('qPCR')" aria-pressed="false">qPCR</button>
+            <div class="primer-assay-preset-btns" role="group" aria-label="PCR or qPCR preset">
+                <button type="button" class="primer-assay-preset-btn is-selected" data-preset="PCR" onclick="applyAssayPreset('PCR')" aria-pressed="true">PCR</button>
+                <button type="button" class="primer-assay-preset-btn" data-preset="qPCR" onclick="applyAssayPreset('qPCR')" aria-pressed="false">qPCR</button>
             </div>
-            <button type="button" class="primer-dialog-restore" onclick="restorePrimerDialogDefaults()" title="Reset all primer fields to application defaults for the current PCR/qPCR selection">Restore default values</button>
+            <button type="button" class="primer-dialog-restore" onclick="restorePrimerDialogDefaults()" title="Reset primer fields to application defaults (keeping current PCR vs qPCR style when possible)">Restore default values</button>
         </div>
 
         <h4 class="primer-dialog-sub">Core</h4>
         <div class="primer-dialog-grid">
+            <label>Product size min (bp) <input type="number" id="dlg_product_size_min" name="product_size_min" value="400" min="1" form="settings" autocomplete="section-primer product-min"></label>
+            <label>Product size max (bp) <input type="number" id="dlg_product_size_max" name="product_size_max" value="800" min="1" form="settings" autocomplete="section-primer product-max"></label>
+            <label title="Bases flanking the variant on each side in the Primer3 target interval (SEQUENCE_TARGET).">Target padding (bp / side) <input type="number" id="dlg_target_padding" name="target_padding" value="50" min="1" max="200" step="1" form="settings" autocomplete="section-primer target-padding"></label>
             <label>Optimal primer Tm (°C) <input type="number" id="dlg_tm" name="tm" value="60" min="40" max="85" step="0.1" form="settings" autocomplete="section-primer tm"></label>
             <label>GC content target (%) <input type="number" id="dlg_gc_content" name="gc_content" value="50" min="1" max="100" form="settings" autocomplete="section-primer gc"></label>
             <label>Max poly-X <input type="number" id="dlg_max_poly_X" name="max_poly_X" value="4" min="0" max="20" form="settings" autocomplete="section-primer max-poly"></label>
-            <label>Product size min (bp) <input type="number" id="dlg_product_size_min" name="product_size_min" value="400" min="1" form="settings" autocomplete="section-primer product-min"></label>
-            <label>Product size max (bp) <input type="number" id="dlg_product_size_max" name="product_size_max" value="800" min="1" form="settings" autocomplete="section-primer product-max"></label>
         </div>
 
         <h4 class="primer-dialog-sub">Primer length</h4>
@@ -67,7 +68,7 @@
         </div>
 
         <div class="primer-dialog-actions">
-            <button type="button" class="primer-dialog-restore" onclick="restorePrimerDialogDefaults()" title="Reset all primer fields to application defaults for the current PCR/qPCR selection">Restore default values</button>
+            <button type="button" class="primer-dialog-restore" onclick="restorePrimerDialogDefaults()" title="Reset primer fields to application defaults (keeping current PCR vs qPCR style when possible)">Restore default values</button>
             <button type="button" class="primer-dialog-done" onclick="document.getElementById('primer-custom-dialog').close()">Done</button>
         </div>
     </div>

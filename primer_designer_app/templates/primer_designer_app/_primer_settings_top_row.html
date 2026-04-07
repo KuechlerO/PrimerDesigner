@@ -1,4 +1,4 @@
-{# Top row: Reference genome, Primer settings, Amplicon check. Hidden usecase (PCR/qPCR) is set from Primer parameters dialog. #}
+{# Top row: Reference genome, Amplicon check, Primer settings. Target padding & product size live in Primer parameters dialog. #}
 {% load static %}
 <link rel="stylesheet" href = "{% static 'primer_designer_app/settings_top_row.css' %}">
 
@@ -15,13 +15,6 @@
             </div>
         </div>
         <input type="hidden" id="reference-genome" name="reference-genome" value="GRCh37" form="settings">
-    </div>
-
-    <input type="hidden" id="usecase" name="usecase" value="PCR" form="settings">
-
-    <div class="settings-container">
-        <h2 class="settings-heading-help" title="Primer3 constraints (melting temperature, GC content, homopolymer limits, product size) use application defaults for the selected use case until you change them. Open Primer parameters to view or edit values for this submission.">Primer settings</h2>
-        <button type="button" class="primer-custom-open-btn" id="primer-custom-open-btn" onclick="openPrimerCustomDialog()">Primer parameters…</button>
     </div>
 
     <div class="settings-container settings-container--amplicon-check">
@@ -41,4 +34,10 @@
         </div>
         <input type="hidden" name="amplicon-check" id="amplicon-check-hidden" value="none" form="settings">
     </div>
+
+    <div class="settings-container">
+        <h2 class="settings-heading-help" title="Primer3 constraints (melting temperature, GC content, homopolymer limits, product size) use application defaults for the selected use case until you change them. Open Primer parameters to view or edit values for this submission.">Primer settings</h2>
+        <button type="button" class="primer-custom-open-btn" id="primer-custom-open-btn" onclick="openPrimerCustomDialog()">Primer parameters…</button>
+    </div>
+
 </div>
