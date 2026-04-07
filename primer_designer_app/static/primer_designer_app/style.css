@@ -141,6 +141,21 @@ textarea {
     transition: transform 0.3s ease;
 }
 
+/* Load Example + Reset + Generate Primers (SNV/InDel index) */
+.snv-submit-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75em 1em;
+    margin-top: 0.8em;
+}
+
+.snv-submit-row .submit-button,
+.snv-submit-row .example-button,
+.snv-submit-row .reset-button {
+    margin-top: 0;
+}
 
 .example-button {
     background-color: rgb(153, 199, 207);
@@ -427,11 +442,6 @@ input#new_base, input#IDnew_base {
     opacity: 0.45;
     cursor: not-allowed;
     box-shadow: none;
-}
-
-input#tm, input#gc_content, input#max_poly_X, input#product_size_min, input#product_size_max {
-    width: 3em;
-    font-size: 1em;
 }
 
 #primer-settings {
