@@ -352,7 +352,12 @@ class SequenceVariantInfo(VariantInfo):
         LOGGER.debug(f"Variant info after: {self}")
 
     def _parse_input_sequence(self, input_seq: str):
-        """Parse variant information from sequence annotation"""
+        """Parse variant information from sequence annotation.
+
+        Strips all whitespace (spaces, line breaks, tabs) so pasted multi-line
+        sequences are accepted.
+        """
+        input_seq = ''.join(input_seq.split())
         if '[' not in input_seq or ']' not in input_seq:
             raise ValueError('Sequence annotation missing brackets')
 
