@@ -12,6 +12,7 @@ from primer_designer_app.utils.variant_info import (
     ReferenceType,
     VARIANT_FLANKING,
 )
+from primer_designer_app.utils.primer3_post import parse_primer3_overrides_from_post
 from primer_designer_app.utils.primer_utils import primer3_design_primers
 
 from primer_designer_app.exceptions import (
@@ -87,16 +88,18 @@ def _get_post(request, name, default=''):
 
 
 def build_primer_settings(request) -> PrimerSettingsModel:
+    primer_mode = _get_post(request, 'primer-settings', 'default')
     return PrimerSettingsModel(
         use_case=_get_post(request, 'usecase', ''),
-        tm=int(_get_post(request, 'tm', '0')),
+        tm=int(_get_post(request, 'tm', '60')),
         gc=int(_get_post(request, 'gc_content', '50')),
         reference_genome=_get_post(request, 'reference-genome', 'GRCh37'),
         productsize_range=[
-            int(_get_post(request, 'product_size_min', '0')),
-            int(_get_post(request, 'product_size_max', '0')),
+            int(_get_post(request, 'product_size_min', '400')),
+            int(_get_post(request, 'product_size_max', '800')),
         ],
         max_poly_x=int(_get_post(request, 'max_poly_X', '4')),
+        primer3_overrides=parse_primer3_overrides_from_post(request, primer_mode),
     )
 
 

@@ -180,49 +180,60 @@ def get_primers_from_primer3(dicey_primer) -> List['PrimerPairResult']:
     return pairs
 
 
+def build_primer3_global_args(prim_set) -> dict:
+    """
+    Build Primer3 global_args from model fields, then apply primer3_overrides (custom mode).
+    """
+    opt_tm = float(prim_set.tm)
+    base = {
+        'PRIMER_OPT_SIZE': 20,
+        'PRIMER_PICK_INTERNAL_OLIGO': 0,
+        'PRIMER_INTERNAL_MAX_SELF_END': 8,
+        'PRIMER_MIN_SIZE': 18,
+        'PRIMER_MAX_SIZE': 22,
+        'PRIMER_OPT_TM': opt_tm,
+        'PRIMER_MIN_TM': opt_tm - 2,
+        'PRIMER_MAX_TM': opt_tm + 2,
+        'PRIMER_OPT_GC_PERCENT': float(prim_set.gc),
+        'PRIMER_MIN_GC': 20.0,
+        'PRIMER_MAX_GC': 80.0,
+        'PRIMER_GC_CLAMP': 1,
+        'PRIMER_MAX_POLY_X': prim_set.max_poly_x,
+        'PRIMER_INTERNAL_MAX_POLY_X': 100,
+        'PRIMER_SALT_MONOVALENT': 50.0,
+        'PRIMER_DNA_CONC': 50.0,
+        'PRIMER_MAX_NS_ACCEPTED': 0,
+        'PRIMER_MAX_SELF_ANY': 12,
+        'PRIMER_MAX_SELF_END': 8,
+        'PRIMER_PAIR_MAX_COMPL_ANY': 12,
+        'PRIMER_PAIR_MAX_COMPL_END': 8,
+        'PRIMER_PRODUCT_SIZE_RANGE': prim_set.productsize_range,
+        'PRIMER_INSIDE_PENALTY': 1.0,
+    }
+    overrides = getattr(prim_set, 'primer3_overrides', None) or {}
+    merged = {**base, **overrides}
+    return merged
+
+
 def primer3_design_primers(
     primSet_obj, varInfo_obj: VariantInfo
 ) -> PrimerSearchResults:
-    opt_tm = primSet_obj.tm
     LOGGER.info(f"Designing primers with target: {primSet_obj.target}")
-    LOGGER.debug(f"Variant info object sequence: {varInfo_obj.get_seq("mutated")}")
+    LOGGER.debug(
+        'Variant info object sequence: %s',
+        varInfo_obj.get_seq('mutated'),
+    )
+
+    global_args = build_primer3_global_args(primSet_obj)
 
     # Call primer3 to design primers
     primer3_obj = primer3.bindings.design_primers(
         seq_args={
-            'SEQUENCE_ID': 'dummy_id',  # Sequence ID
-            'SEQUENCE_TEMPLATE': varInfo_obj.get_seq(
-                'mutated'
-            ),  # full mutated sequence
-            'SEQUENCE_TARGET': primSet_obj.target,  # [80,100]
+            'SEQUENCE_ID': 'dummy_id',
+            'SEQUENCE_TEMPLATE': varInfo_obj.get_seq('mutated'),
+            'SEQUENCE_TARGET': primSet_obj.target,
         },
-        # TODO: All these settings should be adjustable by the user
-        global_args={
-            'PRIMER_OPT_SIZE': 20,
-            'PRIMER_PICK_INTERNAL_OLIGO': 0,  # internal oligo
-            'PRIMER_INTERNAL_MAX_SELF_END': 8,  # internal oligo -> TODO: Remove?!
-            'PRIMER_MIN_SIZE': 18,
-            'PRIMER_MAX_SIZE': 22,
-            'PRIMER_OPT_TM': opt_tm,
-            'PRIMER_MIN_TM': opt_tm - 2,
-            'PRIMER_MAX_TM': opt_tm + 2,
-            'PRIMER_OPT_GC_PERCENT': primSet_obj.gc,
-            'PRIMER_MIN_GC': 20.0,
-            'PRIMER_MAX_GC': 80.0,
-            'PRIMER_GC_CLAMP': 1,
-            'PRIMER_MAX_POLY_X': primSet_obj.max_poly_x,
-            'PRIMER_INTERNAL_MAX_POLY_X': 100,  # internal oligo -> TODO: Remove?! (default: 5)
-            'PRIMER_SALT_MONOVALENT': 50.0,
-            'PRIMER_DNA_CONC': 50.0,
-            'PRIMER_MAX_NS_ACCEPTED': 0,
-            'PRIMER_MAX_SELF_ANY': 12,
-            'PRIMER_MAX_SELF_END': 8,
-            'PRIMER_PAIR_MAX_COMPL_ANY': 12,
-            'PRIMER_PAIR_MAX_COMPL_END': 8,
-            'PRIMER_PRODUCT_SIZE_RANGE': primSet_obj.productsize_range,  # [100,500]
-            'PRIMER_INSIDE_PENALTY': 1.0,  # dont allow primers inside the target (default 0 -> favors primers overlapping the target)
-            # 'PRIMER_OUTSIDE_PENALTY': 0.0,
-        },
+        global_args=global_args,
     )
 
     LOGGER.debug(f"Primer3 output: {primer3_obj}")

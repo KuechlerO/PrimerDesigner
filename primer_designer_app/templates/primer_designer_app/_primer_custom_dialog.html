@@ -1,0 +1,63 @@
+<dialog id="primer-custom-dialog" class="primer-custom-dialog">
+    <div class="primer-custom-dialog-panel">
+        <button type="button" class="primer-dialog-x" aria-label="Close" onclick="document.getElementById('primer-custom-dialog').close()">&times;</button>
+        <h3 class="primer-dialog-title">Custom primer parameters</h3>
+        <p class="primer-dialog-intro">These values are passed to Primer3 together with your variant sequence. Core settings below also update optimal Tm / GC used for scoring; advanced keys override the application defaults when set.</p>
+
+        <h4 class="primer-dialog-sub">Core</h4>
+        <div class="primer-dialog-grid">
+            <label>Optimal primer Tm (°C) <input type="number" id="dlg_tm" name="tm" value="60" min="40" max="85" step="0.1" form="settings" data-primer-field="custom" disabled></label>
+            <label>GC content target (%) <input type="number" id="dlg_gc_content" name="gc_content" value="50" min="1" max="100" form="settings" data-primer-field="custom" disabled></label>
+            <label>Max poly-X <input type="number" id="dlg_max_poly_X" name="max_poly_X" value="4" min="0" max="20" form="settings" data-primer-field="custom" disabled></label>
+            <label>Product size min (bp) <input type="number" id="dlg_product_size_min" name="product_size_min" value="400" min="1" form="settings" data-primer-field="custom" disabled></label>
+            <label>Product size max (bp) <input type="number" id="dlg_product_size_max" name="product_size_max" value="800" min="1" form="settings" data-primer-field="custom" disabled></label>
+        </div>
+
+        <h4 class="primer-dialog-sub">Primer length</h4>
+        <div class="primer-dialog-grid">
+            <label>PRIMER_OPT_SIZE <input type="number" name="p3_PRIMER_OPT_SIZE" value="20" min="1" form="settings" data-primer-field="custom" disabled></label>
+            <label>PRIMER_MIN_SIZE <input type="number" name="p3_PRIMER_MIN_SIZE" value="18" min="1" form="settings" data-primer-field="custom" disabled></label>
+            <label>PRIMER_MAX_SIZE <input type="number" name="p3_PRIMER_MAX_SIZE" value="22" min="1" form="settings" data-primer-field="custom" disabled></label>
+        </div>
+
+        <h4 class="primer-dialog-sub">Primer Tm bounds (optional)</h4>
+        <p class="primer-dialog-hint">Leave blank to derive from optimal Tm ±2 °C. Otherwise overrides min/max.</p>
+        <div class="primer-dialog-grid">
+            <label>PRIMER_MIN_TM <input type="number" name="p3_PRIMER_MIN_TM" placeholder="auto (opt. Tm−2)" step="0.1" form="settings" data-primer-field="custom" disabled></label>
+            <label>PRIMER_MAX_TM <input type="number" name="p3_PRIMER_MAX_TM" placeholder="auto (opt. Tm+2)" step="0.1" form="settings" data-primer-field="custom" disabled></label>
+        </div>
+
+        <h4 class="primer-dialog-sub">GC limits</h4>
+        <div class="primer-dialog-grid">
+            <label>PRIMER_MIN_GC <input type="number" name="p3_PRIMER_MIN_GC" value="20" min="0" max="100" step="0.1" form="settings" data-primer-field="custom" disabled></label>
+            <label>PRIMER_MAX_GC <input type="number" name="p3_PRIMER_MAX_GC" value="80" min="0" max="100" step="0.1" form="settings" data-primer-field="custom" disabled></label>
+            <label>PRIMER_GC_CLAMP <input type="number" name="p3_PRIMER_GC_CLAMP" value="1" min="0" max="5" form="settings" data-primer-field="custom" disabled></label>
+        </div>
+
+        <h4 class="primer-dialog-sub">Ion &amp; concentration</h4>
+        <div class="primer-dialog-grid">
+            <label>PRIMER_SALT_MONOVALENT (mM) <input type="number" name="p3_PRIMER_SALT_MONOVALENT" value="50" min="0" step="0.1" form="settings" data-primer-field="custom" disabled></label>
+            <label>PRIMER_DNA_CONC (nM) <input type="number" name="p3_PRIMER_DNA_CONC" value="50" min="0" step="0.1" form="settings" data-primer-field="custom" disabled></label>
+        </div>
+
+        <h4 class="primer-dialog-sub">Complementarity &amp; quality</h4>
+        <div class="primer-dialog-grid">
+            <label>PRIMER_MAX_NS_ACCEPTED <input type="number" name="p3_PRIMER_MAX_NS_ACCEPTED" value="0" min="0" form="settings" data-primer-field="custom" disabled></label>
+            <label>PRIMER_MAX_SELF_ANY <input type="number" name="p3_PRIMER_MAX_SELF_ANY" value="12" min="0" form="settings" data-primer-field="custom" disabled></label>
+            <label>PRIMER_MAX_SELF_END <input type="number" name="p3_PRIMER_MAX_SELF_END" value="8" min="0" form="settings" data-primer-field="custom" disabled></label>
+            <label>PRIMER_PAIR_MAX_COMPL_ANY <input type="number" name="p3_PRIMER_PAIR_MAX_COMPL_ANY" value="12" min="0" form="settings" data-primer-field="custom" disabled></label>
+            <label>PRIMER_PAIR_MAX_COMPL_END <input type="number" name="p3_PRIMER_PAIR_MAX_COMPL_END" value="8" min="0" form="settings" data-primer-field="custom" disabled></label>
+            <label>PRIMER_INSIDE_PENALTY <input type="number" name="p3_PRIMER_INSIDE_PENALTY" value="1" min="0" step="0.1" form="settings" data-primer-field="custom" disabled></label>
+        </div>
+
+        <h4 class="primer-dialog-sub">Internal oligo (unused when internal oligo off)</h4>
+        <div class="primer-dialog-grid">
+            <label>PRIMER_INTERNAL_MAX_SELF_END <input type="number" name="p3_PRIMER_INTERNAL_MAX_SELF_END" value="8" min="0" form="settings" data-primer-field="custom" disabled></label>
+            <label>PRIMER_INTERNAL_MAX_POLY_X <input type="number" name="p3_PRIMER_INTERNAL_MAX_POLY_X" value="100" min="0" form="settings" data-primer-field="custom" disabled></label>
+        </div>
+
+        <div class="primer-dialog-actions">
+            <button type="button" class="primer-dialog-done" onclick="document.getElementById('primer-custom-dialog').close()">Done</button>
+        </div>
+    </div>
+</dialog>
