@@ -2,6 +2,9 @@
 
 PrimerDesigner is a primer design application that automates primer generation and in-silico PCR. It also provides thorough documentation for the process.
 
+<img width="1916" height="962" alt="index_page" src="https://github.com/user-attachments/assets/e323b90e-8c3f-4518-9479-6f2d44a779e2" />
+
+
 ---
 
 ## Table of Contents
