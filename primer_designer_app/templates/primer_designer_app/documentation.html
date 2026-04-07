@@ -1,0 +1,170 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% include "primer_designer_app/header.html" %}
+</head>
+<body>
+    {% include "primer_designer_app/body_nav.html" %}
+
+    <main class="documentation-page">
+        <section class="documentation-hero settings-container">
+            <p class="hgvs-info">PrimerDesigner Help</p>
+            <h1>Documentation</h1>
+            <p class="documentation-intro">
+                Learn how to use PrimerDesigner, which inputs are supported,
+                how to interpret the output, and how to contact the project team.
+            </p>
+        </section>
+
+        <div class="divider"></div>
+
+        <div class="documentation-layout">
+            <aside class="documentation-sidebar">
+                <h2>Menu</h2>
+
+                <a href="#documentation" class="copy-button documentation-link">
+                    Documentation
+                </a>
+
+                <a href="#tutorial" class="copy-button documentation-link">
+                    Tutorial
+                </a>
+
+                <a href="#support" class="copy-button documentation-link">
+                    Support
+                </a>
+            </aside>
+
+            <div class="documentation-content">
+                <section id="documentation" class="documentation-card">
+                    <p class="hgvs-info">Documentation</p>
+                    <h2>Overview</h2>
+
+                    <p>
+                        PrimerDesigner is a web application that facilitates the design of primer pairs for
+                        variant-containing target regions in PCR and qPCR workflows.
+                        It supports different input types, including genomic positions, transcript-based
+                        variant descriptions, and complete sequences with annotated mutations.
+                    </p>
+
+                    <br>
+                    <h2>Technical details</h2>
+                    <p>
+                        PrimerDesigner is built with modern web technologies and uses the following tools:
+                    </p>
+                    <ul>
+                        <li>
+                            <a href="https://www.djangoproject.com/" target="_blank">Django</a>
+                        </li>
+                        <li>
+                            <a href="https://github.com/libnano/primer3-py" target="_blank">Primer3-py</a>
+                        </li>
+                        <li>
+                            <a href="https://github.com/gear-genomics/dicey" target="_blank">Dicey</a>
+                        </li>
+                    </ul>
+                    <p>
+                        For more information on the technical details, please refer to the <a href="https://github.com/KuechlerO/PrimerDesigner/tree/main" target="_blank">README</a> file.
+                    </p>
+                </section>
+
+                <section id="tutorial" class="documentation-card">
+                    <p class="hgvs-info">Tutorial</p>
+                    <h2>Step-by-step guide</h2>
+
+                    <p>
+                        Before entering any data, the user can adjust several global settings in the web
+                        application. First, the reference genome can be selected as either <strong>GRCh37</strong>
+                        or <strong>GRCh38</strong>.
+                        Second, the primer settings can either be left at the <strong>default</strong> configuration or adjusted
+                        manually (<strong>PCR</strong> and <strong>qPCR</strong> pre-sets are available).
+                        Third, the amplicon check can be enabled or disabled (disabled by default).
+                    </p>
+
+                    <p>
+                        After configuring these general settings, one of three input modes can be used.
+                        The first mode is based on a <strong>genomic position</strong>. In this mode, a single
+                        nucleotide variant can be entered in genomic form by specifying the chromosome
+                        position together with the new base.
+                    </p>
+
+                    <p>
+                        The second mode is based on a <strong>transcript ID</strong>. Here, the user can enter
+                        a transcript identifier and choose under <strong>Check against</strong> whether the
+                        variant should be interpreted relative to the genome or the transcript. In
+                        addition, the reference sequence type can be selected, for example <strong>cDNA</strong>
+                        or <strong>CDS</strong>. This mode supports both single nucleotide variants and indels.
+                        For substitutions, a variant position can be entered. For indels, the user can
+                        specify the wild-type start and end positions as well as the inserted bases.
+                    </p>
+
+                    <p>
+                        The third mode is based on a <strong>full input sequence</strong>. In this mode, the user
+                        provides an entire sequence and receives primer suggestions directly for that
+                        sequence context. Sequence variants must be described explicitly within the input
+                        sequence. Substitutions are written in the format <strong>[A&gt;T]</strong>. Indels can be
+                        represented with alternative notations such as <strong>[-/A]</strong>, <strong>[T/-]</strong>, or
+                        <strong>[ATG/CG]</strong>, depending on the type of sequence change that should be described.
+                    </p>
+
+                    <p>
+                        To explore example inputs for the three modes, the user can click the
+                        <strong>Load Example</strong> button repeatedly. Each click cycles through different
+                        example entries. In addition, every mode contains a small question mark icon in
+                        the lower right corner. When the user hovers over this icon, a more detailed
+                        explanation of the expected input format is displayed.
+                    </p>
+
+                    <p>
+                        After clicking <strong>Generate Primers</strong>, the application displays the sequence
+                        context together with visual highlighting. Recommended primers are highlighted in
+                        turquoise blue, while the target region is marked in red. Further down the page,
+                        several candidate primers are listed for selection. For each candidate, additional
+                        properties such as penalty score, temperature, and GC content are shown.
+                    </p>
+
+                    <p>
+                        The <strong>penalty score</strong> is especially important for interpretation: a lower
+                        penalty score indicates a better primer candidate. Once the user has selected a
+                        preferred primer pair, the <strong>Submit</strong> button can be used to continue to the
+                        next page. There, the user can click <strong>Download Report</strong> to obtain the final
+                        result as a report.
+                    </p>
+                </section>
+
+                <section id="support" class="documentation-card">
+                    <p class="hgvs-info">Support</p>
+                    <h2>Contact</h2>
+                    <p>
+                        For questions, feedback, or bug reports, please use the project
+                        repository or contact the project team directly.
+                    </p>
+
+                    <ul class="documentation-list">
+                        <li>GitHub repository:
+                            <a href="https://github.com/KuechlerO/PrimerDesigner" target="_blank">PrimerDesigner</a>
+                        </li>
+                        <li>Contacts:
+                            <a href="mailto:dominik.seelow@bih-charite.de">Dominik Seelow</a>,
+                            <a href="mailto:oliver.kuechler@charite.de">Oliver Küchler</a>
+                        </li>
+                    </ul>
+
+                    <p>
+                        When reporting a problem, it is helpful to include the used input,
+                        the selected primer settings, and the displayed error message if available.
+                    </p>
+
+                    <div class="documentation-actions">
+                        <a href="{% url 'primer_designer_app:snv_indel_index' %}" class="back-button documentation-back-link">
+                            Back to PrimerDesigner
+                        </a>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
