@@ -6,42 +6,55 @@ function updateReferenceGenome() {
 }
 
 function setProductSizeRange(min, max) {
-    const hMin = document.getElementById("product_size_min");
-    const hMax = document.getElementById("product_size_max");
     const dMin = document.getElementById("dlg_product_size_min");
     const dMax = document.getElementById("dlg_product_size_max");
-    if (hMin) hMin.value = min;
-    if (hMax) hMax.value = max;
     if (dMin) dMin.value = min;
     if (dMax) dMax.value = max;
 }
 
-function updateUsecase() {
-    const switchButton = document.getElementById("usecase-switch");
-    const hiddenInput = document.getElementById("usecase");
-    if (!switchButton || !hiddenInput) return;
-
-    hiddenInput.value = switchButton.checked ? "qPCR" : "PCR";
-
-    if (switchButton.checked) {
+/**
+ * PCR vs qPCR: sets hidden usecase for the server and applies the usual product
+ * size range. Call only when the user explicitly chooses a preset (not on sync/submit).
+ */
+function applyUsecasePreset(mode) {
+    const hidden = document.getElementById("usecase");
+    if (hidden) {
+        hidden.value = mode === "qPCR" ? "qPCR" : "PCR";
+    }
+    if (mode === "qPCR") {
         setProductSizeRange(80, 150);
     } else {
         setProductSizeRange(400, 800);
     }
+    syncUsecaseButtonHighlight();
+}
+
+function syncUsecaseButtonHighlight() {
+    const hidden = document.getElementById("usecase");
+    if (!hidden) return;
+    const mode = hidden.value === "qPCR" ? "qPCR" : "PCR";
+    document.querySelectorAll(".primer-usecase-btn").forEach((btn) => {
+        const selected = btn.dataset.usecase === mode;
+        btn.classList.toggle("is-selected", selected);
+        btn.setAttribute("aria-pressed", selected ? "true" : "false");
+    });
 }
 
 const AMP_CHECK_VALUES = ["none", "genome", "transcriptome"];
 const AMP_CHECK_LABELS = ["None", "Genome", "Transcriptome"];
 
+// Update the aria-valuenow and aria-valuetext attributes of the amplicon button
 function updateAmpliconCheckAria() {
     const root = document.getElementById("amplicon-button");
-    if (!root) return;
+    if (!root) return;  // exit if no amplicon button found
     const i = parseInt(root.dataset.position, 10);
     const idx = Number.isNaN(i) ? 0 : i;
     root.setAttribute("aria-valuenow", String(idx));
     root.setAttribute("aria-valuetext", AMP_CHECK_LABELS[idx] || "None");
 }
 
+// Set the amplicon check value and update the aria-valuenow
+// and aria-valuetext attributes of the amplicon button
 function setAmpliconCheck(value) {
     const idx = AMP_CHECK_VALUES.indexOf(value);
     const i = idx >= 0 ? idx : 0;
@@ -52,6 +65,7 @@ function setAmpliconCheck(value) {
     updateAmpliconCheckAria();
 }
 
+// Initialize the amplicon toggle
 function initAmpliconToggle() {
     const root = document.getElementById("amplicon-button");
     if (!root) return;
@@ -82,7 +96,8 @@ function initAmpliconToggle() {
  */
 function syncAllTopSettingsFromUi() {
     updateReferenceGenome();
-    updateUsecase();
+    // Intentionally do not touch usecase or product size here — those come from
+    // the primer dialog only; syncing would overwrite user edits before submit.
     const root = document.getElementById("amplicon-button");
     if (root) {
         const pos = parseInt(root.dataset.position, 10);
@@ -90,41 +105,61 @@ function syncAllTopSettingsFromUi() {
             setAmpliconCheck(AMP_CHECK_VALUES[pos]);
         }
     }
-    syncPrimerFieldDisabledState();
 }
 
-function syncPrimerFieldDisabledState() {
-    const custom =
-        document.getElementById("primer-settings") &&
-        document.getElementById("primer-settings").value === "custom";
-    document.querySelectorAll("[data-primer-field='default']").forEach((el) => {
-        el.disabled = !!custom;
-    });
-    document.querySelectorAll("[data-primer-field='custom']").forEach((el) => {
-        el.disabled = !custom;
-    });
-}
+/**
+ * Reset primer dialog fields to application defaults for the current use case
+ * (PCR: 400–800 bp product; qPCR: 80–150 bp) and Primer3 advanced defaults.
+ */
+function restorePrimerDialogDefaults() {
+    const uc = document.getElementById("usecase");
+    const isQ = uc && uc.value === "qPCR";
+    const pmin = isQ ? 80 : 400;
+    const pmax = isQ ? 150 : 800;
+    const setId = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+    };
+    setId("dlg_tm", "60");
+    setId("dlg_gc_content", "50");
+    setId("dlg_max_poly_X", "4");
+    setId("dlg_product_size_min", String(pmin));
+    setId("dlg_product_size_max", String(pmax));
 
-function syncDialogFromHidden() {
-    const pairs = [
-        ["tm", "dlg_tm"],
-        ["gc_content", "dlg_gc_content"],
-        ["max_poly_X", "dlg_max_poly_X"],
-        ["product_size_min", "dlg_product_size_min"],
-        ["product_size_max", "dlg_product_size_max"],
-    ];
-    pairs.forEach(([hid, did]) => {
-        const h = document.getElementById(hid);
-        const d = document.getElementById(did);
-        if (h && d) d.value = h.value;
-    });
+    const dlg = document.getElementById("primer-custom-dialog");
+    const p3Defaults = {
+        p3_PRIMER_OPT_SIZE: "20",
+        p3_PRIMER_MIN_SIZE: "18",
+        p3_PRIMER_MAX_SIZE: "22",
+        p3_PRIMER_MIN_TM: "",
+        p3_PRIMER_MAX_TM: "",
+        p3_PRIMER_MIN_GC: "20",
+        p3_PRIMER_MAX_GC: "80",
+        p3_PRIMER_GC_CLAMP: "1",
+        p3_PRIMER_SALT_MONOVALENT: "50",
+        p3_PRIMER_DNA_CONC: "50",
+        p3_PRIMER_MAX_NS_ACCEPTED: "0",
+        p3_PRIMER_MAX_SELF_ANY: "12",
+        p3_PRIMER_MAX_SELF_END: "8",
+        p3_PRIMER_PAIR_MAX_COMPL_ANY: "12",
+        p3_PRIMER_PAIR_MAX_COMPL_END: "8",
+        p3_PRIMER_INSIDE_PENALTY: "1",
+        p3_PRIMER_INTERNAL_MAX_SELF_END: "8",
+        p3_PRIMER_INTERNAL_MAX_POLY_X: "100",
+    };
+    if (dlg) {
+        dlg.querySelectorAll("[name^='p3_']").forEach((el) => {
+            const v = p3Defaults[el.name];
+            if (v !== undefined) {
+                el.value = v;
+            }
+        });
+    }
+    syncUsecaseButtonHighlight();
 }
 
 function openPrimerCustomDialog() {
-    const ps = document.getElementById("primer-settings");
-    if (ps) ps.value = "custom";
-    syncDialogFromHidden();
-    syncPrimerFieldDisabledState();
+    syncUsecaseButtonHighlight();
     const dlg = document.getElementById("primer-custom-dialog");
     if (dlg) dlg.showModal();
 }
@@ -153,8 +188,7 @@ const Genomic_hover_label = document.getElementById("Genomic-hover-label");
 const Sequence_hover_label = document.getElementById("Sequence-hover-label");
 
 const reference_genome_switch = document.getElementById("reference-genome-switch");
-const use_case_switch = document.getElementById("usecase-switch");
-const switches = [reference_genome_switch, use_case_switch];
+const switches = [reference_genome_switch];
 
 const IdTranscriptBase = [transcriptIDField, cdnaSelector, cdsSelector];
 const IdSNV= [rel_pos_Field, IdNewBase];
@@ -187,14 +221,9 @@ function clearAllInputs() {
     enableInputField(idInputFields);
     enableInputField([sequenceField]);
 
-    document.getElementById("primer-settings").value = "default";
-    document.getElementById("tm").value = 60;
-    document.getElementById("gc_content").value = 50;
-    document.getElementById("max_poly_X").value = 4;
-    setProductSizeRange(400, 800);
-    syncPrimerFieldDisabledState();
-    document.getElementById("reference-genome").value = "GRCh37"; // Standardwert für Reference Genome
     document.getElementById("usecase").value = "PCR"; // Standardwert für Use Case
+    restorePrimerDialogDefaults();
+    document.getElementById("reference-genome").value = "GRCh37"; // Standardwert für Reference Genome
     setAmpliconCheck("none");
     const labels = [ID_hover_label.classList,Genomic_hover_label.classList, Sequence_hover_label.classList]
     labels.forEach(label => label.remove("hover-label-highlight"))
@@ -355,10 +384,10 @@ function handleInputChange(inputId) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-    syncPrimerFieldDisabledState();
     updateAmpliconCheckAria();
     initAmpliconToggle();
     syncAllTopSettingsFromUi();
+    syncUsecaseButtonHighlight();
     const settingsForm = document.getElementById("settings");
     if (settingsForm) {
         settingsForm.addEventListener(
@@ -371,6 +400,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     window.addEventListener("pageshow", function () {
         syncAllTopSettingsFromUi();
+        syncUsecaseButtonHighlight();
     });
     const dlg = document.getElementById("primer-custom-dialog");
     if (dlg) {

@@ -103,7 +103,6 @@ def _parse_amplicon_check(request) -> Tuple[bool, str]:
 
 
 def build_primer_settings(request) -> PrimerSettingsModel:
-    primer_mode = _get_post(request, 'primer-settings', 'default')
     do_insilico, context = _parse_amplicon_check(request)
     return PrimerSettingsModel(
         use_case=_get_post(request, 'usecase', ''),
@@ -115,7 +114,7 @@ def build_primer_settings(request) -> PrimerSettingsModel:
             int(_get_post(request, 'product_size_max', '800')),
         ],
         max_poly_x=int(_get_post(request, 'max_poly_X', '4')),
-        primer3_overrides=parse_primer3_overrides_from_post(request, primer_mode),
+        primer3_overrides=parse_primer3_overrides_from_post(request),
         do_insilico_pcr=do_insilico,
         context=context,
     )

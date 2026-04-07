@@ -1,4 +1,4 @@
-{# Top row: Reference genome, Use case, Primer settings, Amplicon check. Expects parent <form id="settings"> and snv_indels_script.js. #}
+{# Top row: Reference genome, Primer settings, Amplicon check. Hidden usecase (PCR/qPCR) is set from Primer parameters dialog. #}
 {% load static %}
 <link rel="stylesheet" href = "{% static 'primer_designer_app/settings_top_row.css' %}">
 
@@ -17,33 +17,11 @@
         <input type="hidden" id="reference-genome" name="reference-genome" value="GRCh37" form="settings">
     </div>
 
-    <div class="settings-container">
-        <h2 class="settings-heading-help" title="Switch between PCR and qPCR presets. Only the allowed product size range changes with this preset; other primer options follow the application defaults unless you edit them under Primer settings.">Use case</h2>
-        <div class="UseCaseDiv" style="display:flex; justify-content: center">
-            <div class="button-cover PCR-button-cover">
-                <div class="button r" id="PCR-button">
-                    <input type="checkbox" class="checkbox" id="usecase-switch" onchange="updateUsecase()"/>
-                    <div class="knobs">
-                        <span></span>
-                    </div>
-                    <div class="layer"></div>
-                </div>
-            </div>
-        </div>
-        <input type="hidden" id="usecase" name="usecase" value="PCR" form="settings">
-    </div>
+    <input type="hidden" id="usecase" name="usecase" value="PCR" form="settings">
 
     <div class="settings-container">
-        <h2 class="settings-heading-help" title="Primer3 constraints (melting temperature, GC content, homopolymer limits, product size) use defaults for the selected use case unless you change them. Use Edit primer parameters to set custom overrides for this submission.">Primer settings</h2>
-        <input type="hidden" id="primer-settings" name="primer-settings" value="default" form="settings">
-        <div id="primer-default-hidden" class="primer-default-hidden" aria-hidden="true">
-            <input type="hidden" id="tm" name="tm" value="60" form="settings" data-primer-field="default">
-            <input type="hidden" id="gc_content" name="gc_content" value="50" form="settings" data-primer-field="default">
-            <input type="hidden" id="max_poly_X" name="max_poly_X" value="4" form="settings" data-primer-field="default">
-            <input type="hidden" id="product_size_min" name="product_size_min" value="400" form="settings" data-primer-field="default">
-            <input type="hidden" id="product_size_max" name="product_size_max" value="800" form="settings" data-primer-field="default">
-        </div>
-        <button type="button" class="primer-custom-open-btn" id="primer-custom-open-btn" onclick="openPrimerCustomDialog()">Edit primer parameters…</button>
+        <h2 class="settings-heading-help" title="Primer3 constraints (melting temperature, GC content, homopolymer limits, product size) use application defaults for the selected use case until you change them. Open Primer parameters to view or edit values for this submission.">Primer settings</h2>
+        <button type="button" class="primer-custom-open-btn" id="primer-custom-open-btn" onclick="openPrimerCustomDialog()">Primer parameters…</button>
     </div>
 
     <div class="settings-container settings-container--amplicon-check">

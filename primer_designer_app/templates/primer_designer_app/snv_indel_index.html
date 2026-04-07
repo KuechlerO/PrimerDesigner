@@ -6,7 +6,7 @@
     {% include "primer_designer_app/body_nav.html" %}
     <main>
         <!-- <section class="curved"></section> -->
-        <form id="settings" method="post" action="{% url 'primer_designer_app:snv_indel_primers_overview' %}" autocomplete="off">
+        <form id="settings" method="post" action="{% url 'primer_designer_app:snv_indel_primers_overview' %}" autocomplete="on">
             {% csrf_token %}
 
             {% include "primer_designer_app/_primer_settings_top_row.html" %}

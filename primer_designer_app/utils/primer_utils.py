@@ -183,7 +183,7 @@ def get_primers_from_primer3(dicey_primer) -> List['PrimerPairResult']:
 
 def build_primer3_global_args(prim_set) -> dict:
     """
-    Build Primer3 global_args from model fields, then apply primer3_overrides (custom mode).
+    Build Primer3 global_args from model fields, then apply primer3_overrides (advanced POST keys).
     """
     opt_tm = float(prim_set.tm)
     base = {

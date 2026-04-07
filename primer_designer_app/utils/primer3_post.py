@@ -1,7 +1,7 @@
 """
-Parse optional Primer3 global_args from POST (custom primer settings mode).
+Parse optional Primer3 global_args from POST (advanced Primer3 keys).
 
-Field names in HTML: p3_<PRIMER_KEY>. Values are merged after base args in primer_utils.
+Field names in HTML: p3_<PRIMER_KEY>. Non-empty values are merged after base args in primer_utils.
 """
 
 import logging
@@ -41,10 +41,8 @@ def _coerce(raw: str, kind: str) -> Any:
     raise ValueError(kind)
 
 
-def parse_primer3_overrides_from_post(request, primer_settings_mode: str) -> dict:
-    """Return a dict of Primer3 keys to coerce values; empty unless mode is custom."""
-    if primer_settings_mode != 'custom':
-        return {}
+def parse_primer3_overrides_from_post(request) -> dict:
+    """Return a dict of Primer3 keys for non-empty p3_* POST fields (advanced overrides)."""
     out: dict[str, Any] = {}
     for key, kind in PRIMER3_OVERRIDE_FIELDS:
         raw = request.POST.get(f"p3_{key}")
