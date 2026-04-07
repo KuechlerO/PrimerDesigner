@@ -1,11 +1,8 @@
 function updateReferenceGenome() {
     const switchButton = document.getElementById("reference-genome-switch");
     const hiddenInput = document.getElementById("reference-genome");
-
-    // Aktualisiere den Wert basierend auf dem Zustand des Switch-Buttons
+    if (!switchButton || !hiddenInput) return;
     hiddenInput.value = switchButton.checked ? "GRCh38" : "GRCh37";
-
-    console.log("Selected Reference Genome:", hiddenInput.value); // Debugging
 }
 
 function setProductSizeRange(min, max) {
@@ -22,6 +19,7 @@ function setProductSizeRange(min, max) {
 function updateUsecase() {
     const switchButton = document.getElementById("usecase-switch");
     const hiddenInput = document.getElementById("usecase");
+    if (!switchButton || !hiddenInput) return;
 
     hiddenInput.value = switchButton.checked ? "qPCR" : "PCR";
 
@@ -30,7 +28,6 @@ function updateUsecase() {
     } else {
         setProductSizeRange(400, 800);
     }
-    console.log("Selected Usecase:", hiddenInput.value);
 }
 
 const AMP_CHECK_VALUES = ["none", "genome", "transcriptome"];
@@ -77,6 +74,23 @@ function initAmpliconToggle() {
             setAmpliconCheck(AMP_CHECK_VALUES[cur + 1]);
         }
     });
+}
+
+/**
+ * Keep hidden POST fields in sync with visible toggles. Browsers may restore
+ * checkbox/slider UI from cache while hidden inputs stay at server defaults.
+ */
+function syncAllTopSettingsFromUi() {
+    updateReferenceGenome();
+    updateUsecase();
+    const root = document.getElementById("amplicon-button");
+    if (root) {
+        const pos = parseInt(root.dataset.position, 10);
+        if (!Number.isNaN(pos) && pos >= 0 && pos < AMP_CHECK_VALUES.length) {
+            setAmpliconCheck(AMP_CHECK_VALUES[pos]);
+        }
+    }
+    syncPrimerFieldDisabledState();
 }
 
 function syncPrimerFieldDisabledState() {
@@ -344,6 +358,20 @@ document.addEventListener("DOMContentLoaded", function () {
     syncPrimerFieldDisabledState();
     updateAmpliconCheckAria();
     initAmpliconToggle();
+    syncAllTopSettingsFromUi();
+    const settingsForm = document.getElementById("settings");
+    if (settingsForm) {
+        settingsForm.addEventListener(
+            "submit",
+            function () {
+                syncAllTopSettingsFromUi();
+            },
+            true
+        );
+    }
+    window.addEventListener("pageshow", function () {
+        syncAllTopSettingsFromUi();
+    });
     const dlg = document.getElementById("primer-custom-dialog");
     if (dlg) {
         dlg.addEventListener("click", function (e) {
