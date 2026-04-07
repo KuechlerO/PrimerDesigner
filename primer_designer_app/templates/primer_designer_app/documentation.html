@@ -32,43 +32,55 @@
                     Tutorial
                 </a>
 
-                <a href="#contact" class="copy-button documentation-link">
-                    Contact
+                <a href="#support" class="copy-button documentation-link">
+                    Support
                 </a>
             </aside>
 
             <div class="documentation-content">
                 <section id="documentation" class="documentation-card">
-                    <p class="hgvs-info">Overview</p>
-                    <h2>Documentation</h2>
+                    <p class="hgvs-info">Documentation</p>
+                    <h2>Overview</h2>
 
                     <p>
-                        PrimerDesigner is a web application for designing primers for variant-containing
-                        target regions in PCR and qPCR workflows. It supports different input types,
-                        including genomic positions, transcript-based variant descriptions, and complete
-                        sequences with annotated mutations.
+                        PrimerDesigner is a web application that facilitates the design of primer pairs for
+                        variant-containing target regions in PCR and qPCR workflows.
+                        It supports different input types, including genomic positions, transcript-based
+                        variant descriptions, and complete sequences with annotated mutations.
                     </p>
 
+                    <br>
+                    <h2>Technical details</h2>
                     <p>
-                        The application returns candidate primer pairs together with key evaluation
-                        parameters such as melting temperature, GC content, product size, and penalty
-                        score. It also highlights the target region and primer positions within the
-                        sequence context to make the results easier to interpret.
+                        PrimerDesigner is built with modern web technologies and uses the following tools:
+                    </p>
+                    <ul>
+                        <li>
+                            <a href="https://www.djangoproject.com/" target="_blank">Django</a>
+                        </li>
+                        <li>
+                            <a href="https://github.com/libnano/primer3-py" target="_blank">Primer3-py</a>
+                        </li>
+                        <li>
+                            <a href="https://github.com/gear-genomics/dicey" target="_blank">Dicey</a>
+                        </li>
+                    </ul>
+                    <p>
+                        For more information on the technical details, please refer to the <a href="https://github.com/KuechlerO/PrimerDesigner/tree/main" target="_blank">README</a> file.
                     </p>
                 </section>
 
                 <section id="tutorial" class="documentation-card">
-                    <p class="hgvs-info">Step-by-step guide</p>
-                    <h2>Tutorial</h2>
+                    <p class="hgvs-info">Tutorial</p>
+                    <h2>Step-by-step guide</h2>
 
                     <p>
                         Before entering any data, the user can adjust several global settings in the web
                         application. First, the reference genome can be selected as either <strong>GRCh37</strong>
-                        or <strong>GRCh38</strong>. Second, the use case can be chosen depending on whether
-                        primers are needed for <strong>PCR</strong> or <strong>qPCR</strong>. Third, the primer
-                        settings can either be left at the <strong>default</strong> configuration or adjusted
-                        manually. In the custom setting mode, the user can define the preferred primer
-                        temperature, GC content, maximum Poly-X value, and the desired product size range.
+                        or <strong>GRCh38</strong>.
+                        Second, the primer settings can either be left at the <strong>default</strong> configuration or adjusted
+                        manually (<strong>PCR</strong> and <strong>qPCR</strong> pre-sets are available).
+                        Third, the amplicon check can be enabled or disabled (disabled by default).
                     </p>
 
                     <p>
@@ -122,7 +134,7 @@
                     </p>
                 </section>
 
-                <section id="contact" class="documentation-card">
+                <section id="support" class="documentation-card">
                     <p class="hgvs-info">Support</p>
                     <h2>Contact</h2>
                     <p>
@@ -131,25 +143,23 @@
                     </p>
 
                     <ul class="documentation-list">
-                        <li>GitHub repository: PrimerDesigner</li>
-                        <li>Contact person: <strong>Dominik Seelow</strong></li>
-                        <li>E-mail: dominik.seelow AT charite.de</li>
+                        <li>GitHub repository:
+                            <a href="https://github.com/KuechlerO/PrimerDesigner" target="_blank">PrimerDesigner</a>
+                        </li>
+                        <li>Contacts:
+                            <a href="mailto:dominik.seelow@bih-charite.de">Dominik Seelow</a>,
+                            <a href="mailto:oliver.kuechler@charite.de">Oliver Küchler</a>
+                        </li>
                     </ul>
 
                     <p>
                         When reporting a problem, it is helpful to include the used input,
-                        the selected mode, and the displayed error message if available.
+                        the selected primer settings, and the displayed error message if available.
                     </p>
 
                     <div class="documentation-actions">
-                        <a href="https://github.com/KuechlerO/PrimerDesigner"
-                           target="_blank"
-                           class="copy-button">
-                            GitHub
-                        </a>
-
                         <a href="{% url 'primer_designer_app:snv_indel_index' %}" class="back-button documentation-back-link">
-                            Go back
+                            Back to PrimerDesigner
                         </a>
                     </div>
                 </section>
