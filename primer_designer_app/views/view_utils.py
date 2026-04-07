@@ -1,7 +1,7 @@
 # View utilities for primer design app
 import logging
+from typing import Tuple
 
-from django.http import HttpResponse
 
 from primer_designer_app.models import PrimerSettingsModel, DesignResultsSummary
 from primer_designer_app.utils.variant_info import (
@@ -87,8 +87,24 @@ def _get_post(request, name, default=''):
     return request.POST.get(name, default)
 
 
+def _parse_amplicon_check(request) -> Tuple[bool, str]:
+    """
+    Single UI control: none | genome | transcriptome.
+    Maps to do_insilico_pcr and PrimerSettings.context for Dicey.
+    """
+    v = _get_post(request, 'amplicon-check', 'none')
+    if v not in ('none', 'genome', 'transcriptome'):
+        v = 'none'
+    if v == 'none':
+        return False, 'genomic'
+    if v == 'genome':
+        return True, 'genomic'
+    return True, 'transcriptomic'
+
+
 def build_primer_settings(request) -> PrimerSettingsModel:
     primer_mode = _get_post(request, 'primer-settings', 'default')
+    do_insilico, context = _parse_amplicon_check(request)
     return PrimerSettingsModel(
         use_case=_get_post(request, 'usecase', ''),
         tm=int(_get_post(request, 'tm', '60')),
@@ -100,6 +116,8 @@ def build_primer_settings(request) -> PrimerSettingsModel:
         ],
         max_poly_x=int(_get_post(request, 'max_poly_X', '4')),
         primer3_overrides=parse_primer3_overrides_from_post(request, primer_mode),
+        do_insilico_pcr=do_insilico,
+        context=context,
     )
 
 
@@ -209,20 +227,22 @@ def handle_transcript_input(request, primer_settings):
         variantInfo = _build_variant_info(request, 'transcript_indel')
     else:
         # TODO: handle error properly
-        raise InvalidTranscriptInputError('The transcript input is incomplete or invalid.')
+        raise InvalidTranscriptInputError(
+            'The transcript input is incomplete or invalid.'
+        )
     # Check input validity
     # TODO: check
     # type int means that the Indel is only within and therefore only has one mapping/ one range
     if type(variantInfo.genomic_pos['pos'][0]) != int:
         raise ExonExonJunctionError('The variant affects an exon-exon junction.')
 
-    # --- 2. Design primers based on context ---
-    # Set target and design primers
-    context = _get_post(request, 'context')
+    # --- 2. Design primers (context / insilico flags come from build_primer_settings) ---
     primer_settings.set_target(variantInfo.relative_pos)
-    primer_settings.set_context(context)
     LOGGER.debug(
-        f"Context set to {context} / {primer_settings.context} for transcript input, target set to {primer_settings.target}"
+        'Transcript input: context=%s do_insilico_pcr=%s target=%s',
+        primer_settings.context,
+        primer_settings.do_insilico_pcr,
+        primer_settings.target,
     )
 
     return _design_primers_and_return_searchID(variantInfo, primer_settings)

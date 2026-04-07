@@ -241,15 +241,25 @@ def primer3_design_primers(
     # Extract primer information
     prim3_res = PrimerSearchResults(primer3_obj=primer3_obj)
 
-    LOGGER.debug(f"Using context: {primSet_obj.context} for in-silico analysis")
-    # run in-silico analysis and populate amplicon summary
+    LOGGER.debug(
+        'In-silico: context=%s do_insilico_pcr=%s',
+        primSet_obj.context,
+        getattr(primSet_obj, 'do_insilico_pcr', False),
+    )
+    # run in-silico analysis and populate amplicon summary (optional)
     if isinstance(varInfo_obj, (TranscriptVariantInfo, GenomicVariantInfo)):
         LOGGER.info('Loading primer start and end positions for genomic context')
         prim3_res.load_primer_start_and_end_pos(varInfo_obj)
-        # run in-silico per primer pair
-        LOGGER.info('Running in-silico analysis for designed primer pairs')
-        do_insilico_analysis(primSet_obj, prim3_res.primer_pairs)
-        LOGGER.info('In-silico analysis completed: ', prim3_res.primer_pairs)
+        if getattr(primSet_obj, 'do_insilico_pcr', False):
+            LOGGER.info('Running in-silico analysis for designed primer pairs')
+            do_insilico_analysis(primSet_obj, prim3_res.primer_pairs)
+            LOGGER.info('In-silico analysis completed: ', prim3_res.primer_pairs)
+        else:
+            LOGGER.info('In-silico PCR disabled; skipping Dicey')
+            for pair in prim3_res.primer_pairs:
+                pair.amplicons = []
+                pair.insilico_status = INSILICO_NOT_APPLICABLE
+                pair.insilico_error_detail = None
     else:
         LOGGER.debug(
             'No genomic/transcript variant info; in-silico search not applicable'

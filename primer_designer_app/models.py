@@ -43,6 +43,8 @@ class PrimerSettingsModel(models.Model):
     context = models.CharField(
         max_length=20, null=False, blank=False, default='genomic'
     )
+    # Run Dicey in-silico PCR / amplicon search (optional; default off)
+    do_insilico_pcr = models.BooleanField(default=False)
     # Optional Primer3 global_args overrides (custom mode); merged in primer_utils
     primer3_overrides = models.JSONField(default=dict, blank=True)
 

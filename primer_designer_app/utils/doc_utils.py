@@ -285,14 +285,15 @@ def create_primer_report(
             return str(len(primer_pair.amplicons or []))
         return str(len(primer_pair.amplicons or []))
 
-    if prim_settings.context == 'genomic':
-        product_data = product_data + (
-            ('Nr of amplicons (in Genome)', _insilico_report_line()),
-        )
-    elif prim_settings.context == 'transcriptomic':
-        product_data = product_data + (
-            ('Nr of amplicons (in Transcriptome)', _insilico_report_line()),
-        )
+    if getattr(prim_settings, 'do_insilico_pcr', False):
+        if prim_settings.context == 'genomic':
+            product_data = product_data + (
+                ('Nr of amplicons (in Genome)', _insilico_report_line()),
+            )
+        elif prim_settings.context == 'transcriptomic':
+            product_data = product_data + (
+                ('Nr of amplicons (in Transcriptome)', _insilico_report_line()),
+            )
 
     # Creating a table object
     doc.add_heading('Primer Selection:', level=1)

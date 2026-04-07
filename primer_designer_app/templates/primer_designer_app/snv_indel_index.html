@@ -62,9 +62,7 @@
                     <div class="info-overlay">
                         <ul><li class="info-li" style="list-style: none;"><strong>Format/Info:</strong></li>
                             <li class="info-li">Positions must correspond to the selected reference genome and sequence type.</li>
-                            <li class="info-li"><span style="color:color(srgb 0.1928 0.5967 0.665)">Check against: </span>
-                                In-Silico check for possible additional amplicons is going to be performed against the selected reference.
-                            </li>
+                            <li class="info-li">Optional amplicon check (Dicey: None, genome, or transcriptome) is configured in the top settings row.</li>
                             <li class="info-li">For SNVs, the position refers to the exact location of the variant.</li>
                             <li class="info-li">For InDels, the two positions refer to the start and end position of the sequence region that is substituted with the given variant sequence.</li>
                             <li class="info-li">Inserted bases can be specified either as a base sequence (e.g., AGT) or as the number of inserted bases (e.g., 3)</li>
@@ -74,17 +72,7 @@
                         <h2 class="ID_h2">Transcript-ID</h2>
                         <input type="text" id="Transcript-ID" name="Transcript-ID" placeholder="e.g. ENST00000340855" oninput="handleInputChange('Transcript-ID')">
                     </div>
-                    <div class="identifier-two-col-wrap">
-                        <div class="identifier-col">
-                            <h2 class="ID_h2">Check against</h2>
-                            <div style="display:flex; flex-direction: column; width: 100%; justify-content: center; border-radius: 0em 0em 0.5em 0.5em; background-color: color(srgb 0.9068 0.9645 0.975); box-shadow: 0 0em 1em -0.5em #8baaaa;">
-                                <input type="radio" name="context" value="genomic" id="genomic" onchange="handleInputChange('genomic')">
-                                <label for="genomic">Genome</label>
-                                <input type="radio" name="context" value="transcriptomic" id="transcriptomic" onchange="handleInputChange('transcriptomic')">
-                                <label for="transcriptomic">Transcriptome</label>
-                            </div>
-                        </div>
-
+                    <div class="identifier-two-col-wrap identifier-two-col-wrap--reference-only">
                         <div class="identifier-col">
                             <h2 class="ID_h2">Reference</h2>
                             <div style="display:flex; flex-direction: column; width: 100%; justify-content: center; border-radius: 0em 0em 0.5em 0.5em; background-color: color(srgb 0.9068 0.9645 0.975); box-shadow: 0 0em 1em -0.5em #8baaaa;">

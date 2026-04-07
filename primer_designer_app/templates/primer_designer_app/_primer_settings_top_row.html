@@ -1,4 +1,7 @@
-{# Top row: Reference genome, Use case, Primer settings. Expects parent <form id="settings"> and matching POST field names. #}
+{# Top row: Reference genome, Use case, Primer settings, Amplicon check. Expects parent <form id="settings"> and snv_indels_script.js. #}
+{% load static %}
+<link rel="stylesheet" href = "{% static 'primer_designer_app/settings_top_row.css' %}">
+
 <div class="primer-settings-top-row">
     <div class="settings-container">
         <h2 class="settings-heading-help" title="Choose GRCh37 (hg19) or GRCh38 (hg38). Genomic coordinates and variant interpretation must match this assembly; Primer3 and in-silico amplicon checks use the reference sequence for the selected build.">Reference genome</h2>
@@ -41,5 +44,23 @@
             <input type="hidden" id="product_size_max" name="product_size_max" value="800" form="settings" data-primer-field="default">
         </div>
         <button type="button" class="primer-custom-open-btn" id="primer-custom-open-btn" onclick="openPrimerCustomDialog()">Edit primer parameters…</button>
+    </div>
+
+    <div class="settings-container settings-container--amplicon-check">
+        <h2 class="settings-heading-help" title="Optional search for additional PCR products (Dicey) in the reference genome or transcriptome. None skips this step. Genome uses the primary assembly FASTA; Transcriptome uses the transcript FASTA.">Amplicon check</h2>
+        <div class="UseCaseDiv" style="display:flex; justify-content: center">
+            <div class="button-cover amplicon-button-cover">
+                <div class="button r" id="amplicon-button" data-position="0" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="2" aria-valuenow="0" aria-valuetext="None">
+                    <div class="knobs amplicon-knobs">
+                        <span class="amplicon-pill"></span>
+                        <button type="button" class="amplicon-opt" data-idx="0" tabindex="-1">None</button>
+                        <button type="button" class="amplicon-opt" data-idx="1" tabindex="-1">Genome</button>
+                        <button type="button" class="amplicon-opt" data-idx="2" tabindex="-1">Transcriptome</button>
+                    </div>
+                    <div class="layer"></div>
+                </div>
+            </div>
+        </div>
+        <input type="hidden" name="amplicon-check" id="amplicon-check-hidden" value="none" form="settings">
     </div>
 </div>

@@ -1,0 +1,254 @@
+.primer-settings-top-row {
+    display: flex;
+    justify-content: center;
+    margin-top: 0.5em;
+    flex-wrap: wrap;
+}
+
+.settings-container--amplicon-check {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Amplicon check: same toggle family as Reference genome / Use case (3 positions); wide track so each label stays one line. */
+.button-cover.amplicon-button-cover {
+    width: min(100%, 38em);
+    min-width: 28em;
+    height: 3em;
+}
+
+#amplicon-button.button,
+#amplicon-button.button.r {
+    overflow: hidden;
+}
+
+#amplicon-button .knobs.amplicon-knobs {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: stretch;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+}
+
+#amplicon-button .amplicon-pill {
+    position: absolute;
+    top: 0.08em;
+    bottom: 0.08em;
+    width: calc((100% - 0.7em) / 3);
+    box-sizing: border-box;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-accent);
+    box-shadow: 0 0em 1em -0.5em #334747;
+    z-index: 1;
+    transition: 0.4s cubic-bezier(0.18, 0.89, 0.35, 1.15) left;
+}
+
+#amplicon-button[data-position="0"] .amplicon-pill {
+    left: 0.35em;
+}
+
+#amplicon-button[data-position="1"] .amplicon-pill {
+    left: calc(0.35em + (100% - 0.7em) / 3);
+}
+
+#amplicon-button[data-position="2"] .amplicon-pill {
+    left: calc(0.35em + 2 * (100% - 0.7em) / 3);
+}
+
+#amplicon-button .amplicon-opt {
+    flex: 1 1 0;
+    min-width: 0;
+    position: relative;
+    z-index: 2;
+    margin: 0;
+    padding: 0.2em 0.35em;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: var(--font-main);
+    font-size: clamp(0.85em, 2.35vmin, 1.1em);
+    font-weight: 500;
+    line-height: 1.2;
+    color: color(srgb 0.6649 0.8122 0.84);
+    white-space: nowrap;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+#amplicon-button[data-position="0"] .amplicon-opt[data-idx="0"],
+#amplicon-button[data-position="1"] .amplicon-opt[data-idx="1"],
+#amplicon-button[data-position="2"] .amplicon-opt[data-idx="2"] {
+    color: white;
+    font-weight: 600;
+}
+
+#amplicon-button .amplicon-opt:hover {
+    color: color(srgb 0.35 0.55 0.58);
+}
+
+#amplicon-button[data-position="0"] .amplicon-opt[data-idx="0"]:hover,
+#amplicon-button[data-position="1"] .amplicon-opt[data-idx="1"]:hover,
+#amplicon-button[data-position="2"] .amplicon-opt[data-idx="2"]:hover {
+    color: white;
+}
+
+#amplicon-button[data-position="0"] .layer {
+    background-color: #ebf7fc;
+}
+
+#amplicon-button[data-position="1"] .layer,
+#amplicon-button[data-position="2"] .layer {
+    background-color: #fcebeb;
+}
+
+#amplicon-button .layer {
+    transition: background-color 0.3s ease;
+}
+
+#amplicon-button:focus-visible {
+    outline: 2px solid color(srgb 0.35 0.55 0.58);
+    outline-offset: 3px;
+    border-radius: var(--radius-md);
+}
+
+.identifier-two-col-wrap--reference-only {
+    max-width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Reference genome / Use case / Primer settings: native tooltip on heading (title) */
+.settings-heading-help {
+    cursor: help;
+    border-bottom: 1px dotted transparent;
+}
+
+.settings-heading-help:hover {
+    border-bottom-color: color(srgb 0.35 0.55 0.58);
+}
+
+.primer-custom-open-btn {
+    margin-top: 0.5em;
+    padding: 0.35em 0.9em;
+    cursor: pointer;
+    border-radius: 6px;
+    border: 1px solid color(srgb 0.35 0.55 0.58);
+    background: color(srgb 0.9068 0.9645 0.975);
+    color: color(srgb 0.15 0.4 0.45);
+    font-weight: 600;
+    font-family: var(--font-main);
+}
+
+.primer-custom-open-btn:hover {
+    background: #cfecf1;
+}
+
+.primer-default-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+}
+
+.primer-custom-dialog {
+    border: none;
+    border-radius: 10px;
+    padding: 0;
+    max-width: min(96vw, 720px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+}
+
+.primer-custom-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.primer-custom-dialog-panel {
+    position: relative;
+    padding: 1.1em 1.25em 1em;
+    max-height: 88vh;
+    overflow: auto;
+    box-sizing: border-box;
+}
+
+.primer-dialog-x {
+    position: absolute;
+    top: 0.3em;
+    right: 0.4em;
+    border: none;
+    background: transparent;
+    font-size: 1.5em;
+    line-height: 1;
+    cursor: pointer;
+    color: #555;
+}
+
+.primer-dialog-title {
+    margin: 0 1.8em 0.5em 0;
+    font-size: 1.2em;
+    color: color(srgb 0.2 0.45 0.5);
+}
+
+.primer-dialog-intro {
+    margin: 0 0 1em;
+    font-size: 0.9em;
+    line-height: 1.45;
+    color: #444;
+}
+
+.primer-dialog-sub {
+    margin: 1em 0 0.4em;
+    font-size: 1.05em;
+    color: color(srgb 0.25 0.48 0.55);
+}
+
+.primer-dialog-hint {
+    margin: 0 0 0.5em;
+    font-size: 0.85em;
+    color: #555;
+}
+
+.primer-dialog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.5em 1em;
+    margin-bottom: 0.5em;
+}
+
+.primer-dialog-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+    font-size: 0.82em;
+    text-align: left;
+}
+
+.primer-dialog-grid input {
+    max-width: 100%;
+    padding: 0.25em 0.4em;
+    font-size: 1em;
+}
+
+.primer-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1em;
+}
+
+.primer-dialog-done {
+    padding: 0.4em 1.2em;
+    cursor: pointer;
+    border-radius: 6px;
+    border: 1px solid color(srgb 0.35 0.55 0.58);
+    background: color(srgb 0.5338 0.7473 0.785);
+    color: white;
+    font-weight: 600;
+    font-family: var(--font-main);
+}

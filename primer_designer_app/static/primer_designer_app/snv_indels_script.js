@@ -33,6 +33,52 @@ function updateUsecase() {
     console.log("Selected Usecase:", hiddenInput.value);
 }
 
+const AMP_CHECK_VALUES = ["none", "genome", "transcriptome"];
+const AMP_CHECK_LABELS = ["None", "Genome", "Transcriptome"];
+
+function updateAmpliconCheckAria() {
+    const root = document.getElementById("amplicon-button");
+    if (!root) return;
+    const i = parseInt(root.dataset.position, 10);
+    const idx = Number.isNaN(i) ? 0 : i;
+    root.setAttribute("aria-valuenow", String(idx));
+    root.setAttribute("aria-valuetext", AMP_CHECK_LABELS[idx] || "None");
+}
+
+function setAmpliconCheck(value) {
+    const idx = AMP_CHECK_VALUES.indexOf(value);
+    const i = idx >= 0 ? idx : 0;
+    const root = document.getElementById("amplicon-button");
+    const hidden = document.getElementById("amplicon-check-hidden");
+    if (root) root.dataset.position = String(i);
+    if (hidden) hidden.value = AMP_CHECK_VALUES[i];
+    updateAmpliconCheckAria();
+}
+
+function initAmpliconToggle() {
+    const root = document.getElementById("amplicon-button");
+    if (!root) return;
+    root.querySelectorAll(".amplicon-opt").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            const idx = parseInt(btn.dataset.idx, 10);
+            if (!Number.isNaN(idx) && idx >= 0 && idx < AMP_CHECK_VALUES.length) {
+                setAmpliconCheck(AMP_CHECK_VALUES[idx]);
+            }
+        });
+    });
+    root.addEventListener("keydown", (e) => {
+        const cur = parseInt(root.dataset.position, 10) || 0;
+        if (e.key === "ArrowLeft" && cur > 0) {
+            e.preventDefault();
+            setAmpliconCheck(AMP_CHECK_VALUES[cur - 1]);
+        } else if (e.key === "ArrowRight" && cur < AMP_CHECK_VALUES.length - 1) {
+            e.preventDefault();
+            setAmpliconCheck(AMP_CHECK_VALUES[cur + 1]);
+        }
+    });
+}
+
 function syncPrimerFieldDisabledState() {
     const custom =
         document.getElementById("primer-settings") &&
@@ -86,11 +132,8 @@ const IndelInst = document.getElementById("IndelIns");
 const NewBase =  document.getElementById("new_base");
 const sequenceField = document.getElementById("sequence");
 const referenceSelectors = Array.from(document.getElementsByName("Reference"));
-const IdContextSelectors= Array.from(document.getElementsByName("context"));
 const cdnaSelector = document.getElementById("cdna");
 const cdsSelector = document.getElementById("cds");
-const IdGenomeSelector = document.getElementById("genomic");
-const IdTranscriptomeSelector = document.getElementById("transcriptomic");
 const ID_hover_label = document.getElementById("ID-hover-label");
 const Genomic_hover_label = document.getElementById("Genomic-hover-label");
 const Sequence_hover_label = document.getElementById("Sequence-hover-label");
@@ -99,12 +142,12 @@ const reference_genome_switch = document.getElementById("reference-genome-switch
 const use_case_switch = document.getElementById("usecase-switch");
 const switches = [reference_genome_switch, use_case_switch];
 
-const IdAlwaysRequired = [transcriptIDField, cdnaSelector, cdsSelector, IdGenomeSelector, IdTranscriptomeSelector];
+const IdTranscriptBase = [transcriptIDField, cdnaSelector, cdsSelector];
 const IdSNV= [rel_pos_Field, IdNewBase];
 const IdSNVList = document.querySelector("#IdSNV").classList;
 const IdInDel = [IdIndelStart, IdIndelEnd, IdIndelInst];
 const IdInDelList = document.querySelector("#IdInDel").classList;
-const idInputFields = [...IdAlwaysRequired, ...IdSNV, ...IdInDel];
+const idInputFields = [...IdTranscriptBase, ...IdSNV, ...IdInDel];
 
 const SNV = [genom_pos_Field,NewBase];
 const SNVList = document.querySelector("#SNV").classList;
@@ -138,6 +181,7 @@ function clearAllInputs() {
     syncPrimerFieldDisabledState();
     document.getElementById("reference-genome").value = "GRCh37"; // Standardwert für Reference Genome
     document.getElementById("usecase").value = "PCR"; // Standardwert für Use Case
+    setAmpliconCheck("none");
     const labels = [ID_hover_label.classList,Genomic_hover_label.classList, Sequence_hover_label.classList]
     labels.forEach(label => label.remove("hover-label-highlight"))
 
@@ -163,7 +207,7 @@ function loadExampleData() {
         document.getElementById("IdIndelEnd").value = "1244";
         document.getElementById("IdIndelIns").value = "GGTC";// Benutzerdefinierte Parameter ausblenden
         document.getElementById("cds").checked = true;
-        document.getElementById("genomic").checked = true;
+        setAmpliconCheck("genome");
         handleInputChange('Transcript-ID');
     }
     else{
@@ -226,7 +270,7 @@ function handleInputChange(inputId) {
         disableInputField([sequenceField]);
         sequence.add("grey-transparent");
         position.add("grey-transparent");
-        IdAlwaysRequired.forEach(field => field.required = true);
+        IdTranscriptBase.forEach(field => field.required = true);
         if(isFieldGroupFilled(IdSNV)){
             IdInDelList.add("grey-transparent");
             IdInDel.forEach(field => field.required = false);
@@ -279,11 +323,11 @@ function handleInputChange(inputId) {
         [identifier, position, sequence, IdInDelList, IdSNVList, InDelList, SNVList].forEach(container => container.remove("grey-transparent"));
         IdInDel.forEach(field => field.required = false);
         IdSNV.forEach(field => field.required = false);
-        IdAlwaysRequired.forEach(field => field.required = false);
-        IdContextSelectors.forEach(radio => radio.checked = false);
+        IdTranscriptBase.forEach(field => field.required = false);
         referenceSelectors.forEach(radio => radio.checked = false);
         InDel.forEach(field => field.required = false);
         SNV.forEach(field => field.required = false);
+        setAmpliconCheck("none");
     }
 
     ID_hover_label.classList.toggle("hover-label-highlight", isFieldGroupFilled(idInputFields));
@@ -298,6 +342,8 @@ function handleInputChange(inputId) {
 
 document.addEventListener("DOMContentLoaded", function () {
     syncPrimerFieldDisabledState();
+    updateAmpliconCheckAria();
+    initAmpliconToggle();
     const dlg = document.getElementById("primer-custom-dialog");
     if (dlg) {
         dlg.addEventListener("click", function (e) {

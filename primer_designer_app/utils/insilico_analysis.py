@@ -42,6 +42,8 @@ def insilico_reference_description(primer_settings) -> str:
     """
     Short sentence for the amplicon modal: which reference file and mode Dicey used.
     """
+    if not getattr(primer_settings, 'do_insilico_pcr', False):
+        return ''
     paths = prepare_context_path(primer_settings)
     assembly = primer_settings.reference_genome
     if primer_settings.context == 'genomic':
