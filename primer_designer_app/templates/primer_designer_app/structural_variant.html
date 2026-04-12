@@ -1,0 +1,179 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% include "primer_designer_app/header.html" %}
+</head>
+<body>
+    <h1>Structural Variant Primer Design</h1>
+
+    {% if error_message %}
+        <div style="color: red; margin-bottom: 1em;">
+            {{ error_message }}
+        </div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+
+        <input type="hidden" name="usecase" value="qPCR">
+
+        <h2>Structural variant input</h2>
+
+        <label for="reference-genome">Reference genome</label>
+        <select id="reference-genome" name="reference-genome">
+            <option value="GRCh37" {% if form_data.reference_genome == "GRCh37" %}selected{% endif %}>GRCh37</option>
+            <option value="GRCh38" {% if form_data.reference_genome == "GRCh38" %}selected{% endif %}>GRCh38</option>
+        </select>
+
+        <br><br>
+
+        <label for="sv_chromosome">Chromosome</label>
+        <input
+            type="text"
+            id="sv_chromosome"
+            name="sv_chromosome"
+            placeholder="chr12"
+            value="{{ form_data.sv_chromosome|default:'' }}"
+        >
+
+        <br><br>
+
+        <label for="sv_start_position">Start position</label>
+        <input
+            type="number"
+            id="sv_start_position"
+            name="sv_start_position"
+            placeholder="23949296"
+            value="{{ form_data.sv_start_position|default:'' }}"
+        >
+
+        <br><br>
+
+        <label for="sv_end_position">End position</label>
+        <input
+            type="number"
+            id="sv_end_position"
+            name="sv_end_position"
+            placeholder="24102946"
+            value="{{ form_data.sv_end_position|default:'' }}"
+        >
+
+        <br><br>
+
+        <label for="sv_type">SV type</label>
+        <select id="sv_type" name="sv_type">
+            <option value="deletion" {% if form_data.sv_type == "deletion" %}selected{% endif %}>Deletion</option>
+            <option value="duplication" {% if form_data.sv_type == "duplication" %}selected{% endif %}>Duplication</option>
+        </select>
+
+        <h2>Primer settings</h2>
+
+        <label for="tm">Optimal Tm</label>
+        <input
+            type="number"
+            id="tm"
+            name="tm"
+            value="{{ form_data.tm|default:'60' }}"
+        >
+
+        <br><br>
+
+        <label for="gc_content">Optimal GC content</label>
+        <input
+            type="number"
+            id="gc_content"
+            name="gc_content"
+            value="{{ form_data.gc_content|default:'50' }}"
+        >
+
+        <br><br>
+
+        <label for="product_size_min">Product size min</label>
+        <input
+            type="number"
+            id="product_size_min"
+            name="product_size_min"
+            value="{{ form_data.product_size_min|default:'100' }}"
+        >
+
+        <br><br>
+
+        <label for="product_size_max">Product size max</label>
+        <input
+            type="number"
+            id="product_size_max"
+            name="product_size_max"
+            value="{{ form_data.product_size_max|default:'300' }}"
+        >
+
+        <br><br>
+
+        <label for="max_poly_X">Max poly X</label>
+        <input
+            type="number"
+            id="max_poly_X"
+            name="max_poly_X"
+            value="{{ form_data.max_poly_X|default:'4' }}"
+        >
+
+        <br><br>
+
+        <button type="submit">Design primers</button>
+    </form>
+
+    {% if sv_results %}
+        <hr>
+        <h2>Results</h2>
+
+        {% for label, result in sv_results.items %}
+            <div style="border: 1px solid #ccc; padding: 1em; margin-bottom: 1em;">
+                <h3>{{ label }}</h3>
+
+                <p>
+                    <strong>Window:</strong>
+                    {{ result.design_window.window_start_genomic }} -
+                    {{ result.design_window.window_end_genomic }}
+                </p>
+
+                {% if result.best_primer_pair %}
+                    <p><strong>Forward primer:</strong> {{ result.best_primer_pair.left_seq }}</p>
+                    <p><strong>Reverse primer:</strong> {{ result.best_primer_pair.right_seq }}</p>
+                    <p><strong>Penalty:</strong> {{ result.best_primer_pair.penalty }}</p>
+                    <p><strong>Product size:</strong> {{ result.best_primer_pair.product_size }}</p>
+
+                    <p>
+                        <strong>Forward genomic position:</strong>
+                        {{ result.genomic_positions.forward_start }} -
+                        {{ result.genomic_positions.forward_end }}
+                    </p>
+
+                    <p>
+                        <strong>Reverse genomic position:</strong>
+                        {{ result.genomic_positions.reverse_start }} -
+                        {{ result.genomic_positions.reverse_end }}
+                    </p>
+
+                    {% if result.best_primer_pair.tm %}
+                        <p>
+                            <strong>Primer Tm values:</strong>
+                            F {{ result.best_primer_pair.tm.0 }} /
+                            R {{ result.best_primer_pair.tm.1 }}
+                        </p>
+                    {% endif %}
+
+                    {% if result.best_primer_pair.gc %}
+                        <p>
+                            <strong>Primer GC values:</strong>
+                            F {{ result.best_primer_pair.gc.0 }} /
+                            R {{ result.best_primer_pair.gc.1 }}
+                        </p>
+                    {% endif %}
+                {% else %}
+                    <p>No primer pair found for this window.</p>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% endif %}
+</body>
+</html>
