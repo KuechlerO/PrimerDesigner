@@ -3,8 +3,13 @@
 <html lang="en">
 <head>
     {% include "primer_designer_app/header.html" %}
+    <script defer src="{% static 'primer_designer_app/snv_indels_script.js' %}"></script>
 </head>
 <body>
+    {% include "primer_designer_app/body_nav.html" %}
+
+    <div class="curved"></div>
+
     <h1>Structural Variant Primer Design</h1>
 
     {% if error_message %}
@@ -13,20 +18,13 @@
         </div>
     {% endif %}
 
-    <form method="post">
+    <form method="post" id="settings">
         {% csrf_token %}
-
         <input type="hidden" name="usecase" value="qPCR">
 
+        {% include "primer_designer_app/_primer_settings_top_row_sv.html" %}
+
         <h2>Structural variant input</h2>
-
-        <label for="reference-genome">Reference genome</label>
-        <select id="reference-genome" name="reference-genome">
-            <option value="GRCh37" {% if form_data.reference_genome == "GRCh37" %}selected{% endif %}>GRCh37</option>
-            <option value="GRCh38" {% if form_data.reference_genome == "GRCh38" %}selected{% endif %}>GRCh38</option>
-        </select>
-
-        <br><br>
 
         <label for="sv_chromosome">Chromosome</label>
         <input
@@ -67,59 +65,11 @@
             <option value="duplication" {% if form_data.sv_type == "duplication" %}selected{% endif %}>Duplication</option>
         </select>
 
-        <h2>Primer settings</h2>
-
-        <label for="tm">Optimal Tm</label>
-        <input
-            type="number"
-            id="tm"
-            name="tm"
-            value="{{ form_data.tm|default:'60' }}"
-        >
-
         <br><br>
 
-        <label for="gc_content">Optimal GC content</label>
-        <input
-            type="number"
-            id="gc_content"
-            name="gc_content"
-            value="{{ form_data.gc_content|default:'50' }}"
-        >
+        {% include "primer_designer_app/_primer_custom_dialog_sv.html" %}
 
-        <br><br>
-
-        <label for="product_size_min">Product size min</label>
-        <input
-            type="number"
-            id="product_size_min"
-            name="product_size_min"
-            value="{{ form_data.product_size_min|default:'100' }}"
-        >
-
-        <br><br>
-
-        <label for="product_size_max">Product size max</label>
-        <input
-            type="number"
-            id="product_size_max"
-            name="product_size_max"
-            value="{{ form_data.product_size_max|default:'300' }}"
-        >
-
-        <br><br>
-
-        <label for="max_poly_X">Max poly X</label>
-        <input
-            type="number"
-            id="max_poly_X"
-            name="max_poly_X"
-            value="{{ form_data.max_poly_X|default:'4' }}"
-        >
-
-        <br><br>
-
-        <button type="submit">Design primers</button>
+        <button type="submit" class="submit-button">Design primers</button>
     </form>
 
     {% if sv_results %}

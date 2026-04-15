@@ -1,0 +1,46 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'primer_designer_app/settings_top_row.css' %}">
+
+<div class="primer-settings-top-row">
+    <div class="settings-container">
+        <h2 class="settings-heading-help" title="Choose GRCh37 (hg19) or GRCh38 (hg38). Genomic coordinates and variant interpretation must match this assembly.">
+            Reference genome
+        </h2>
+        <div class="button-cover">
+            <div class="button r" id="genome-button">
+                <input
+                    type="checkbox"
+                    class="checkbox"
+                    id="reference-genome-switch"
+                    onchange="updateReferenceGenome()"
+                    {% if form_data.reference_genome == "GRCh38" %}checked{% endif %}
+                />
+                <div class="knobs">
+                    <span></span>
+                </div>
+                <div class="layer"></div>
+            </div>
+        </div>
+        <input
+            type="hidden"
+            id="reference-genome"
+            name="reference-genome"
+            value="{{ form_data.reference_genome|default:'GRCh37' }}"
+            form="settings"
+        >
+    </div>
+
+    <div class="settings-container">
+        <h2 class="settings-heading-help" title="Adjust primer design constraints such as melting temperature, GC content, product size, and quality parameters.">
+            Primer settings
+        </h2>
+        <button
+            type="button"
+            class="primer-custom-open-btn"
+            id="primer-custom-open-btn"
+            onclick="openPrimerCustomDialog()"
+        >
+            Primer parameters…
+        </button>
+    </div>
+</div>
