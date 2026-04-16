@@ -7,7 +7,6 @@ repos:
       - id: trailing-whitespace
       - id: check-case-conflict
       - id: detect-private-key
-      - id: double-quote-string-fixer
       - id: name-tests-test
       - id: pretty-format-json
       - id: requirements-txt-fixer
@@ -15,3 +14,15 @@ repos:
       - id: check-yaml
       - id: check-toml
       - id: check-xml
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.3.0
+    hooks:
+    - id: flake8
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v2.3.3
+    hooks:
+    - id: autoflake
+  - repo: https://github.com/psf/black
+    rev: 26.3.1
+    hooks:
+    - id: black
