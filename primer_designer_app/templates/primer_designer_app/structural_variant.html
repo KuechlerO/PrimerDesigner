@@ -1,0 +1,168 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% include "primer_designer_app/header.html" %}
+    <script defer src="{% static 'primer_designer_app/snv_indels_script.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'primer_designer_app/indel_results.css' %}">
+</head>
+<body>
+    {% include "primer_designer_app/body_nav.html" %}
+
+    <div class="curved"></div>
+
+    <h1>Structural Variant Primer Design</h1>
+
+    {% if error_message %}
+        <div style="color: red; margin-bottom: 1em;">
+            {{ error_message }}
+        </div>
+    {% endif %}
+
+    <form method="post" id="settings">
+        {% csrf_token %}
+        <input
+            type="hidden"
+            name="usecase"
+            id="usecase-hidden"
+            value="{{ form_data.usecase|default:'qPCR' }}"
+        >
+        {% include "primer_designer_app/_primer_settings_top_row.html" %}
+
+        <h2>Structural variant input</h2>
+
+        <label for="sv_chromosome">Chromosome</label>
+        <input
+            type="text"
+            id="sv_chromosome"
+            name="sv_chromosome"
+            placeholder="chr12"
+            value="{{ form_data.sv_chromosome|default:'' }}"
+        >
+
+        <br><br>
+
+        <label for="sv_start_position">Start position</label>
+        <input
+            type="number"
+            id="sv_start_position"
+            name="sv_start_position"
+            placeholder="23949296"
+            value="{{ form_data.sv_start_position|default:'' }}"
+        >
+
+        <br><br>
+
+        <label for="sv_end_position">End position</label>
+        <input
+            type="number"
+            id="sv_end_position"
+            name="sv_end_position"
+            placeholder="24102946"
+            value="{{ form_data.sv_end_position|default:'' }}"
+        >
+
+        <br><br>
+
+        <label for="sv_type">SV type</label>
+        <select id="sv_type" name="sv_type">
+            <option value="deletion" {% if form_data.sv_type == "deletion" %}selected{% endif %}>Deletion</option>
+            <option value="duplication" {% if form_data.sv_type == "duplication" %}selected{% endif %}>Duplication</option>
+        </select>
+
+        <br><br>
+
+        {% include "primer_designer_app/_primer_custom_dialog.html" %}
+
+        <button type="submit" class="submit-button">Design primers</button>
+    </form>
+
+    {% if sv_results %}
+        <main>
+            <div style="display:flex; margin:0.5em; align-items: baseline;">
+                <h1 style="margin:0;">Structural Variant Primer Results</h1>
+            </div>
+
+            {% for label, result in sv_results.items %}
+                <section style="margin-bottom: 2em;">
+                    <div style="display:flex; margin:0.5em 0; align-items: baseline; gap: 1em;">
+                        <h2 style="margin:0;">{{ label | title }}</h2>
+                        <p class="hgvs-info" style="margin:0;">
+                            Window: {{ result.design_window.window_start_genomic }} - {{ result.design_window.window_end_genomic }}
+                        </p>
+                    </div>
+
+                    {% if result.primer_rows %}
+                        <div class="output-table-div">
+                            <table style="width: 100%;" class="output-table">
+                                <thead>
+                                    <tr>
+                                        <th class="output-th">Rank</th>
+                                        <th class="output-th">Primer Pair</th>
+                                        <th class="output-th">Penalty</th>
+                                        <th class="output-th">Product Size</th>
+                                        <th class="output-th">Primer Tm</th>
+                                        <th class="output-th">Primer GC</th>
+                                        <th class="output-th">Forward Position</th>
+                                        <th class="output-th">Reverse Position</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in result.primer_rows %}
+                                        <tr class="selectable-row {% if forloop.first %}selected{% endif %}">
+                                            <td style="font-size: 1.1em;">
+                                                {% if forloop.first %}
+                                                    Best
+                                                {% else %}
+                                                    {{ forloop.counter }}
+                                                {% endif %}
+                                            </td>
+                                            <td style="text-align: left; padding: 0.4em 0.5em; font-size: 1.05em;">
+                                                {{ row.pair.left_seq }} + {{ row.pair.right_seq }}
+                                            </td>
+                                            <td style="font-size: 1.1em;">{{ row.pair.penalty }}</td>
+                                            <td style="font-size: 1.1em;">{{ row.pair.product_size }} bp</td>
+                                            <td style="font-size: 1.1em;">
+                                                {% if row.pair.tm %}
+                                                    {{ row.pair.tm.0 }}, {{ row.pair.tm.1 }} °C
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td style="font-size: 1.1em;">
+                                                {% if row.pair.gc %}
+                                                    {{ row.pair.gc.0 }}, {{ row.pair.gc.1 }} %
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td style="font-size: 1.1em;">
+                                                {{ row.genomic_positions.forward_start }} - {{ row.genomic_positions.forward_end }}
+                                            </td>
+                                            <td style="font-size: 1.1em;">
+                                                {{ row.genomic_positions.reverse_start }} - {{ row.genomic_positions.reverse_end }}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="output-table-div">
+                            <table style="width: 100%;" class="output-table">
+                                <tbody>
+                                    <tr>
+                                        <td style="font-size: 1.1em; text-align: center; padding: 1em;">
+                                            No primer pair found for this window.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                </section>
+            {% endfor %}
+        </main>
+    {% endif %}
+</body>
+</html>
