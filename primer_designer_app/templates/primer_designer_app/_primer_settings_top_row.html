@@ -7,16 +7,17 @@
         <h2 class="settings-heading-help" title="Choose GRCh37 (hg19) or GRCh38 (hg38). Genomic coordinates and variant interpretation must match this assembly; Primer3 and in-silico amplicon checks use the reference sequence for the selected build.">Reference genome</h2>
         <div class="button-cover">
             <div class="button r" id="genome-button">
-                <input type="checkbox" class="checkbox" id="reference-genome-switch" onchange="updateReferenceGenome()"/>
+                <input type="checkbox" class="checkbox" id="reference-genome-switch" onchange="updateReferenceGenome()" {% if form_data.reference_genome == "GRCh38" %}checked{% endif %}/>
                 <div class="knobs">
                 <span></span>
                 </div>
                     <div class="layer"></div>
             </div>
         </div>
-        <input type="hidden" id="reference-genome" name="reference-genome" value="GRCh37" form="settings">
+        <input type="hidden" id="reference-genome" name="reference-genome" value="{{ form_data.reference_genome|default:'GRCh37' }}" form="settings">
     </div>
 
+    {% if not is_structural_variant %}
     <div class="settings-container settings-container--amplicon-check">
         <h2 class="settings-heading-help" title="Optional search for additional PCR products (Dicey) in the reference genome or transcriptome. None skips this step. Genome uses the primary assembly FASTA file; Transcriptome uses the transcripts FASTA file. See README.md for more information.">Amplicon check</h2>
         <div class="UseCaseDiv" style="display:flex; justify-content: center">
@@ -34,6 +35,7 @@
         </div>
         <input type="hidden" name="amplicon-check" id="amplicon-check-hidden" value="none" form="settings">
     </div>
+    {% endif %}
 
     <div class="settings-container">
         <h2 class="settings-heading-help" title="Primer3 constraints (melting temperature, GC content, homopolymer limits, product size) use application defaults for the selected use case until you change them. Open Primer parameters to view or edit values for this submission.">Primer settings</h2>
