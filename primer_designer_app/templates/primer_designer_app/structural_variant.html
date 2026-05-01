@@ -3,15 +3,12 @@
 <html lang="en">
 <head>
     {% include "primer_designer_app/header.html" %}
-    <script defer src="{% static 'primer_designer_app/snv_indels_script.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'primer_designer_app/primer_overview.css' %}">
     <link rel="stylesheet" href="{% static 'primer_designer_app/indel_results.css' %}">
 </head>
-<body>
+<body class="body-snv-indels">
     {% include "primer_designer_app/body_nav.html" %}
-
-    <div class="curved"></div>
-
-    <h1>Structural Variant Primer Design</h1>
+    {% include "primer_designer_app/_prim3_param_overview.html" %}
 
     {% if error_message %}
         <div style="color: red; margin-bottom: 1em;">
@@ -21,61 +18,65 @@
 
     <form method="post" id="settings">
         {% csrf_token %}
-        <input
-            type="hidden"
-            name="usecase"
-            id="usecase-hidden"
-            value="{{ form_data.usecase|default:'qPCR' }}"
-        >
         {% include "primer_designer_app/_primer_settings_top_row.html" %}
 
-        <h2>Structural variant input</h2>
+        <div id="in">
 
-        <label for="sv_chromosome">Chromosome</label>
-        <input
-            type="text"
-            id="sv_chromosome"
-            name="sv_chromosome"
-            placeholder="chr12"
-            value="{{ form_data.sv_chromosome|default:'' }}"
-        >
+            <!-- 1. Genomic Position -->
+            <section id="Structural_Variant">
+                <div id="Genomic-hover-label" class="hover-label">Via genomic position</div>
+                <div class="info-icon">?</div>
+                <div class="info-overlay">
+                    <ul>
+                        <li class="info-li" style="list-style: none;"><strong>Format/Info:</strong></li>
+                        <li class="info-li">Chromosome should match your selected reference genome (e.g. <span style="color: color(srgb 0.095 0.4408 0.5);">chr12</span>).</li>
+                        <li class="info-li">Start/end define the affected interval in genomic coordinates.</li>
+                        <li class="info-li">Choose deletion or duplication.</li>
+                    </ul>
+                </div>
 
-        <br><br>
+                <h2>Structural Variant: Region of interest</h2>
 
-        <label for="sv_start_position">Start position</label>
-        <input
-            type="number"
-            id="sv_start_position"
-            name="sv_start_position"
-            placeholder="23949296"
-            value="{{ form_data.sv_start_position|default:'' }}"
-        >
+                <div class="dual_input" style="margin-bottom: 0.6em;">
+                    <div class="column">Genomic range</div>
+                    <div class="second_column" style="width: 80%;">
+                        <input
+                            type="text"
+                            id="sv_chromosome"
+                            name="sv_chromosome"
+                            placeholder="Chromosome (e.g. chr12)"
+                            value="{{ form_data.sv_chromosome|default:'' }}"
+                            style="width: 100%;">
+                        <input
+                            type="text"
+                            id="sv_start_position"
+                            name="sv_start_position"
+                            placeholder="Start position (e.g. 20000000)"
+                            value="{{ form_data.sv_start_position|default:'' }}"
+                            style="width: 100%;">
+                        <input
+                            type="text"
+                            id="sv_end_position"
+                            name="sv_end_position"
+                            placeholder="End position (e.g. 21000000)"
+                            value="{{ form_data.sv_end_position|default:'' }}"
+                            style="width: 100%; margin-top: 0.5em;">
+                    </div>
+                </div>
+            </section>
 
-        <br><br>
-
-        <label for="sv_end_position">End position</label>
-        <input
-            type="number"
-            id="sv_end_position"
-            name="sv_end_position"
-            placeholder="24102946"
-            value="{{ form_data.sv_end_position|default:'' }}"
-        >
-
-        <br><br>
-
-        <label for="sv_type">SV type</label>
-        <select id="sv_type" name="sv_type">
-            <option value="deletion" {% if form_data.sv_type == "deletion" %}selected{% endif %}>Deletion</option>
-            <option value="duplication" {% if form_data.sv_type == "duplication" %}selected{% endif %}>Duplication</option>
-        </select>
-
-        <br><br>
+        </div>
 
         {% include "primer_designer_app/_primer_custom_dialog.html" %}
-
-        <button type="submit" class="submit-button">Design primers</button>
     </form>
+
+    <div class="snv-submit-row">
+        <button type="button" class="example-button" onclick="loadStructuralVariantExample()">Load Example</button>
+        <button type="button" class="reset-button" onclick="clearStructuralVariantInputs()">Reset</button>
+        <button type="submit" class="submit-button" form="settings">Generate Primers</button>
+    </div>
+
+    {% include "primer_designer_app/_loading_overlay.html" %}
 
     {% if sv_results %}
         <main>
@@ -164,5 +165,8 @@
             {% endfor %}
         </main>
     {% endif %}
+    <script src="{% static 'primer_designer_app/primer_params_utils.js' %}"></script>
+    <script src="{% static 'primer_designer_app/snv_indels_script.js' %}"></script>
+    <script src="{% static 'primer_designer_app/structural_variant_script.js' %}"></script>
 </body>
 </html>

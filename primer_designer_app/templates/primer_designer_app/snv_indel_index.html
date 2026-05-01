@@ -1,28 +1,14 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="de">
-{% include "primer_designer_app/header.html" %}
-<link rel="stylesheet" href="{% static 'primer_designer_app/primer_overview.css' %}">
+<head>
+    {% include "primer_designer_app/header.html" %}
+    <link rel="stylesheet" href="{% static 'primer_designer_app/primer_overview.css' %}">
+</head>
 <body class="body-snv-indels">
     {% include "primer_designer_app/body_nav.html" %}
-    <aside class="primer-param-overview" id="primer-param-overview" aria-label="Current primer parameters">
-        <div class="primer-param-overview__head">
-            <h3 class="primer-param-overview__title">Primer parameters</h3>
-            <button type="button" class="primer-param-overview__edit" onclick="openPrimerCustomDialog()">Edit…</button>
-        </div>
-        <dl>
-            <dt>Target padding (bp / side)</dt>
-            <dd><span id="overview-target-padding">—</span></dd>
-            <dt>Product size (bp)</dt>
-            <dd><span id="overview-product-min">—</span> – <span id="overview-product-max">—</span></dd>
-            <dt>Optimal Tm</dt>
-            <dd><span id="overview-tm">—</span> °C</dd>
-            <dt>GC target</dt>
-            <dd><span id="overview-gc">—</span> %</dd>
-        </dl>
-    </aside>
+    {% include "primer_designer_app/_prim3_param_overview.html" %}
     <main>
-        <!-- <section class="curved"></section> -->
         <form id="settings" method="post" action="{% url 'primer_designer_app:snv_indel_primers_overview' %}" autocomplete="on">
             {% csrf_token %}
 
@@ -35,7 +21,8 @@
                     <div id="Genomic-hover-label" class="hover-label">Via genomic position</div>
                     <div class="info-icon">?</div>
                     <div class="info-overlay">
-                        <ul><li class="info-li" style="list-style: none;"><strong>Format/Info:</strong></li>
+                        <ul>
+                            <li class="info-li" style="list-style: none;"><strong>Format/Info:</strong></li>
                             <li class="info-li">Positions must correspond to the selected reference genome.</li>
                             <li class="info-li">For SNVs, the position refers to the exact location of the variant.</li>
                             <li class="info-li">For InDels, the two positions refer to the start and end position of the sequence region that is substituted with the given variant sequence.</li>
@@ -163,22 +150,9 @@
             <button type="submit" class="submit-button" form="settings">Generate Primers</button>
         </div>
 
-        <div id="loading-overlay">
-            <div class="loader-content">
-              <div class="spinner"></div>
-              <p>Data is being processed...</p>
-            </div>
-          </div>
-
-        <script>
-              window.addEventListener('pageshow', function(event) {
-                document.getElementById("loading-overlay").style.display = "none";
-              });
-            document.getElementById("settings").addEventListener("submit", function() {
-                document.getElementById("loading-overlay").style.display = "flex";
-            });
-        </script>
+        {% include "primer_designer_app/_loading_overlay.html" %}
     </main>
+    <script src="{% static 'primer_designer_app/primer_params_utils.js' %}"></script>
     <script src="{% static 'primer_designer_app/snv_indels_script.js' %}"></script>
 </body>
 </html>

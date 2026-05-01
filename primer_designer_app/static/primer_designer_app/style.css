@@ -349,7 +349,9 @@ div.column {
     flex: 1 1 auto;
 }
 
-input#IndelChrom, input#IndelStart, input#IndelEnd {
+input#IndelChrom, input#IndelStart, input#IndelEnd,
+input#IdIndelStart, input#IdIndelEnd, input#sv_chromosome,
+input#sv_chromosome, input#sv_start_position {
     width: 100%;
     padding-bottom: 0.4em;
     border: none;
@@ -357,19 +359,9 @@ input#IndelChrom, input#IndelStart, input#IndelEnd {
     box-sizing: border-box;
 }
 
-input#IndelStart, input#IndelEnd, input#IndelIns {
-    padding-top: 0.4em;
-}
-
-input#IdIndelStart, input#IdIndelEnd {
-    width: 100%;
-    padding-bottom: 0.4em;
-    border: none;
-    border-bottom: 1px solid #ccc;
-    box-sizing: border-box;
-}
-
-input#IdIndelEnd, input#IdIndelIns {
+input#IndelStart, input#IndelEnd, input#IndelIns,
+input#IdIndelEnd, input#IdIndelIns,
+input#sv_start_position, input#sv_end_position {
     padding-top: 0.4em;
 }
 
@@ -383,7 +375,7 @@ input#Position, input#genom_pos {
     font-family: var(--font-main);
 }
 
-input#new_base, input#IDnew_base {
+input#new_base, input#IDnew_base, input#sv_end_position {
     width: 35%;
     border: none;
     box-sizing: border-box;
@@ -463,7 +455,7 @@ select#primer-settings:hover {
     font-size: 1.1em;
 }
 
-#Identifier, #Genomic_Position, #Sequence {
+#Identifier, #Genomic_Position, #Sequence, #Structural_Variant {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -592,27 +584,6 @@ label, h2, .hover-label, .info-li {
     padding: 0 0.5em;
 }
 
-.curved {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 50em;
-    background: rgb(247, 254, 255);
-    z-index: -1;
-}
-
-.curved::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 2.5em;
-    background: rgb(215, 249, 251);
-    border-top-left-radius: 50% 100%;
-    border-top-right-radius: 50% 100%;
-}
 
 .ID_h2 {
     margin: 0;
@@ -1165,7 +1136,7 @@ p.output-legend {
         grid-template-columns: 1fr;
     }
 
-    #Identifier, #Genomic_Position, #Sequence {
+    #Identifier, #Genomic_Position, #Sequence, #Structural_Variant {
         width: 100%;
     }
 
