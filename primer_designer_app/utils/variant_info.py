@@ -466,7 +466,6 @@ class StructuralVariantInfo:
     chromosome: str
     start_position: int
     end_position: int
-    structural_variant_type: str
     reference_genome: str
     windows: List[StructuralVariantWindow] = field(default_factory=list)
 
@@ -477,11 +476,6 @@ class StructuralVariantInfo:
 
         if self.start_position > self.end_position:
             raise ValueError("Start position must not exceed end position")
-
-        if self.structural_variant_type not in {"deletion", "duplication"}:
-            raise ValueError(
-                f"Unsupported structural_variant_type: {self.structural_variant_type}"
-            )
 
     @property
     def structural_variant_length(self) -> int:

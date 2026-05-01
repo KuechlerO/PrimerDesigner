@@ -5,6 +5,7 @@
     {% include "primer_designer_app/header.html" %}
     <link rel="stylesheet" href="{% static 'primer_designer_app/primer_overview.css' %}">
     <link rel="stylesheet" href="{% static 'primer_designer_app/indel_results.css' %}">
+    <link rel="stylesheet" href="{% static 'primer_designer_app/sv_styles.css' %}">
 </head>
 <body class="body-snv-indels">
     {% include "primer_designer_app/body_nav.html" %}
@@ -63,6 +64,21 @@
                             style="width: 100%; margin-top: 0.5em;">
                     </div>
                 </div>
+            </section>
+
+            <section id="Structural_Variant_Sketch" class="sv-sketch" aria-label="Primer design sketch">
+                <div class="sv-sketch-title">Expected primer layout</div>
+                <div class="sv-sketch-subtitle" id="sv_sketch_caption">4 primer pairs: 1 upstream, 2 internal, 1 downstream</div>
+                <svg
+                    id="sv_sketch_svg"
+                    class="sv-sketch-svg"
+                    viewBox="0 0 520 170"
+                    role="img"
+                    aria-labelledby="sv-sketch-title sv-sketch-desc"
+                    preserveAspectRatio="xMidYMid meet">
+                    <title id="sv-sketch-title">Primer layout sketch</title>
+                    <desc id="sv-sketch-desc">A schematic showing one primer pair upstream, two within the region, and one downstream.</desc>
+                </svg>
             </section>
 
         </div>

@@ -33,20 +33,15 @@ def build_structural_variant_info_from_request(request) -> StructuralVariantInfo
         request.POST.get("sv_end_position", ""),
         "SV end position",
     )
-    structural_variant_type = request.POST.get("sv_type", "").strip().lower()
     reference_genome = request.POST.get("reference-genome", "GRCh37").strip()
 
     if not chromosome:
         raise ValueError("Chromosome must not be empty")
 
-    if not structural_variant_type:
-        raise ValueError("SV type must not be empty")
-
     structural_variant_info = StructuralVariantInfo(
         chromosome=chromosome,
         start_position=start_position,
         end_position=end_position,
-        structural_variant_type=structural_variant_type,
         reference_genome=reference_genome,
     )
 
