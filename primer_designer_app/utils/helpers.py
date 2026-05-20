@@ -3,19 +3,18 @@ import re
 
 from primer_designer_app.models import PrimerSettingsModel
 from primer_designer_app.utils.variant_info import (
+    AllelicVariantInfo,
     TranscriptVariantInfo,
     SequenceVariantInfo,
-    VariantInfo,
     GenomicVariantInfo,
     IndelType,
 )
 from primer_designer_app.utils.primer_utils import PrimerPairResult
 
-
 LOGGER = logging.getLogger(__name__)
 
 
-def map_variant_content(var_info: VariantInfo) -> tuple[str, str]:
+def map_variant_content(var_info: AllelicVariantInfo) -> tuple[str, str]:
     """Maps variant info to indel type and notation for highlighting in HTML output."""
     if var_info.indel_type in [IndelType.NONE, IndelType.SNV]:
         LOGGER.debug(f"1")
@@ -35,13 +34,15 @@ def map_variant_content(var_info: VariantInfo) -> tuple[str, str]:
         )
 
 
-def create_hgvs_notation(var_info: VariantInfo) -> str:
+def create_hgvs_notation(var_info: AllelicVariantInfo) -> str:
     """
     Build HGVS-like notation for transcript or genomic variant info.
     """
     LOGGER.debug(f"Creating HGVS notation for variant: {var_info}")
 
-    def get_final_hgvs_construct(var_info: VariantInfo, prefix, var_position) -> str:
+    def get_final_hgvs_construct(
+        var_info: AllelicVariantInfo, prefix, var_position
+    ) -> str:
         LOGGER.debug(f"Variant position for HGVS notation: {var_position}")
         hgvs_notation = ""
         if var_info.indel_type in [IndelType.SNV]:
@@ -75,7 +76,7 @@ def create_hgvs_notation(var_info: VariantInfo) -> str:
         return get_final_hgvs_construct(var_info, prefix_array, var_position)
 
     elif isinstance(var_info, TranscriptVariantInfo):
-        genomic_var_position = var_info.get_genomic_pos()
+        var_info.get_genomic_pos()
         prefix_coding = f"{var_info.gene_symbol}({var_info.transcript_id}): c."
         prefix_genomic = f"chr{var_info.genomic_pos.get('chr')}: g."
         # return f"""{get_final_hgvs_construct(var_info, prefix_coding, relative_var_position)} - \
@@ -87,7 +88,7 @@ def create_hgvs_notation(var_info: VariantInfo) -> str:
         return get_final_hgvs_construct(var_info, prefix, var_info.relative_pos)
     else:
         raise ValueError(
-            f"Unsupported VariantInfo type for HGVS notation: {type(var_info)}"
+            f"Unsupported AllelicVariantInfo type for HGVS notation: {type(var_info)}"
         )
 
 
@@ -100,7 +101,7 @@ def transform_rel_primer_pos(primerF_range, primerR_range, genomic_pos):
 
 def html_visualize_sequence(
     prim_settings: PrimerSettingsModel,
-    var_info: VariantInfo,
+    var_info: AllelicVariantInfo,
     prim_pair: PrimerPairResult,
 ) -> str:
     """Generates an HTML string with the target region highlighted, including the variant and primer binding sites."""

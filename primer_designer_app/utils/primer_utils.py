@@ -4,7 +4,9 @@ from typing import List, Optional
 
 import primer3
 from primer_designer_app.utils.variant_info import (
-    VariantInfo,
+    AllelicVariantInfo,
+    PrimerDesignSequence,
+    StructuralVariantWindow,
     TranscriptVariantInfo,
     GenomicVariantInfo,
     SequenceVariantInfo,
@@ -15,10 +17,10 @@ from primer_designer_app.utils.insilico_analysis import do_insilico_analysis
 LOGGER = logging.getLogger(__name__)
 
 # In-silico (Dicey) outcome per primer pair — persisted on PrimerPairResult
-INSILICO_NOT_APPLICABLE = 'not_applicable'
-INSILICO_ERROR = 'error'
-INSILICO_OK_EMPTY = 'ok_empty'
-INSILICO_OK = 'ok'
+INSILICO_NOT_APPLICABLE = "not_applicable"
+INSILICO_ERROR = "error"
+INSILICO_OK_EMPTY = "ok_empty"
+INSILICO_OK = "ok"
 
 
 @dataclass
@@ -36,7 +38,7 @@ class PrimerPairResult:
     right_relPos_end: Optional[int] = None  # 0-based position
     gc: Optional[List[float]] = None
     tm: Optional[List[float]] = None
-    insilico_seq: Optional[str] = ''
+    insilico_seq: Optional[str] = ""
     amplicons: Optional[List[str]] = None
     insilico_status: Optional[str] = None
     insilico_error_detail: Optional[str] = None
@@ -53,41 +55,41 @@ class PrimerSearchResults:
             # primer3_obj is the dict returned by primer3.bindings.design_primers
             self.primer_pairs = get_primers_from_primer3(primer3_obj)
 
-        self.mapped_primer_positions = {'primerF_starts': [], 'primerR_ends': []}
+        self.mapped_primer_positions = {"primerF_starts": [], "primerR_ends": []}
 
     @classmethod
     def from_dict(cls, data: dict):
         """Create a PrimerSearchResults object from a dictionary."""
         instance = cls()
         instance.mapped_primer_positions = data.get(
-            'mapped_primer_positions', {'primerF_starts': [], 'primerR_ends': []}
+            "mapped_primer_positions", {"primerF_starts": [], "primerR_ends": []}
         )
 
         instance.primer_pairs = [
-            primer_pair_from_dict(pair) for pair in data.get('primer_pairs', [])
+            primer_pair_from_dict(pair) for pair in data.get("primer_pairs", [])
         ]
         return instance
 
     def to_dict(self):
         return asdict(self)
 
-    def load_primer_start_and_end_pos(self, varInfo: VariantInfo):
+    def load_primer_start_and_end_pos(self, varInfo: AllelicVariantInfo):
         """Calculate genomic positions of primers based on variant info."""
         gene_pos = varInfo.get_genomic_pos()[0]
         # clear existing mapped positions before filling
-        self.mapped_primer_positions['primerF_starts'].clear()
-        self.mapped_primer_positions['primerR_ends'].clear()
+        self.mapped_primer_positions["primerF_starts"].clear()
+        self.mapped_primer_positions["primerR_ends"].clear()
 
         for pair in self.primer_pairs:
             if pair.left_relPos_start is None or pair.right_relPos_end is None:
                 # skip malformed pair
-                self.mapped_primer_positions['primerF_starts'].append(None)
-                self.mapped_primer_positions['primerR_ends'].append(None)
+                self.mapped_primer_positions["primerF_starts"].append(None)
+                self.mapped_primer_positions["primerR_ends"].append(None)
                 continue
-            self.mapped_primer_positions['primerF_starts'].append(
+            self.mapped_primer_positions["primerF_starts"].append(
                 gene_pos - VARIANT_FLANKING + pair.left_relPos_start
             )
-            self.mapped_primer_positions['primerR_ends'].append(
+            self.mapped_primer_positions["primerR_ends"].append(
                 gene_pos - VARIANT_FLANKING + pair.right_relPos_end
             )
         return self.mapped_primer_positions
@@ -95,11 +97,11 @@ class PrimerSearchResults:
 
 def _infer_legacy_insilico_status(pair_dict: dict) -> str:
     """Best-effort status for JSON saved before insilico_status existed."""
-    amps = pair_dict.get('amplicons')
+    amps = pair_dict.get("amplicons")
     if amps is None:
         return INSILICO_OK_EMPTY
-    if amps == ['N/A'] or (
-        isinstance(amps, list) and len(amps) == 1 and amps[0] == 'N/A'
+    if amps == ["N/A"] or (
+        isinstance(amps, list) and len(amps) == 1 and amps[0] == "N/A"
     ):
         return INSILICO_NOT_APPLICABLE
     if isinstance(amps, list) and len(amps) > 0 and isinstance(amps[0], dict):
@@ -111,20 +113,20 @@ def _infer_legacy_insilico_status(pair_dict: dict) -> str:
 
 def primer_pair_from_dict(pair: dict) -> PrimerPairResult:
     d = dict(pair)
-    if d.get('insilico_status') is None:
-        d['insilico_status'] = _infer_legacy_insilico_status(d)
-    d.setdefault('insilico_error_detail', None)
+    if d.get("insilico_status") is None:
+        d["insilico_status"] = _infer_legacy_insilico_status(d)
+    d.setdefault("insilico_error_detail", None)
     return PrimerPairResult(**d)
 
 
-def get_primers_from_primer3(dicey_primer) -> List['PrimerPairResult']:
+def get_primers_from_primer3(dicey_primer) -> List["PrimerPairResult"]:
     """
     Create a list of PrimerPairResult from a primer3/dicey result dict.
     :param dicey_primer: dict returned by primer3.bindings.design_primers
     :return: List of PrimerPairResult (ordered by penalty)
     """
     pairs: List[PrimerPairResult] = []
-    pair_count = int(dicey_primer.get('PRIMER_PAIR_NUM_RETURNED', 0))
+    pair_count = int(dicey_primer.get("PRIMER_PAIR_NUM_RETURNED", 0))
     for i in range(pair_count):
         left_key = f"PRIMER_LEFT_{i}"
         right_key = f"PRIMER_RIGHT_{i}"
@@ -171,7 +173,7 @@ def get_primers_from_primer3(dicey_primer) -> List['PrimerPairResult']:
                     round(float(dicey_primer.get(right_tm_key, 0.0)), 1),
                 ],
                 amplicons=[],
-                insilico_seq='',
+                insilico_seq="",
                 insilico_status=None,
                 insilico_error_detail=None,
             )
@@ -187,55 +189,64 @@ def build_primer3_global_args(prim_set) -> dict:
     """
     opt_tm = float(prim_set.tm)
     base = {
-        'PRIMER_OPT_SIZE': 20,
-        'PRIMER_PICK_INTERNAL_OLIGO': 0,
-        'PRIMER_INTERNAL_MAX_SELF_END': 8,
-        'PRIMER_MIN_SIZE': 18,
-        'PRIMER_MAX_SIZE': 22,
-        'PRIMER_OPT_TM': opt_tm,
-        'PRIMER_MIN_TM': opt_tm - 2,
-        'PRIMER_MAX_TM': opt_tm + 2,
-        'PRIMER_OPT_GC_PERCENT': float(prim_set.gc),
-        'PRIMER_MIN_GC': 20.0,
-        'PRIMER_MAX_GC': 80.0,
-        'PRIMER_GC_CLAMP': 1,
-        'PRIMER_MAX_POLY_X': prim_set.max_poly_x,
-        'PRIMER_INTERNAL_MAX_POLY_X': 100,
-        'PRIMER_SALT_MONOVALENT': 50.0,
-        'PRIMER_DNA_CONC': 50.0,
-        'PRIMER_MAX_NS_ACCEPTED': 0,
-        'PRIMER_MAX_SELF_ANY': 12,
-        'PRIMER_MAX_SELF_END': 8,
-        'PRIMER_PAIR_MAX_COMPL_ANY': 12,
-        'PRIMER_PAIR_MAX_COMPL_END': 8,
-        'PRIMER_PRODUCT_SIZE_RANGE': prim_set.productsize_range,
-        'PRIMER_INSIDE_PENALTY': 1.0,
+        "PRIMER_OPT_SIZE": 20,
+        "PRIMER_PICK_INTERNAL_OLIGO": 0,
+        "PRIMER_INTERNAL_MAX_SELF_END": 8,
+        "PRIMER_MIN_SIZE": 18,
+        "PRIMER_MAX_SIZE": 22,
+        "PRIMER_OPT_TM": opt_tm,
+        "PRIMER_MIN_TM": opt_tm - 2,
+        "PRIMER_MAX_TM": opt_tm + 2,
+        "PRIMER_OPT_GC_PERCENT": float(prim_set.gc),
+        "PRIMER_MIN_GC": 20.0,
+        "PRIMER_MAX_GC": 80.0,
+        "PRIMER_GC_CLAMP": 1,
+        "PRIMER_MAX_POLY_X": prim_set.max_poly_x,
+        "PRIMER_INTERNAL_MAX_POLY_X": 100,
+        "PRIMER_SALT_MONOVALENT": 50.0,
+        "PRIMER_DNA_CONC": 50.0,
+        "PRIMER_MAX_NS_ACCEPTED": 0,
+        "PRIMER_MAX_SELF_ANY": 12,
+        "PRIMER_MAX_SELF_END": 8,
+        "PRIMER_PAIR_MAX_COMPL_ANY": 12,
+        "PRIMER_PAIR_MAX_COMPL_END": 8,
+        "PRIMER_PRODUCT_SIZE_RANGE": prim_set.productsize_range,
+        "PRIMER_INSIDE_PENALTY": 1.0,
     }
-    overrides = getattr(prim_set, 'primer3_overrides', None) or {}
+    overrides = getattr(prim_set, "primer3_overrides", None) or {}
     merged = {**base, **overrides}
     return merged
 
 
 def primer3_design_primers(
-    primSet_obj, varInfo_obj: VariantInfo
+    primSet_obj, varInfo_obj: PrimerDesignSequence
 ) -> PrimerSearchResults:
-    LOGGER.info(f"Designing primers with target: {primSet_obj.target}")
+    use_sequence_target = not isinstance(varInfo_obj, StructuralVariantWindow)
+    LOGGER.info(
+        "Designing primers (SEQUENCE_TARGET=%s, target=%s)",
+        use_sequence_target,
+        primSet_obj.target if use_sequence_target else None,
+    )
     LOGGER.debug(
-        'Variant info object sequence: %s',
-        varInfo_obj.get_seq('mutated'),
+        "Variant info object sequence: %s",
+        varInfo_obj.get_seq("mutated"),
     )
 
     global_args = build_primer3_global_args(primSet_obj)
 
-    # Call primer3 to design primers
+    seq_args = {
+        "SEQUENCE_ID": "dummy_id",
+        "SEQUENCE_TEMPLATE": varInfo_obj.get_seq("mutated"),
+    }
+    if use_sequence_target:
+        seq_args["SEQUENCE_TARGET"] = primSet_obj.target
+
     primer3_obj = primer3.bindings.design_primers(
-        seq_args={
-            'SEQUENCE_ID': 'dummy_id',
-            'SEQUENCE_TEMPLATE': varInfo_obj.get_seq('mutated'),
-            'SEQUENCE_TARGET': primSet_obj.target,
-        },
+        seq_args=seq_args,
         global_args=global_args,
     )
+
+    LOGGER.debug(f"Global args: {global_args}")
 
     LOGGER.debug(f"Primer3 output: {primer3_obj}")
 
@@ -243,20 +254,20 @@ def primer3_design_primers(
     prim3_res = PrimerSearchResults(primer3_obj=primer3_obj)
 
     LOGGER.debug(
-        'In-silico: context=%s do_insilico_pcr=%s',
+        "In-silico: context=%s do_insilico_pcr=%s",
         primSet_obj.context,
-        getattr(primSet_obj, 'do_insilico_pcr', False),
+        getattr(primSet_obj, "do_insilico_pcr", False),
     )
     # run in-silico analysis and populate amplicon summary (optional)
     if isinstance(varInfo_obj, (TranscriptVariantInfo, GenomicVariantInfo)):
-        LOGGER.info('Loading primer start and end positions for genomic context')
+        LOGGER.info("Loading primer start and end positions for genomic context")
         prim3_res.load_primer_start_and_end_pos(varInfo_obj)
-        if getattr(primSet_obj, 'do_insilico_pcr', False):
-            LOGGER.info('Running in-silico analysis for designed primer pairs')
+        if getattr(primSet_obj, "do_insilico_pcr", False):
+            LOGGER.info("Running in-silico analysis for designed primer pairs")
             do_insilico_analysis(primSet_obj, prim3_res.primer_pairs)
-            LOGGER.info('In-silico analysis completed: ', prim3_res.primer_pairs)
+            LOGGER.info("In-silico analysis completed: ", prim3_res.primer_pairs)
         else:
-            LOGGER.info('In-silico PCR disabled; skipping Dicey')
+            LOGGER.info("In-silico PCR disabled; skipping Dicey")
             for pair in prim3_res.primer_pairs:
                 pair.amplicons = []
                 pair.insilico_status = INSILICO_NOT_APPLICABLE
@@ -264,18 +275,18 @@ def primer3_design_primers(
     elif isinstance(varInfo_obj, SequenceVariantInfo):
         # No genomic coordinates: skip mapped primer positions; Dicey still searches
         # the selected reference when the user enables amplicon check.
-        if getattr(primSet_obj, 'do_insilico_pcr', False):
-            LOGGER.info('Running in-silico analysis for sequence input')
+        if getattr(primSet_obj, "do_insilico_pcr", False):
+            LOGGER.info("Running in-silico analysis for sequence input")
             do_insilico_analysis(primSet_obj, prim3_res.primer_pairs)
         else:
-            LOGGER.debug('Sequence input: in-silico PCR disabled; skipping Dicey')
+            LOGGER.debug("Sequence input: in-silico PCR disabled; skipping Dicey")
             for pair in prim3_res.primer_pairs:
                 pair.amplicons = []
                 pair.insilico_status = INSILICO_NOT_APPLICABLE
                 pair.insilico_error_detail = None
     else:
         LOGGER.debug(
-            'No genomic/transcript variant info; in-silico search not applicable'
+            "No genomic/transcript variant info; in-silico search not applicable"
         )
         for pair in prim3_res.primer_pairs:
             pair.amplicons = []

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Protocol, runtime_checkable
 import logging
 
 from enum import Enum
@@ -9,6 +9,15 @@ LOGGER = logging.getLogger(__name__)
 
 
 VARIANT_FLANKING = 1000
+
+
+@runtime_checkable
+class PrimerDesignSequence(Protocol):
+    """Minimal interface for Primer3 template input (allelic variants or SV windows)."""
+
+    def get_seq(self, output_type: str) -> str: ...
+
+    def get_genomic_pos(self) -> list: ...
 
 
 class IndelType(Enum):
@@ -27,8 +36,8 @@ class ReferenceType(Enum):
 
 
 @dataclass
-class VariantInfo:
-    """Information for a variant (provided by user throught web app interface)"""
+class AllelicVariantInfo:
+    """SNV/indel variant information (provided by user through the web app)."""
 
     ref_seq: str = ""
     ref_bases: str = ""
@@ -60,7 +69,7 @@ class VariantInfo:
 
     def __post_init__(self):
         if self.relative_pos is None:
-            raise ValueError("relative_pos must be provided for VariantInfo")
+            raise ValueError("relative_pos must be provided for AllelicVariantInfo")
 
     def set_attribute(self, key, value):
         setattr(self, key, value)
@@ -209,7 +218,7 @@ class VariantInfo:
             raise ValueError(f"Invalid output type: {output_type}")
 
 
-class GenomicVariantInfo(VariantInfo):
+class GenomicVariantInfo(AllelicVariantInfo):
     def __init__(
         self,
         relative_pos: Optional[Tuple[int, int]] = [VARIANT_FLANKING, VARIANT_FLANKING],
@@ -255,7 +264,7 @@ class GenomicVariantInfo(VariantInfo):
         return seq
 
 
-class TranscriptVariantInfo(VariantInfo):
+class TranscriptVariantInfo(AllelicVariantInfo):
     """Information for a variant when gene or transcript ID is provided"""
 
     transcript_id: str
@@ -347,7 +356,7 @@ class TranscriptVariantInfo(VariantInfo):
         return genomic_pos
 
 
-class SequenceVariantInfo(VariantInfo):
+class SequenceVariantInfo(AllelicVariantInfo):
     """Parse inline sequence annotations, e.g. AC[3>A]GT or ACG[-/T]T"""
 
     def __init__(self, input_seq, **kwargs):
@@ -402,6 +411,8 @@ class SequenceVariantInfo(VariantInfo):
 
 @dataclass
 class StructuralVariantWindow:
+    """Genomic window for SV primer design; implements PrimerDesignSequence."""
+
     label: str
     window_start_genomic: int
     window_end_genomic: int
@@ -425,8 +436,9 @@ class StructuralVariantWindow:
         self.target_length = target_length
 
     def set_default_target(self, target_length: int = 150) -> None:
+        """Place target in the center of the window"""
         effective_target_length = min(target_length, self.window_length)
-        target_start_in_window = (self.window_length - effective_target_length) // 2
+        target_start_in_window = (self.window_length - effective_target_length) / 2
         self.set_target(target_start_in_window, effective_target_length)
 
     def get_primer3_target(self) -> list[int]:
@@ -488,6 +500,7 @@ class StructuralVariantInfo:
     ) -> List[StructuralVariantWindow]:
         sv_length = self.structural_variant_length
 
+        # --- Validate input parameters ---
         if sv_length < 50:
             raise ValueError("Structural variant must span at least 50 bases")
 
@@ -495,10 +508,10 @@ class StructuralVariantInfo:
         if upstream_window_end < 1:
             raise ValueError("Upstream window cannot be created at chromosome start")
 
-        half_sv_length = sv_length // 2
-        internal_size = min(internal_window_size, half_sv_length)
+        half_sv_length = sv_length / 2
+        effective_internal_window_size = min(internal_window_size, half_sv_length)
 
-        if internal_size < 25:
+        if effective_internal_window_size < 25:
             raise ValueError("Internal window size is too small for primer design")
 
         upstream_window = StructuralVariantWindow(
@@ -516,12 +529,12 @@ class StructuralVariantInfo:
         internal_1 = StructuralVariantWindow(
             label="internal_1",
             window_start_genomic=self.start_position,
-            window_end_genomic=self.start_position + internal_size - 1,
+            window_end_genomic=self.start_position + effective_internal_window_size - 1,
         )
 
         internal_2 = StructuralVariantWindow(
             label="internal_2",
-            window_start_genomic=self.end_position - internal_size + 1,
+            window_start_genomic=self.end_position - effective_internal_window_size + 1,
             window_end_genomic=self.end_position,
         )
 

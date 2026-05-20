@@ -1,10 +1,9 @@
-from copy import deepcopy
-
 from primer_designer_app.utils.variant_info import (
     StructuralVariantInfo,
     StructuralVariantWindow,
 )
 from primer_designer_app.utils.primer_utils import primer3_design_primers
+from primer_designer_app.models import PrimerSettingsModel
 
 
 def _normalize_chromosome(chromosome: str) -> str:
@@ -66,7 +65,7 @@ def _calculate_genomic_primer_positions(
 
 def design_structural_variant_primers(
     structural_variant_info: StructuralVariantInfo,
-    primer_settings,
+    primer_settings: PrimerSettingsModel,
 ) -> dict:
     results = {}
 
@@ -76,13 +75,8 @@ def design_structural_variant_primers(
             reference_genome=structural_variant_info.reference_genome,
         )
 
-        design_window.set_default_target(target_length=150)
-
-        window_primer_settings = deepcopy(primer_settings)
-        window_primer_settings.target = design_window.get_primer3_target()
-
         primer_search_results = primer3_design_primers(
-            window_primer_settings,
+            primer_settings,
             design_window,
         )
 
