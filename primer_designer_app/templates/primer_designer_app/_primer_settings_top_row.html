@@ -33,7 +33,7 @@
                 </div>
             </div>
         </div>
-        <input type="hidden" name="amplicon-check" id="amplicon-check-hidden" value="none" form="settings">
+        <input type="hidden" name="amplicon-check" id="amplicon-check-hidden" value="{{ form_data.amplicon_check|default:'none' }}" form="settings">
     </div>
     {% endif %}
 

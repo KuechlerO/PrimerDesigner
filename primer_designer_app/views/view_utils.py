@@ -12,7 +12,11 @@ from primer_designer_app.utils.variant_info import (
     ReferenceType,
     VARIANT_FLANKING,
 )
-from primer_designer_app.utils.primer3_post import parse_primer3_overrides_from_post
+from primer_designer_app.utils.primer3_post import (
+    P3_FORM_DEFAULTS,
+    PRIMER3_OVERRIDE_FIELDS,
+    parse_primer3_overrides_from_post,
+)
 from primer_designer_app.utils.primer_utils import primer3_design_primers
 
 from primer_designer_app.exceptions import (
@@ -84,6 +88,30 @@ def _process_genome_pos_indel_input(
 
 def _get_post(request, name, default=""):
     return request.POST.get(name, default)
+
+
+def build_form_data_from_request(request, **extra) -> dict:
+    """
+    Build a template context dict so primer settings and optional page fields
+    repopulate after POST (avoids resetting dialog inputs to HTML defaults).
+    """
+    data = {
+        "reference_genome": _get_post(request, "reference-genome", "GRCh37"),
+        "amplicon_check": _get_post(request, "amplicon-check", "none"),
+        "tm": _get_post(request, "tm", "60"),
+        "gc_content": _get_post(request, "gc_content", "50"),
+        "product_size_min": _get_post(request, "product_size_min", "400"),
+        "product_size_max": _get_post(request, "product_size_max", "800"),
+        "target_padding": _get_post(request, "target_padding", "50"),
+        "max_poly_X": _get_post(request, "max_poly_X", "4"),
+    }
+    for key, _kind in PRIMER3_OVERRIDE_FIELDS:
+        field_name = f"p3_{key}"
+        data[field_name] = _get_post(
+            request, field_name, P3_FORM_DEFAULTS.get(field_name, "")
+        )
+    data.update(extra)
+    return data
 
 
 def _parse_amplicon_check(request) -> Tuple[bool, str]:

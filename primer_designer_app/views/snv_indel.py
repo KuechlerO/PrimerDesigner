@@ -13,13 +13,13 @@ from primer_designer_app.utils.doc_utils import create_primer_report
 from primer_designer_app.utils.insilico_analysis import insilico_reference_description
 from primer_designer_app.views.view_utils import (
     _get_post,
+    build_form_data_from_request,
     build_primer_settings,
     handle_transcript_input,
     handle_genomic_snv,
     handle_genomic_indel,
     handle_sequence_input,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +31,7 @@ def index(request):
     return render(
         request,
         "primer_designer_app/snv_indel_index.html",
+        {"form_data": build_form_data_from_request(request)},
     )
 
 

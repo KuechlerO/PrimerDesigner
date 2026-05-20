@@ -198,9 +198,19 @@ function openPrimerCustomDialog() {
     if (dlg) dlg.showModal();
 }
 
+function initAmpliconCheckFromHidden() {
+    const hidden = document.getElementById("amplicon-check-hidden");
+    if (!hidden || !document.getElementById("amplicon-button")) return;
+    const v = (hidden.value || "none").trim().toLowerCase();
+    if (AMP_CHECK_VALUES.includes(v)) {
+        setAmpliconCheck(v);
+    }
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     updateAmpliconCheckAria();
     initAmpliconToggle();
+    initAmpliconCheckFromHidden();
     syncAllTopSettingsFromUi();
     syncAssayPresetButtonHighlight();
     syncPrimerOverview();
@@ -217,6 +227,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     window.addEventListener("pageshow", function () {
+        initAmpliconCheckFromHidden();
         syncAllTopSettingsFromUi();
         syncAssayPresetButtonHighlight();
         syncPrimerOverview();
