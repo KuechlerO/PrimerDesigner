@@ -40,6 +40,11 @@ urlpatterns = [
         structural_variant.index,
         name="structural_variants_index",
     ),
+    path(
+        "structural-variant/generate-report/<uuid:uuid>/",
+        structural_variant.generate_report,
+        name="structural_variant_generate_report",
+    ),
     # Documentation
     path(
         "documentation/",

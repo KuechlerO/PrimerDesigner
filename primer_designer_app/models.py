@@ -138,8 +138,49 @@ class DesignResultsSummary(models.Model):
             # normalized models require Postgres (ArrayField); nothing more to do
             return
 
+    def is_structural_variant_design(self) -> bool:
+        from primer_designer_app.utils.sv_storage import SV_DESIGN_TYPE
+
+        return (self.variant_info_data or {}).get("design_type") == SV_DESIGN_TYPE
+
+    def save_structural_variant_results(self, primer_settings, sv_info, sv_results):
+        """Persist structural-variant query and all designed primer pairs."""
+        from primer_designer_app.utils.sv_storage import (
+            SV_DESIGN_TYPE,
+            serialize_structural_variant_info,
+            serialize_sv_results_for_storage,
+        )
+
+        primer_settings.save()
+        self.primer_settings = primer_settings
+        self.variant_info_data = serialize_structural_variant_info(sv_info)
+        self.primer_search_results = {
+            "design_type": SV_DESIGN_TYPE,
+            "windows": serialize_sv_results_for_storage(sv_results),
+        }
+        self.save()
+
+    def get_structural_variant_info_data(self) -> dict:
+        if self.is_structural_variant_design():
+            return self.variant_info_data or {}
+        return {}
+
+    def get_sv_primer_results(self) -> dict:
+        from primer_designer_app.utils.primer_utils import primer_pair_from_dict
+        from primer_designer_app.utils.sv_storage import (
+            deserialize_sv_results_from_storage,
+        )
+
+        if not self.is_structural_variant_design():
+            return {}
+        return deserialize_sv_results_from_storage(
+            self.primer_search_results or {}, primer_pair_from_dict
+        )
+
     def get_variant_info(self):
         """Deserialize stored variant info from JSON into an AllelicVariantInfo object."""
+        if self.is_structural_variant_design():
+            return None
         if self.variant_info_data:
             # Convert IndelType from string back to Enum if necessary
             if "indel_type" in self.variant_info_data:
@@ -178,6 +219,8 @@ class DesignResultsSummary(models.Model):
 
     def get_primer_search_results(self):
         """Deserialize the stored primer search results from JSON back into a PrimerSearchResults object."""
+        if self.is_structural_variant_design():
+            return None
         if self.primer_search_results:
             return PrimerSearchResults.from_dict(self.primer_search_results)
         return None

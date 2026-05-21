@@ -126,14 +126,8 @@
                                 </thead>
                                 <tbody>
                                     {% for row in result.primer_rows %}
-                                        <tr class="selectable-row {% if forloop.first %}selected{% endif %}">
-                                            <td style="font-size: 1.1em;">
-                                                {% if forloop.first %}
-                                                    Best
-                                                {% else %}
-                                                    {{ forloop.counter }}
-                                                {% endif %}
-                                            </td>
+                                        <tr>
+                                            <td style="font-size: 1.1em;">{{ forloop.counter }}</td>
                                             <td style="text-align: left; padding: 0.4em 0.5em; font-size: 1.05em;">
                                                 {{ row.pair.left_seq }} + {{ row.pair.right_seq }}
                                             </td>
@@ -179,6 +173,15 @@
                     {% endif %}
                 </section>
             {% endfor %}
+
+            {% if report_uuid %}
+                <div style="display:flex; justify-content: center; margin: 1.5em 0.5em;">
+                    <a href="{% url 'primer_designer_app:structural_variant_generate_report' uuid=report_uuid %}" class="copy-button" style="text-decoration: none;">
+                        <img class="download-icon" src="{% static 'primer_designer_app/images/download_icon.png' %}" alt="download_icon" width="30" height="30">
+                        Download report (all primers)
+                    </a>
+                </div>
+            {% endif %}
         </main>
     {% endif %}
     <script src="{% static 'primer_designer_app/primer_params_utils.js' %}"></script>

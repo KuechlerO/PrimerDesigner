@@ -16,6 +16,7 @@ from primer_designer_app.utils.amplicon_display import (
 )
 from primer_designer_app.utils.insilico_analysis import insilico_reference_description
 from primer_designer_app.utils.primer_utils import INSILICO_OK, PrimerPairResult
+from primer_designer_app.utils.sv_storage import SV_WINDOW_ORDER
 
 from django.conf import settings
 from django.urls import reverse
@@ -355,6 +356,153 @@ def create_primer_report(
     visualize_sequence_as_docx(paragraph, prim_settings, var_info, primer_pair)
 
     # Save the document to an in-memory file
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+
+def _init_report_document(title: str) -> Document:
+    doc = Document()
+    section = doc.sections[0]
+    section.top_margin = Inches(0.7)
+    section.bottom_margin = Inches(0.7)
+    section.left_margin = Inches(0.7)
+    section.right_margin = Inches(0.7)
+    style = doc.styles["Normal"]
+    style.font.name = "Calibri"
+    style.font.size = Pt(11)
+
+    header = section.header
+    paragraph = header.paragraphs[0] if header.paragraphs else header.add_paragraph()
+    paragraph.text = f"Created: {datetime.now().strftime('%d.%m.%Y %H:%M')}"
+    paragraph.alignment = 2
+
+    doc.add_heading(title, level=0)
+    return doc
+
+
+def _add_bullet_field(doc: Document, label: str, value: str) -> None:
+    p = doc.add_paragraph(style="List Bullet")
+    p.add_run(f"{label}: ")
+    bold_run = p.add_run(value)
+    bold_run.bold = True
+
+
+def _add_sv_primer_pairs_table(doc: Document, primer_rows: list) -> None:
+    headers = [
+        "Rank",
+        "Forward primer",
+        "Reverse primer",
+        "Penalty",
+        "Product size (bp)",
+        "Primer Tm (°C)",
+        "Primer GC (%)",
+        "Forward genomic",
+        "Reverse genomic",
+    ]
+    if not primer_rows:
+        doc.add_paragraph("No primer pairs found for this window.")
+        return
+
+    table = doc.add_table(rows=1 + len(primer_rows), cols=len(headers))
+    table.style = "Table Grid"
+    for j, title in enumerate(headers):
+        _set_cell_run(table.rows[0].cells[j], title, bold=True, size_pt=9)
+
+    for i, row in enumerate(primer_rows):
+        pair = row["pair"]
+        genomic = row["genomic_positions"]
+        tm_text = (
+            f"{pair.tm[0]}, {pair.tm[1]}" if pair.tm and len(pair.tm) >= 2 else "—"
+        )
+        gc_text = (
+            f"{pair.gc[0]}, {pair.gc[1]}" if pair.gc and len(pair.gc) >= 2 else "—"
+        )
+        values = [
+            str(i + 1),
+            pair.left_seq,
+            pair.right_seq,
+            str(pair.penalty),
+            str(pair.product_size),
+            tm_text,
+            gc_text,
+            f"{genomic['forward_start']}–{genomic['forward_end']}",
+            f"{genomic['reverse_start']}–{genomic['reverse_end']}",
+        ]
+        for j, val in enumerate(values):
+            _set_cell_run(table.rows[i + 1].cells[j], val, size_pt=8)
+
+
+def create_structural_variant_primer_report(
+    design_results_summary: DesignResultsSummary,
+) -> io.BytesIO:
+    """
+    Word report for structural variant primer design: all primer pairs per window,
+    without sequence visualization or primer-pair selection.
+    """
+    sv_info = design_results_summary.get_structural_variant_info_data()
+    sv_results = design_results_summary.get_sv_primer_results()
+    prim_settings = design_results_summary.primer_settings
+
+    doc = _init_report_document("Structural Variant Primer Designer Results")
+
+    doc.add_heading("Structural variant query", level=1)
+    chromosome = sv_info.get("chromosome", "")
+    start_pos = sv_info.get("start_position", "")
+    end_pos = sv_info.get("end_position", "")
+    _add_bullet_field(doc, "Reference genome", sv_info.get("reference_genome", ""))
+    _add_bullet_field(doc, "Chromosome", f"chr{chromosome}")
+    _add_bullet_field(doc, "Start position", str(start_pos))
+    _add_bullet_field(doc, "End position", str(end_pos))
+    if start_pos and end_pos:
+        span = int(end_pos) - int(start_pos) + 1
+        _add_bullet_field(doc, "Span", f"{span} bp")
+
+    doc.add_heading("Design windows", level=2)
+    for window in sv_info.get("windows", []):
+        doc.add_paragraph(
+            f"{window.get('label', '').replace('_', ' ').title()}: "
+            f"{window.get('window_start_genomic')}–{window.get('window_end_genomic')} "
+            f"(chr{chromosome})",
+            style="List Bullet",
+        )
+
+    doc.add_heading("Primer design parameters", level=1)
+    if prim_settings:
+        _add_bullet_field(doc, "Optimal Tm", f"{prim_settings.tm} °C")
+        _add_bullet_field(doc, "GC target", f"{prim_settings.gc} %")
+        _add_bullet_field(doc, "Max poly-X", str(prim_settings.max_poly_x))
+        if prim_settings.productsize_range:
+            _add_bullet_field(
+                doc,
+                "Product size range",
+                f"{prim_settings.productsize_range[0]}–{prim_settings.productsize_range[1]} bp",
+            )
+
+    doc.add_heading("Designed primer pairs", level=1)
+    doc.add_paragraph(
+        "All primer pairs returned by Primer3 for each design window are listed below. "
+        "Genomic coordinates refer to the selected reference assembly."
+    )
+
+    labels_in_report = [label for label in SV_WINDOW_ORDER if label in sv_results]
+    labels_in_report.extend(
+        label for label in sv_results if label not in labels_in_report
+    )
+
+    for label in labels_in_report:
+        window_result = sv_results[label]
+        window = window_result["window"]
+        window_title = label.replace("_", " ").title()
+        doc.add_heading(window_title, level=2)
+        doc.add_paragraph(
+            f"Window coordinates (chr{chromosome}): "
+            f"{window['window_start_genomic']}–{window['window_end_genomic']}"
+        )
+        _add_sv_primer_pairs_table(doc, window_result.get("primer_rows", []))
+        doc.add_paragraph()
+
     buffer = io.BytesIO()
     doc.save(buffer)
     buffer.seek(0)
