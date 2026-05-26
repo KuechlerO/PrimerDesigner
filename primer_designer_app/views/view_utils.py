@@ -18,6 +18,7 @@ from primer_designer_app.utils.primer3_post import (
     parse_primer3_overrides_from_post,
 )
 from primer_designer_app.utils.primer_utils import primer3_design_primers
+from primer_designer_app.utils.vcf_utils import parse_vcf_upload
 
 from primer_designer_app.exceptions import (
     InvalidTranscriptVersionError,
@@ -134,6 +135,17 @@ def _parse_amplicon_check(request) -> Tuple[bool, str]:
     return True, "transcriptomic"
 
 
+def _parse_optional_vcf_upload(request, chromosome: str):
+    """Return parsed VCF records for the design chromosome, or None if no upload."""
+    upload = request.FILES.get("vcf_file")
+    if not upload or not getattr(upload, "name", ""):
+        return None
+    try:
+        return parse_vcf_upload(upload, chromosome)
+    except ValueError as exc:
+        raise ValueError(f"VCF upload: {exc}") from exc
+
+
 def _parse_target_padding(request) -> int:
     try:
         v = int(_get_post(request, "target_padding", "50"))
@@ -168,11 +180,19 @@ def _build_variant_info(request, input_type: str) -> AllelicVariantInfo:
         genomic_pos = _get_post(request, "genom_pos", "")
         new_base = _get_post(request, "new_base", "")
         assert len(new_base) == 1, "For SNV input, new_base must be a single character."
+        gpos = _process_genome_pos_snv_input(genomic_pos, len(new_base) - 1)
+        vcf_records = _parse_optional_vcf_upload(request, gpos["chr"])
+        rel_pos = (
+            None
+            if vcf_records
+            else (VARIANT_FLANKING, VARIANT_FLANKING + len(new_base) - 1)
+        )
         variant_info = GenomicVariantInfo(
-            genomic_pos=_process_genome_pos_snv_input(genomic_pos, len(new_base) - 1),
+            genomic_pos=gpos,
             new_bases=new_base,
             ref_genome=ref_genome,
-            relative_pos=(VARIANT_FLANKING, VARIANT_FLANKING + len(new_base) - 1),
+            relative_pos=rel_pos or (0, 0),
+            vcf_records=vcf_records,
         )
 
     elif input_type == "genomic_indel":
@@ -182,16 +202,20 @@ def _build_variant_info(request, input_type: str) -> AllelicVariantInfo:
         indelIns = _get_post(request, "IndelIns", "")
         if indelIns.isnumeric():
             indelIns = "N" * int(indelIns)  # Convert numeric input to string of Ns
+        gpos = _process_genome_pos_indel_input(indelChrom, indelStart, indelEnd)
+        vcf_records = _parse_optional_vcf_upload(request, gpos["chr"])
+        indel_span = int(indelEnd) - int(indelStart)
+        rel_pos = (
+            None
+            if vcf_records
+            else (VARIANT_FLANKING, VARIANT_FLANKING + indel_span - 1)
+        )
         variant_info = GenomicVariantInfo(
-            genomic_pos=_process_genome_pos_indel_input(
-                indelChrom, indelStart, indelEnd
-            ),
+            genomic_pos=gpos,
             new_bases=indelIns,
             ref_genome=ref_genome,
-            relative_pos=(
-                VARIANT_FLANKING,
-                VARIANT_FLANKING + (int(indelEnd) - int(indelStart)) - 1,
-            ),
+            relative_pos=rel_pos or (0, 0),
+            vcf_records=vcf_records,
         )
 
     elif input_type in ["transcript_snv", "transcript_indel"]:
@@ -304,11 +328,14 @@ def _design_primers_and_return_searchID(variant_info, primer_settings):
     primer_res = primer3_design_primers(primer_settings, variant_info)
     LOGGER.debug(f"Context 2 for primer design: {primer_settings.context}")
 
+    target = primer_settings.target
+    primer_target = (int(target[0]), int(target[1])) if target else None
     snp_analysis = annotate_primer_pairs_with_snp_awareness(
         variant_info,
         primer_res.primer_pairs,
         primer_settings.reference_genome,
         enabled=getattr(primer_settings, "check_known_snps", False),
+        primer_target=primer_target,
     )
 
     result_sum_obj = DesignResultsSummary()

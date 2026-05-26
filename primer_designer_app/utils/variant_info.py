@@ -4,6 +4,12 @@ import logging
 
 from enum import Enum
 from primer_designer_app.utils.ensembl_client import EnsemblClient
+from primer_designer_app.utils.vcf_utils import (
+    VcfRecord,
+    compute_fetch_window,
+    spike_vcf_variants,
+    template_range_for_genomic,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -52,6 +58,9 @@ class AllelicVariantInfo:
     )
     genomic_pos: Optional[dict] = None
     reference_type: ReferenceType = ReferenceType.NONE
+    # Optional VCF spiking (genomic input)
+    sequence_region_start: Optional[int] = None
+    vcf_applied_variants: Optional[list] = None
 
     def __init__(self, **kwargs):
         # Set attributes for known fields
@@ -221,31 +230,104 @@ class AllelicVariantInfo:
 class GenomicVariantInfo(AllelicVariantInfo):
     def __init__(
         self,
-        relative_pos: Optional[Tuple[int, int]] = [VARIANT_FLANKING, VARIANT_FLANKING],
+        relative_pos: Optional[Tuple[int, int]] = None,
         genomic_pos: Optional[dict] = None,
+        vcf_records: Optional[List[VcfRecord]] = None,
         *args,
         **kwargs,
     ):
+        if vcf_records is None:
+            vcf_records = kwargs.pop("vcf_records", None)
+        else:
+            kwargs.pop("vcf_records", None)
         LOGGER.info(
             f"Running GenomicVariantInfo init with relative_pos: "
-            f"{relative_pos}, genomic_pos: {genomic_pos}"
+            f"{relative_pos}, genomic_pos: {genomic_pos}, "
+            f"vcf_records: {len(vcf_records) if vcf_records else 0}"
         )
-        # Pass only the arguments expected by the parent class
         super().__init__(
             relative_pos=relative_pos, genomic_pos=genomic_pos, *args, **kwargs
         )
         ensembl_client = EnsemblClient(ref_genome=self.ref_genome)
 
-        # Load sequence snippet if genomic position is provided
-        self.ref_seq = self._get_sequence_snippet(ensembl_client)
-        self.ref_bases = self.ref_seq[self.relative_pos[0] : self.relative_pos[1] + 1]
+        if self.ref_seq:
+            LOGGER.debug("Using pre-loaded ref_seq from stored design data")
+        elif vcf_records:
+            self._load_sequence_with_vcf(ensembl_client, vcf_records)
+        else:
+            self.sequence_region_start = max(
+                1, self.genomic_pos["pos"][0] - VARIANT_FLANKING
+            )
+            self.ref_seq = self._get_sequence_snippet(ensembl_client)
+            if relative_pos is None:
+                self.relative_pos = self._default_relative_pos()
 
-        # Load gene details if genomic position is provided
+        if not self.ref_bases:
+            self.ref_bases = self.ref_seq[
+                self.relative_pos[0] : self.relative_pos[1] + 1
+            ]
+
         if self.genomic_pos and not self.gene_ID:
             self.gene_ID, self.gene_symbol = self._load_geneDetails(ensembl_client)
 
-        # Determine indel type if not set
         self.indel_type = self._determine_indel_type()
+
+    def _default_relative_pos(self) -> Tuple[int, int]:
+        primary_start = self.genomic_pos["pos"][0]
+        primary_end = self.genomic_pos["pos"][-1]
+        if self.sequence_region_start is None:
+            return (VARIANT_FLANKING, VARIANT_FLANKING + primary_end - primary_start)
+        return (
+            primary_start - self.sequence_region_start,
+            primary_end - self.sequence_region_start,
+        )
+
+    def _load_sequence_with_vcf(
+        self, ensembl_client: EnsemblClient, vcf_records: List[VcfRecord]
+    ) -> None:
+        if not self.genomic_pos:
+            raise ValueError("Genomic position required when using VCF upload")
+
+        primary_start = int(self.genomic_pos["pos"][0])
+        primary_end = int(self.genomic_pos["pos"][-1])
+        region_start, region_end = compute_fetch_window(
+            primary_start, primary_end, vcf_records, VARIANT_FLANKING
+        )
+        self.sequence_region_start = region_start
+
+        ref_seq = ensembl_client.get_genomic_sequence(
+            self.genomic_pos["chr"], region_start, region_end
+        )
+        spiked, applied, deltas = spike_vcf_variants(
+            ref_seq,
+            region_start,
+            vcf_records,
+            skip_interval=(primary_start, primary_end),
+        )
+        self.ref_seq = spiked
+        self.vcf_applied_variants = [
+            {
+                "id": a.id,
+                "chrom": a.chrom,
+                "pos": a.pos,
+                "ref": a.ref,
+                "alt": a.alt,
+                "template_start": a.template_start,
+                "template_end": a.template_end,
+            }
+            for a in applied
+        ]
+
+        t_start, t_end = template_range_for_genomic(
+            region_start, primary_start, primary_end, deltas
+        )
+        self.relative_pos = (t_start, t_end)
+        LOGGER.info(
+            "VCF spiking: %s variant(s) applied; primary template %s–%s",
+            len(applied),
+            t_start,
+            t_end,
+        )
 
     def _get_sequence_snippet(
         self, ensembl_client: EnsemblClient, flank: int = VARIANT_FLANKING
@@ -256,8 +338,14 @@ class GenomicVariantInfo(AllelicVariantInfo):
                 "Genomic position must be provided to fetch sequence snippet"
             )
 
-        start_position = max(1, self.genomic_pos["pos"][0] - flank)
-        end_position = self.genomic_pos["pos"][-1] + flank
+        if self.sequence_region_start is not None and self.ref_seq:
+            start_position = self.sequence_region_start
+            end_position = start_position + len(self.ref_seq) - 1
+        else:
+            start_position = max(1, self.genomic_pos["pos"][0] - flank)
+            end_position = self.genomic_pos["pos"][-1] + flank
+            self.sequence_region_start = start_position
+
         seq = ensembl_client.get_genomic_sequence(
             self.genomic_pos["chr"], start_position, end_position
         )

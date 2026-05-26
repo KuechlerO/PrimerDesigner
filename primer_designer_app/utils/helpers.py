@@ -1,5 +1,7 @@
+import json
 import logging
 import re
+from typing import List, Optional, Sequence
 
 from primer_designer_app.models import PrimerSettingsModel
 from primer_designer_app.utils.variant_info import (
@@ -9,9 +11,36 @@ from primer_designer_app.utils.variant_info import (
     GenomicVariantInfo,
     IndelType,
 )
+from primer_designer_app.utils.display_utils import (
+    compute_display_bounds,
+    shift_template_hits_for_display,
+)
 from primer_designer_app.utils.primer_utils import PrimerPairResult
 
 LOGGER = logging.getLogger(__name__)
+
+
+def vcf_hits_for_display(
+    vcf_applied: List[dict], display_offset: int, display_length: int
+) -> List[dict]:
+    """Shift VCF template coordinates into the displayed sequence slice."""
+    return shift_template_hits_for_display(
+        list(vcf_applied or []), display_offset, display_length
+    )
+
+
+def vcf_hits_json_for_display(
+    vcf_applied: List[dict], display_offset: int, display_length: int
+) -> str:
+    return json.dumps(vcf_hits_for_display(vcf_applied, display_offset, display_length))
+
+
+def snp_hits_json_for_display(
+    snp_hits: List[dict], display_offset: int, display_length: int
+) -> str:
+    return json.dumps(
+        shift_template_hits_for_display(snp_hits, display_offset, display_length)
+    )
 
 
 def map_variant_content(var_info: AllelicVariantInfo) -> tuple[str, str]:
@@ -99,54 +128,106 @@ def transform_rel_primer_pos(primerF_range, primerR_range, genomic_pos):
     return primerF_range, primerR_range
 
 
+def _slice_variant_info_for_display(
+    var_info: AllelicVariantInfo,
+    target_start: int,
+    target_len: int,
+    primer_pairs: Sequence[PrimerPairResult],
+) -> tuple[int, int, int, int, int, int, int, int]:
+    """
+    Slice var_info in place for UI display; return display offset and adjusted coordinates
+    for the active primer pair (first in primer_pairs).
+    """
+    template_len = len(var_info.ref_seq)
+    var_lo, var_hi = var_info.relative_pos
+    pair = primer_pairs[0]
+    primerF_start, primerF_end = pair.left_relPos_start, pair.left_relPos_end
+    primerR_start, primerR_end = pair.right_relPos_start, pair.right_relPos_end
+
+    display_start, display_end = compute_display_bounds(
+        template_len, var_lo, var_hi, target_start, target_len, primer_pairs
+    )
+
+    saved_ref = var_info.ref_seq
+    var_info.relative_pos
+    saved_bases = var_info.ref_bases
+
+    var_info.ref_seq = saved_ref[display_start:display_end]
+    var_info.relative_pos = (var_lo - display_start, var_hi - display_start)
+    if saved_bases:
+        var_info.ref_bases = var_info.ref_seq[
+            var_info.relative_pos[0] : var_info.relative_pos[1] + 1
+        ]
+
+    adj = display_start
+    return (
+        display_start,
+        primerF_start - adj,
+        primerF_end - adj,
+        primerR_start - adj,
+        primerR_end - adj,
+        target_start - adj,
+        display_end - display_start,
+    )
+
+
 def html_visualize_sequence(
     prim_settings: PrimerSettingsModel,
     var_info: AllelicVariantInfo,
     prim_pair: PrimerPairResult,
-) -> str:
-    """Generates an HTML string with the target region highlighted, including the variant and primer binding sites."""
-    annotated_seq = var_info.get_seq("input")
+    *,
+    all_primer_pairs: Optional[Sequence[PrimerPairResult]] = None,
+) -> tuple[str, int, int]:
+    """Return (HTML, display_offset, display_length) for the sequence view."""
+    pairs = list(all_primer_pairs) if all_primer_pairs else [prim_pair]
+    if prim_pair not in pairs:
+        pairs = [prim_pair] + pairs
 
-    primerF_start, primerF_end = [
-        prim_pair.left_relPos_start,
-        prim_pair.left_relPos_end,
-    ]
-    primerR_start, primerR_end = [
-        prim_pair.right_relPos_start,
-        prim_pair.right_relPos_end,
-    ]
+    saved_ref = var_info.ref_seq
+    saved_rel = var_info.relative_pos
+    saved_bases = var_info.ref_bases
+    display_offset = 0
+    display_length = len(var_info.ref_seq)
 
-    # 1. Get variant text -> extract text surrounded by [] for highlighting
-    reg_expr = r"(\[[^\]]+\])"
-    capture = re.findall(reg_expr, annotated_seq)[0]
-    # Insert IndelType annotation
-    var_text = capture.replace("[", "[" + var_info.indel_type.value + ":")
+    try:
+        (
+            display_offset,
+            primerF_start,
+            primerF_end,
+            primerR_start,
+            primerR_end,
+            target_start,
+            display_length,
+        ) = _slice_variant_info_for_display(
+            var_info,
+            prim_settings.target[0],
+            prim_settings.target[1],
+            pairs,
+        )
+        annotated_seq = var_info.get_seq("input")
 
-    start_target_region = max(prim_settings.target[0], primerF_end + 1)
-    end_target_region = min(
-        prim_settings.target[0] + prim_settings.target[1], primerR_start - 1
+        reg_expr = r"(\[[^\]]+\])"
+
+        def _highlight_variant(match: re.Match) -> str:
+            capture = match.group(1)
+            var_text = capture.replace("[", "[" + var_info.indel_type.value + ":")
+            return f"<span class='highlight-mutation'>{var_text}</span>"
+
+        highlighted_sequence = re.sub(
+            reg_expr, _highlight_variant, annotated_seq, count=1
+        )
+
+        # Only highlight the variant itself (highlight-mutation).
+        # The previous "highlight-target" wrapper around surrounding flank/target
+        # area is intentionally removed to reduce visual noise.
+    finally:
+        var_info.ref_seq = saved_ref
+        var_info.relative_pos = saved_rel
+        var_info.ref_bases = saved_bases
+
+    LOGGER.debug(
+        "Display highlighted sequence length: %s (offset %s)",
+        len(highlighted_sequence),
+        display_offset,
     )
-    seq_target_region = annotated_seq[
-        start_target_region:end_target_region
-    ]  # TODO: Really?
-    upstream_ref_pos = var_info.relative_pos[0] - start_target_region
-    # Position downstream of variant in reference sequence
-    downstream_ref_pos = upstream_ref_pos + len(capture)
-
-    # 2. Create highlighted target region with highlighted variant
-    seq_target_highlight = (
-        f"<span class='highlight-target'>"  # Highlighting of target region
-        + seq_target_region[:upstream_ref_pos]
-        + f"<span class='highlight-mutation'>{var_text}</span>"  # Notation of variant
-        + seq_target_region[downstream_ref_pos:]
-        + "</span>"
-    )
-
-    highlighted_sequence = (
-        annotated_seq[:start_target_region]
-        + seq_target_highlight
-        + annotated_seq[end_target_region:]
-    )
-
-    LOGGER.debug(f"Full highlighted sequence: {highlighted_sequence}")
-    return highlighted_sequence
+    return highlighted_sequence, display_offset, display_length

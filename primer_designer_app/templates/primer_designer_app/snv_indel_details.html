@@ -145,10 +145,17 @@
         // Function to initialize primer highlighting on page load
         function initializePrimerHighlighting() {
             // Get relative primer positions
-            const primerF_start = parseInt(document.getElementById("left_relPos_start").textContent, 10);
-            const primerF_end = parseInt(document.getElementById("left_relPos_end").textContent, 10);
-            const primerR_start = parseInt(document.getElementById("right_relPos_start").textContent, 10);
-            const primerR_end = parseInt(document.getElementById("right_relPos_end").textContent, 10);
+            let primerF_start = parseInt(document.getElementById("left_relPos_start").textContent, 10);
+            let primerF_end = parseInt(document.getElementById("left_relPos_end").textContent, 10);
+            let primerR_start = parseInt(document.getElementById("right_relPos_start").textContent, 10);
+            let primerR_end = parseInt(document.getElementById("right_relPos_end").textContent, 10);
+            const displayOffset = typeof SEQUENCE_DISPLAY_OFFSET !== "undefined"
+                ? SEQUENCE_DISPLAY_OFFSET
+                : 0;
+            primerF_start -= displayOffset;
+            primerF_end -= displayOffset;
+            primerR_start -= displayOffset;
+            primerR_end -= displayOffset;
 
             refreshSequenceHighlights(
                 primerF_start,
@@ -158,6 +165,8 @@
             );
         }
 
+        const SEQUENCE_DISPLAY_OFFSET = {{ sequence_display_offset|default:0 }};
+        const VCF_REGION_HITS = {{ vcf_hits_json|safe }};
         {% if snp_analysis and snp_analysis.hits %}
         const SNP_REGION_HITS = {{ snp_hits_json|safe }};
         {% else %}

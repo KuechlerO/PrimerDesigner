@@ -150,8 +150,10 @@ def get_primers_from_primer3(dicey_primer) -> List["PrimerPairResult"]:
                 right_pos = dicey_primer[right_key]
                 left_relPos_start = int(left_pos[0])
                 left_len = int(left_pos[1])
-                right_relPos_start = int(right_pos[0])
+                right_pos_5p = int(right_pos[0])
                 right_len = int(right_pos[1])
+                right_relPos_start = right_pos_5p - (right_len - 1)
+                right_relPos_end = right_pos_5p
             except Exception:
                 # skip malformed entries
                 continue
@@ -166,8 +168,8 @@ def get_primers_from_primer3(dicey_primer) -> List["PrimerPairResult"]:
                 # Position is 0-based!
                 left_relPos_start=left_relPos_start,
                 left_relPos_end=left_relPos_start + (left_len - 1),
-                right_relPos_start=right_relPos_start - (right_len - 1),
-                right_relPos_end=right_relPos_start,
+                right_relPos_start=right_relPos_start,
+                right_relPos_end=right_relPos_end,
                 gc=[
                     round(float(dicey_primer.get(left_gc_key, 0.0)), 1),
                     round(float(dicey_primer.get(right_gc_key, 0.0)), 1),

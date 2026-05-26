@@ -9,7 +9,7 @@
     {% include "primer_designer_app/body_nav.html" %}
     {% include "primer_designer_app/_prim3_param_overview.html" %}
     <main>
-        <form id="settings" method="post" action="{% url 'primer_designer_app:snv_indel_primers_overview' %}" autocomplete="on">
+        <form id="settings" method="post" action="{% url 'primer_designer_app:snv_indel_primers_overview' %}" enctype="multipart/form-data" autocomplete="on">
             {% csrf_token %}
 
             {% include "primer_designer_app/_primer_settings_top_row.html" %}
@@ -28,6 +28,7 @@
                             <li class="info-li">For InDels, the two positions refer to the start and end position of the sequence region that is substituted with the given variant sequence.</li>
                             <li class="info-li">Inserted bases can be specified either as a base sequence (e.g., AGT) or as the number of inserted bases (e.g., 3)</li>
                             <li class="info-li">Allowed format: <span style ="color: color(srgb 0.095 0.4408 0.5);">ChrY:2655470</style></li>
+                            <li class="info-li">Optional: upload a <strong>VCF</strong> (same chromosome as your variant) to spike additional variants into the reference sequence before primer design (patient-specific background).</li>
                         </ul>
                     </div>
                     <h2>Genomic position</h2>
@@ -56,6 +57,15 @@
                             <input type="text" id="IndelEnd" name="IndelEnd" placeholder="Wildtype end position" oninput="handleInputChange('IndelEnd')"style="width: 100%; ">
                             <input type="text" id="IndelIns" name="IndelIns" placeholder="Inserted bases" oninput="handleInputChange('IndelIns')" style="width: 100%; border: none; ">
                         </div>
+                    </div>
+
+                    <div class="vcf-upload-block" id="vcf-upload-block">
+                        <h3 class="vcf-upload-heading">Optional: VCF (same chromosome)</h3>
+                        <p class="vcf-upload-hint">
+                            Variants from the file are applied to the reference window (gnomAD-style MAF not required).
+                            Your SNV/InDel above remains the primary design variant.
+                        </p>
+                        <input type="file" id="vcf_file" name="vcf_file" accept=".vcf,.vcf.gz,text/plain" onchange="handleInputChange('vcf_file')">
                     </div>
                 </section>
 

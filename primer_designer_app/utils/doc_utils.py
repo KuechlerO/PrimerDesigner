@@ -337,6 +337,27 @@ def create_primer_report(
 
     add_amplicon_detail_table_to_doc(doc, primer_pair, prim_settings)
 
+    vcf_applied = getattr(var_info, "vcf_applied_variants", None) or []
+    if vcf_applied:
+        doc.add_heading("VCF background variants", level=1)
+        doc.add_paragraph(
+            f"{len(vcf_applied)} variant(s) from the uploaded VCF were spiked into "
+            "the reference sequence before primer design."
+        )
+        table = doc.add_table(rows=1 + len(vcf_applied), cols=3)
+        table.style = "Table Grid"
+        for j, title in enumerate(["ID", "Genomic", "REF → ALT"]):
+            _set_cell_run(table.rows[0].cells[j], title, bold=True, size_pt=9)
+        for i, row in enumerate(vcf_applied):
+            cells = table.rows[i + 1].cells
+            values = [
+                row.get("id", ""),
+                f"chr{row.get('chrom', '')}:{row.get('pos', '')}",
+                f"{row.get('ref', '')} → {row.get('alt', '')}",
+            ]
+            for j, val in enumerate(values):
+                _set_cell_run(cells[j], str(val), size_pt=9)
+
     snp_analysis = getattr(designResultsSummary_obj, "snp_analysis_data", None) or {}
     if snp_analysis.get("enabled"):
         doc.add_heading("Known SNPs (gnomAD, MAF > 1%)", level=1)

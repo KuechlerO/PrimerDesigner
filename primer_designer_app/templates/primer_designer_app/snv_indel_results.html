@@ -15,6 +15,17 @@
             <p class = "hgvs-info" style = "margin-left: 1em;">{{ hgvs_info }}</p>
         </div>
 
+        {% if result_sum_obj.variant_info_data and result_sum_obj.variant_info_data.vcf_applied_variants %}
+            <div class="snp-banner vcf-banner--active">
+                <span class="snp-banner__message">
+                    {{ result_sum_obj.variant_info_data.vcf_applied_variants|length }}
+                    variant(s) from your VCF were spiked into the reference sequence before primer design
+                    (your entered SNV/InDel remains the primary design target).
+                </span>
+                <button type="button" class="snp-details-btn" onclick="document.getElementById('vcf-applied-modal').showModal();">Show spiked VCF variants</button>
+            </div>
+        {% endif %}
+
         {% if snp_analysis and snp_analysis.enabled %}
             <div class="snp-banner{% if snp_analysis.hits %} snp-banner--active{% endif %}{% if snp_analysis.pairs_with_binding_conflict %} snp-banner--warn{% endif %}">
                 <span class="snp-banner__message">{{ snp_analysis.message }}</span>
@@ -42,6 +53,9 @@
                 <div class="output-info-overlay">
                     <ul><li class="info-li" style="list-style: none;"><strong>Info:</strong></li>
                         <li class="info-li">The sequence above shows a snippet of the relevant DNA including the <span style="color:color(srgb 0.1928 0.5967 0.665)">recommended primer pair</span> and <span style="color:color(srgb 0.83 0.4543 0.4482)">target region</span>.</li>
+                        {% if result_sum_obj.variant_info_data.vcf_applied_variants %}
+                        <li class="info-li">Variants spiked from your VCF are highlighted in <span class="vcf-legend-sample">lavender</span> (hover for ID and alleles).</li>
+                        {% endif %}
                         {% if snp_analysis and snp_analysis.enabled and snp_analysis.hits %}
                         <li class="info-li">Common gnomAD variants (MAF &gt; 1%) are highlighted in <span class="snp-legend-sample">yellow/orange</span>; darker orange marks SNPs overlapping the selected primer binding sites. Hover a highlight to see rsID and MAF.</li>
                         {% endif %}
@@ -128,6 +142,9 @@
                 </tbody>
             </table>
             </div>
+            {% if result_sum_obj.variant_info_data and result_sum_obj.variant_info_data.vcf_applied_variants %}
+                {% include "primer_designer_app/_vcf_applied_modal.html" %}
+            {% endif %}
             {% if snp_analysis and snp_analysis.enabled and snp_analysis.hits %}
                 {% include "primer_designer_app/_snp_region_modal.html" %}
             {% endif %}
@@ -197,7 +214,14 @@
 
             // Get primer positions from the hidden cell
             const positions = row.cells[1].textContent.split(",").map(x => parseInt(x.trim(), 10));
-            const [primerF_start, primerF_end, primerR_start, primerR_end] = positions;
+            let [primerF_start, primerF_end, primerR_start, primerR_end] = positions;
+            const displayOffset = typeof SEQUENCE_DISPLAY_OFFSET !== "undefined"
+                ? SEQUENCE_DISPLAY_OFFSET
+                : 0;
+            primerF_start -= displayOffset;
+            primerF_end -= displayOffset;
+            primerR_start -= displayOffset;
+            primerR_end -= displayOffset;
 
             // Highlight primers in the sequence
             highlightPrimers(primerF_start, primerF_end, primerR_start, primerR_end);
@@ -219,6 +243,8 @@
             });
         });
 
+        const SEQUENCE_DISPLAY_OFFSET = {{ sequence_display_offset|default:0 }};
+        const VCF_REGION_HITS = {{ vcf_hits_json|safe }};
         {% if snp_analysis and snp_analysis.hits %}
         const SNP_REGION_HITS = {{ snp_hits_json|safe }};
         {% else %}

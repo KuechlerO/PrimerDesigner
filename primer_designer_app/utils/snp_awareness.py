@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Sequence, Tuple
 
+from primer_designer_app.utils.display_utils import compute_display_bounds
 from primer_designer_app.utils.ensembl_client import (
     GNOMAD_VARIANT_SET,
     EnsemblClient,
@@ -90,11 +91,18 @@ def _attach_maf_and_filter_common_variants(
 
 
 def get_design_region_genomic(
-    var_info: AllelicVariantInfo, flank: int = VARIANT_FLANKING
+    var_info: AllelicVariantInfo,
+    flank: int = VARIANT_FLANKING,
+    primer_pairs: Optional[Sequence[PrimerPairResult]] = None,
+    *,
+    primer_target: Optional[Tuple[int, int]] = None,
 ) -> Optional[dict]:
     """
-    Return 1-based inclusive genomic interval used for the Primer3 template
-    (matches GenomicVariantInfo sequence fetch).
+    Return genomic intervals for SNP awareness.
+
+    - region_start: template origin for mapping hits (full VCF-spiked window when present).
+    - query_start / query_end: 1-based inclusive Ensembl overlap interval, aligned with
+      the same display window shown in the results UI (DISPLAY_FLANK).
     """
     genomic_pos = getattr(var_info, "genomic_pos", None)
     if not genomic_pos or not genomic_pos.get("pos"):
@@ -111,12 +119,50 @@ def get_design_region_genomic(
         variant_start = int(pos[0])
         variant_end = int(pos[-1]) if len(pos) > 1 else int(pos[0])
 
-    region_start = max(1, variant_start - flank)
-    region_end = variant_end + flank
+    region_start_attr = getattr(var_info, "sequence_region_start", None)
+    ref_seq = getattr(var_info, "ref_seq", None)
+    if region_start_attr is not None and ref_seq:
+        region_start = int(region_start_attr)
+        region_end = region_start + len(ref_seq) - 1
+    else:
+        region_start = max(1, variant_start - flank)
+        region_end = variant_end + flank
+
+    rel = getattr(var_info, "relative_pos", None)
+    display_start = 0
+    display_end = (
+        len(ref_seq) if ref_seq else (variant_end - variant_start + 1 + 2 * flank)
+    )
+
+    if rel and ref_seq:
+        var_lo, var_hi = int(rel[0]), int(rel[1])
+        if primer_target:
+            target_start, target_len = primer_target
+        else:
+            target_start = max(0, var_lo - flank)
+            target_len = (var_hi - var_lo + 1) + 2 * flank
+        display_start, display_end = compute_display_bounds(
+            len(ref_seq),
+            var_lo,
+            var_hi,
+            target_start,
+            target_len,
+            primer_pairs or [],
+        )
+        query_start = region_start + display_start
+        query_end = region_start + display_end - 1
+    else:
+        query_start = max(1, variant_start - flank)
+        query_end = variant_end + flank
+
     return {
         "chromosome": chromosome,
         "region_start": region_start,
         "region_end": region_end,
+        "query_start": max(1, query_start),
+        "query_end": query_end,
+        "display_start": display_start,
+        "display_end": display_end,
         "variant_start": variant_start,
         "variant_end": variant_end,
     }
@@ -214,6 +260,7 @@ def annotate_primer_pairs_with_snp_awareness(
     reference_genome: str,
     *,
     enabled: bool = True,
+    primer_target: Optional[Tuple[int, int]] = None,
 ) -> dict:
     """
     Query Ensembl for known variants in the design region and annotate each primer pair.
@@ -252,7 +299,11 @@ def annotate_primer_pairs_with_snp_awareness(
             pair.snp_conflicts = []
         return base_summary
 
-    region = get_design_region_genomic(var_info)
+    region = get_design_region_genomic(
+        var_info,
+        primer_pairs=primer_pairs,
+        primer_target=primer_target,
+    )
     if not region:
         base_summary["message"] = "No genomic coordinates available for SNP check."
         for pair in primer_pairs:
@@ -260,18 +311,20 @@ def annotate_primer_pairs_with_snp_awareness(
             pair.snp_conflicts = []
         return base_summary
 
+    query_start = region["query_start"]
+    query_end = region["query_end"]
     base_summary["region"] = {
         "chromosome": region["chromosome"],
-        "start": region["region_start"],
-        "end": region["region_end"],
+        "start": query_start,
+        "end": query_end,
     }
 
     try:
         client = EnsemblClient(ref_genome=reference_genome)
         raw_hits = client.get_overlapping_variations_for_region(
             region["chromosome"],
-            region["region_start"],
-            region["region_end"],
+            query_start,
+            query_end,
             variant_set=GNOMAD_VARIANT_SET,
         )
     except Exception as exc:
