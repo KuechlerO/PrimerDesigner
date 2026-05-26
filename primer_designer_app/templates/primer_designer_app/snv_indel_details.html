@@ -6,6 +6,7 @@
 <head>
     {% include "primer_designer_app/header.html" %}
     <link rel="stylesheet" href = "{% static 'primer_designer_app/indel_details.css' %}">
+    <link rel="stylesheet" href = "{% static 'primer_designer_app/indel_results.css' %}">
 </head>
 <body>
     {% include "primer_designer_app/body_nav.html" %}
@@ -88,6 +89,14 @@
                             <td class="final-output-td">Product tm</td>
                             <td class="final-output-td" colspan="2">{{ primer_pair.product_tm }} °C</td>
                         </tr>
+                        {% if snp_analysis.enabled %}
+                        <tr>
+                            <td class="final-output-td">SNP risk (gnomAD)</td>
+                            <td class="final-output-td {{ primer_pair.snp_status|snp_cell_class }}" colspan="2" title="{{ primer_pair.snp_conflicts|snp_conflict_summary }}">
+                                {{ primer_pair.snp_status|snp_status_label }}
+                            </td>
+                        </tr>
+                        {% endif %}
                     </tbody>
                 </table>
 
@@ -141,9 +150,19 @@
             const primerR_start = parseInt(document.getElementById("right_relPos_start").textContent, 10);
             const primerR_end = parseInt(document.getElementById("right_relPos_end").textContent, 10);
 
-            // Highlight primers in the sequence
-            highlightPrimers(primerF_start, primerF_end, primerR_start, primerR_end);
+            refreshSequenceHighlights(
+                primerF_start,
+                primerF_end,
+                primerR_start,
+                primerR_end
+            );
         }
+
+        {% if snp_analysis and snp_analysis.hits %}
+        const SNP_REGION_HITS = {{ snp_hits_json|safe }};
+        {% else %}
+        const SNP_REGION_HITS = [];
+        {% endif %}
 
         window.onload = function() {
             initializePrimerHighlighting();

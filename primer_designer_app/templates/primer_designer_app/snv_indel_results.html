@@ -15,7 +15,16 @@
             <p class = "hgvs-info" style = "margin-left: 1em;">{{ hgvs_info }}</p>
         </div>
 
-        <div class="sequence-container">
+        {% if snp_analysis and snp_analysis.enabled %}
+            <div class="snp-banner{% if snp_analysis.hits %} snp-banner--active{% endif %}{% if snp_analysis.pairs_with_binding_conflict %} snp-banner--warn{% endif %}">
+                <span class="snp-banner__message">{{ snp_analysis.message }}</span>
+                {% if snp_analysis.hits %}
+                    <button type="button" class="snp-details-btn" onclick="document.getElementById('snp-region-modal').showModal();">Show all variants in region</button>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <div class="sequence-container" id="sequence-container">
             <ol class="seq-lines">
                 {% for line in highlighted_sequence|chunk_html:100 %}
                 <li class="seq-line">
@@ -33,6 +42,9 @@
                 <div class="output-info-overlay">
                     <ul><li class="info-li" style="list-style: none;"><strong>Info:</strong></li>
                         <li class="info-li">The sequence above shows a snippet of the relevant DNA including the <span style="color:color(srgb 0.1928 0.5967 0.665)">recommended primer pair</span> and <span style="color:color(srgb 0.83 0.4543 0.4482)">target region</span>.</li>
+                        {% if snp_analysis and snp_analysis.enabled and snp_analysis.hits %}
+                        <li class="info-li">Common gnomAD variants (MAF &gt; 1%) are highlighted in <span class="snp-legend-sample">yellow/orange</span>; darker orange marks SNPs overlapping the selected primer binding sites. Hover a highlight to see rsID and MAF.</li>
+                        {% endif %}
                         <li class="info-li">Select one of the primer pairs <span style="font-weight:bold">or </span> click Back to adjust the primer settings and generate new suggestions if none of the options are suitable.</span></li>
 
                         <br>
@@ -61,6 +73,9 @@
                         <th class="output-th">Primer Tm</th>
                         <th class="output-th">Primer GC</th>
                         <th class="output-th">Amplicons</th>
+                        {% if snp_analysis and snp_analysis.enabled %}
+                            <th class="output-th">SNP risk</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -100,11 +115,58 @@
                                 {% endif %}
                                 </span>
                             </td>
+                            {% if snp_analysis and snp_analysis.enabled %}
+                                <td class="{{ pair_res.snp_status|snp_cell_class }}" style="font-size: 1.1em;" title="{{ pair_res.snp_conflicts|snp_conflict_summary }}">
+                                    {{ pair_res.snp_status|snp_status_label }}
+                                    {% if pair_res.snp_conflicts %}
+                                        <button type="button" class="snp-details-btn" onclick="event.stopPropagation(); document.getElementById('snp-pair-modal-{{ forloop.counter }}').showModal();">Details</button>
+                                    {% endif %}
+                                </td>
+                            {% endif %}
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
             </div>
+            {% if snp_analysis and snp_analysis.enabled and snp_analysis.hits %}
+                {% include "primer_designer_app/_snp_region_modal.html" %}
+            {% endif %}
+            {% for pair_res in result_sum_obj.get_primer_search_results.primer_pairs %}
+                {% if pair_res.snp_conflicts %}
+                    <dialog id="snp-pair-modal-{{ forloop.counter }}" class="amplicon-dialog">
+                        <div class="amplicon-dialog-panel">
+                            <h3 class="amplicon-dialog-title">SNP overlap — primer pair {{ forloop.counter }}</h3>
+                            <div class="amplicon-dialog-scroll">
+                            <table class="output-table" style="width: 100%;">
+                                <thead>
+                                    <tr>
+                                        <th class="output-th">ID</th>
+                                        <th class="output-th">Genomic</th>
+                                        <th class="output-th">Alleles</th>
+                                        <th class="output-th">MAF</th>
+                                        <th class="output-th">Primer</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for hit in pair_res.snp_conflicts %}
+                                        <tr>
+                                            <td>{{ hit.id }}</td>
+                                            <td>{{ hit.genomic_start }}–{{ hit.genomic_end }}</td>
+                                            <td>{{ hit.alleles }}</td>
+                                            <td>{% if hit.maf %}{{ hit.maf|floatformat:4 }}{% else %}—{% endif %}</td>
+                                            <td>{{ hit.primer }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            </div>
+                            <div class="amplicon-dialog-actions">
+                                <button type="button" class="amplicon-dialog-close-btn" onclick="document.getElementById('snp-pair-modal-{{ forloop.counter }}').close()">Close</button>
+                            </div>
+                        </div>
+                    </dialog>
+                {% endif %}
+            {% endfor %}
             {% for pair_res in result_sum_obj.get_primer_search_results.primer_pairs %}
                 {% if pair_res.insilico_status == 'ok' %}
                     {% include "primer_designer_app/_amplicon_modal.html" with amplicons=pair_res.amplicons modal_suffix=forloop.counter %}
@@ -139,6 +201,7 @@
 
             // Highlight primers in the sequence
             highlightPrimers(primerF_start, primerF_end, primerR_start, primerR_end);
+            highlightSnpsForPair(primerF_start, primerF_end, primerR_start, primerR_end);
         }
 
         // Automatically select and highlight the recommended primer pair on page load
@@ -155,6 +218,12 @@
                 if (e.target === dialog) dialog.close();
             });
         });
+
+        {% if snp_analysis and snp_analysis.hits %}
+        const SNP_REGION_HITS = {{ snp_hits_json|safe }};
+        {% else %}
+        const SNP_REGION_HITS = [];
+        {% endif %}
     </script>
 </body>
 </html>

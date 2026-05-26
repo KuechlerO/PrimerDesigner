@@ -42,6 +42,8 @@ class PrimerPairResult:
     amplicons: Optional[List[str]] = None
     insilico_status: Optional[str] = None
     insilico_error_detail: Optional[str] = None
+    snp_status: Optional[str] = None
+    snp_conflicts: Optional[List[dict]] = None
 
     def to_dict(self):
         return asdict(self)
@@ -116,6 +118,8 @@ def primer_pair_from_dict(pair: dict) -> PrimerPairResult:
     if d.get("insilico_status") is None:
         d["insilico_status"] = _infer_legacy_insilico_status(d)
     d.setdefault("insilico_error_detail", None)
+    d.setdefault("snp_status", None)
+    d.setdefault("snp_conflicts", None)
     return PrimerPairResult(**d)
 
 

@@ -337,6 +337,44 @@ def create_primer_report(
 
     add_amplicon_detail_table_to_doc(doc, primer_pair, prim_settings)
 
+    snp_analysis = getattr(designResultsSummary_obj, "snp_analysis_data", None) or {}
+    if snp_analysis.get("enabled"):
+        doc.add_heading("Known SNPs (gnomAD, MAF > 1%)", level=1)
+        doc.add_paragraph(snp_analysis.get("message", ""))
+        if snp_analysis.get("region"):
+            region = snp_analysis["region"]
+            doc.add_paragraph(
+                f"Design region: chr{region.get('chromosome')}:"
+                f"{region.get('start')}-{region.get('end')}",
+                style="List Bullet",
+            )
+        pair_status = getattr(primer_pair, "snp_status", None)
+        if pair_status:
+            doc.add_paragraph(
+                f"Selected primer pair SNP risk: {pair_status}",
+                style="List Bullet",
+            )
+        conflicts = getattr(primer_pair, "snp_conflicts", None) or []
+        if conflicts:
+            doc.add_heading("SNP overlap with selected primers", level=2)
+            table = doc.add_table(rows=1 + len(conflicts), cols=5)
+            table.style = "Table Grid"
+            for j, title in enumerate(["ID", "Genomic", "Alleles", "MAF", "Primer"]):
+                _set_cell_run(table.rows[0].cells[j], title, bold=True, size_pt=9)
+            for i, hit in enumerate(conflicts):
+                row_cells = table.rows[i + 1].cells
+                maf_val = hit.get("maf")
+                maf_str = f"{maf_val:.4f}" if maf_val is not None else ""
+                values = [
+                    hit.get("id", ""),
+                    f"{hit.get('genomic_start')}–{hit.get('genomic_end')}",
+                    hit.get("alleles", ""),
+                    maf_str,
+                    hit.get("primer", ""),
+                ]
+                for j, val in enumerate(values):
+                    _set_cell_run(row_cells[j], val, size_pt=8)
+
     # 3. Sequence visualization
     doc.add_heading("Sequence snippet:", level=1)
     doc.add_paragraph(

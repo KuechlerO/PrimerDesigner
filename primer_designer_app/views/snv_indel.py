@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 
+import json
 import logging
 
 from primer_designer_app.models import DesignResultsSummary
@@ -100,6 +101,11 @@ def primers_overview(request, uuid=None):
     for i, primer_pair in enumerate(prim_search_results.primer_pairs):
         logger.debug(f"Primer pair {i}: Amplicons per primer: {primer_pair.amplicons}")
 
+    snp_analysis = designResults_obj.snp_analysis_data or {}
+    snp_hits_json = "[]"
+    if snp_analysis.get("hits"):
+        snp_hits_json = json.dumps(snp_analysis["hits"])
+
     return render(
         request,
         "primer_designer_app/snv_indel_results.html",
@@ -107,6 +113,8 @@ def primers_overview(request, uuid=None):
             "highlighted_sequence": highlighted_seq_snippet,
             "result_sum_obj": designResults_obj,
             "hgvs_info": hgvs_info,
+            "snp_analysis": snp_analysis,
+            "snp_hits_json": snp_hits_json,
             "insilico_reference_note": insilico_reference_description(
                 designResults_obj.primer_settings
             ),
@@ -140,6 +148,11 @@ def primer_details(request, uuid):
         genome_version = retrieved_result.get_variant_info().ref_genome
         hgvs_notation = create_hgvs_notation(retrieved_result.get_variant_info())
 
+        snp_analysis = retrieved_result.snp_analysis_data or {}
+        snp_hits_json = "[]"
+        if snp_analysis.get("hits"):
+            snp_hits_json = json.dumps(snp_analysis["hits"])
+
         return render(
             request,
             "primer_designer_app/snv_indel_details.html",
@@ -150,6 +163,8 @@ def primer_details(request, uuid):
                 "genome_version": genome_version,
                 "hgvs_info": hgvs_notation,
                 "selected_primer_index": selected_primer_index,
+                "snp_analysis": snp_analysis,
+                "snp_hits_json": snp_hits_json,
                 "insilico_reference_note": insilico_reference_description(
                     retrieved_result.primer_settings
                 ),

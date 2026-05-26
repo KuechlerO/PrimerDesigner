@@ -90,6 +90,10 @@ def _get_post(request, name, default=""):
     return request.POST.get(name, default)
 
 
+def _parse_snp_check(request) -> bool:
+    return _get_post(request, "snp-check", "").lower() in ("on", "1", "true", "yes")
+
+
 def build_form_data_from_request(request, **extra) -> dict:
     """
     Build a template context dict so primer settings and optional page fields
@@ -98,6 +102,7 @@ def build_form_data_from_request(request, **extra) -> dict:
     data = {
         "reference_genome": _get_post(request, "reference-genome", "GRCh37"),
         "amplicon_check": _get_post(request, "amplicon-check", "none"),
+        "snp_check": "on" if _parse_snp_check(request) else "",
         "tm": _get_post(request, "tm", "60"),
         "gc_content": _get_post(request, "gc_content", "50"),
         "product_size_min": _get_post(request, "product_size_min", "400"),
@@ -152,6 +157,7 @@ def build_primer_settings(request) -> PrimerSettingsModel:
         primer3_overrides=parse_primer3_overrides_from_post(request),
         do_insilico_pcr=do_insilico,
         context=context,
+        check_known_snps=_parse_snp_check(request),
     )
 
 
@@ -290,10 +296,23 @@ def handle_sequence_input(request, primer_settings):
 
 def _design_primers_and_return_searchID(variant_info, primer_settings):
     """Final step: Design primers and generate output."""
+    from primer_designer_app.utils.snp_awareness import (
+        annotate_primer_pairs_with_snp_awareness,
+    )
+
     LOGGER.debug(f"Context for primer design: {primer_settings.context}")
     primer_res = primer3_design_primers(primer_settings, variant_info)
     LOGGER.debug(f"Context 2 for primer design: {primer_settings.context}")
 
+    snp_analysis = annotate_primer_pairs_with_snp_awareness(
+        variant_info,
+        primer_res.primer_pairs,
+        primer_settings.reference_genome,
+        enabled=getattr(primer_settings, "check_known_snps", False),
+    )
+
     result_sum_obj = DesignResultsSummary()
-    result_sum_obj.save_primer_results(primer_res, primer_settings, variant_info)
+    result_sum_obj.save_primer_results(
+        primer_res, primer_settings, variant_info, snp_analysis_data=snp_analysis
+    )
     return result_sum_obj.id

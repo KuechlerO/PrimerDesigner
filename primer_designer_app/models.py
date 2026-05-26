@@ -43,6 +43,8 @@ class PrimerSettingsModel(models.Model):
     do_insilico_pcr = models.BooleanField(default=False)
     # Optional Primer3 global_args overrides (custom mode); merged in primer_utils
     primer3_overrides = models.JSONField(default=dict, blank=True)
+    # Query Ensembl for common gnomAD variants (MAF > 1%) in the design sequence
+    check_known_snps = models.BooleanField(default=False)
 
     def set_target(self, rel_pos):
         LOGGER.debug(
@@ -90,8 +92,11 @@ class DesignResultsSummary(models.Model):
     primer_search_results = models.JSONField(
         null=True, blank=True
     )  # Store primer results as JSON
+    snp_analysis_data = models.JSONField(null=True, blank=True)
 
-    def save_primer_results(self, prim_search_res, prim_settings, var_info):
+    def save_primer_results(
+        self, prim_search_res, prim_settings, var_info, snp_analysis_data=None
+    ):
         """
         Save primer results and related information into the DesignResultsSummary model
         """
@@ -125,6 +130,7 @@ class DesignResultsSummary(models.Model):
                 pair.to_dict() for pair in primer_results_dict["primer_pairs"]
             ]
         self.primer_search_results = primer_results_dict
+        self.snp_analysis_data = snp_analysis_data
 
         # Save the DesignResultsSummary instance
         self.save()
