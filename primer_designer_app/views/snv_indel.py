@@ -89,11 +89,13 @@ def primers_overview(request, uuid=None):
     prim_search_results = designResults_obj.get_primer_search_results()
     var_info = designResults_obj.get_variant_info()
 
-    highlighted_seq_snippet, display_offset, display_length = html_visualize_sequence(
-        designResults_obj.primer_settings,
-        var_info,
-        prim_search_results.primer_pairs[0],
-        all_primer_pairs=prim_search_results.primer_pairs,
+    highlighted_seq_snippet, display_offset, display_length, display_chunks = (
+        html_visualize_sequence(
+            designResults_obj.primer_settings,
+            var_info,
+            prim_search_results.primer_pairs[0],
+            all_primer_pairs=prim_search_results.primer_pairs,
+        )
     )
 
     primerF_sequences, primerR_sequences = (
@@ -128,6 +130,7 @@ def primers_overview(request, uuid=None):
         "primer_designer_app/snv_indel_results.html",
         {
             "highlighted_sequence": highlighted_seq_snippet,
+            "display_chunks": display_chunks,
             "result_sum_obj": designResults_obj,
             "hgvs_info": hgvs_info,
             "snp_analysis": snp_analysis,
@@ -159,10 +162,12 @@ def primer_details(request, uuid):
         selected_primer = primer_pairs[selected_primer_index - 1]
 
         var_info_detail = retrieved_result.get_variant_info()
-        full_highlighted_seq, display_offset, display_length = html_visualize_sequence(
-            retrieved_result.primer_settings,
-            var_info_detail,
-            selected_primer,
+        full_highlighted_seq, display_offset, display_length, display_chunks = (
+            html_visualize_sequence(
+                retrieved_result.primer_settings,
+                var_info_detail,
+                selected_primer,
+            )
         )
 
         genome_version = retrieved_result.get_variant_info().ref_genome
@@ -187,6 +192,7 @@ def primer_details(request, uuid):
             "primer_designer_app/snv_indel_details.html",
             {
                 "highlighted_sequence": full_highlighted_seq,
+                "display_chunks": display_chunks,
                 "primer_pair": selected_primer,
                 "uuid": retrieved_result.id,
                 "genome_version": genome_version,

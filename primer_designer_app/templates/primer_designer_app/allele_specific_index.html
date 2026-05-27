@@ -9,17 +9,26 @@
     {% include "primer_designer_app/body_nav.html" %}
     {% include "primer_designer_app/_prim3_param_overview.html" %}
     <main>
-        <form id="settings" method="post" action="{% url 'primer_designer_app:snv_indel_primers_overview' %}" enctype="multipart/form-data" autocomplete="on">
+        <form id="settings" method="post" action="{% url 'primer_designer_app:allele_specific_primers_overview' %}" enctype="multipart/form-data" autocomplete="on">
             {% csrf_token %}
 
             {% include "primer_designer_app/_primer_settings_top_row.html" %}
+
+            <div style="max-width: 64em; margin: 0.5em auto 4em; padding: 0.7em 1em; background: color(srgb 0.94 0.97 0.98); border: 1px solid color(srgb 0.55 0.72 0.78); border-radius: var(--radius-md);">
+                <h2 style="margin: 0 0 0.25em;">Allele-specific PCR (AS-PCR / ARMS)</h2>
+                <p style="margin: 0; line-height: 1.45;">
+                    This mode designs <strong>two allele-specific reactions</strong>: WT-specific and MUT-specific.
+                    By default, primers are designed so that the allele-discriminating base is at the <strong>3′ end</strong>
+                    of the allele-specific primer (no extra intentional mismatch).
+                </p>
+            </div>
 
             {% include "primer_designer_app/_allelic_input_sections.html" %}
         </form>
         <div class="snv-submit-row">
             <button type="button" id="example-button" class="example-button" onclick="loadExampleData()">Load Example</button>
             <button type="reset" class="reset-button" form="settings" onclick="clearAllInputs()">Reset</button>
-            <button type="submit" class="submit-button" form="settings">Generate Primers</button>
+            <button type="submit" class="submit-button" form="settings">Generate AS-PCR primers</button>
         </div>
 
         {% include "primer_designer_app/_loading_overlay.html" %}

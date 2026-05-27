@@ -4,17 +4,17 @@
 <html lang="en">
 <head>
     {% include "primer_designer_app/header.html" %}
+    {# header.html already includes the global stylesheet #}
 </head>
 <body>
     {% include "primer_designer_app/body_nav.html" %}
 
     <main class="documentation-page">
         <section class="documentation-hero settings-container">
-            <p class="hgvs-info">PrimerDesigner Help</p>
-            <h1>Documentation</h1>
+            <h1>Help & Documentation</h1>
             <p class="documentation-intro">
-                Learn how to use PrimerDesigner, which inputs are supported,
-                how to interpret the output, and how to contact the project team.
+                A practical guide for designing primers for SNVs/indels, allele-specific PCR, and structural variants —
+                including input formats, result interpretation, and reporting.
             </p>
         </section>
 
@@ -24,116 +24,231 @@
             <aside class="documentation-sidebar">
                 <h2>Menu</h2>
 
-                <a href="#documentation" class="copy-button documentation-link">
-                    Documentation
-                </a>
-
-                <a href="#tutorial" class="copy-button documentation-link">
-                    Tutorial
-                </a>
-
-                <a href="#support" class="copy-button documentation-link">
-                    Support
-                </a>
+                <a href="#quickstart" class="copy-button documentation-link">Quick start</a>
+                <a href="#inputs" class="copy-button documentation-link">Inputs</a>
+                <a href="#results" class="copy-button documentation-link">Interpreting results</a>
+                <a href="#report" class="copy-button documentation-link">Reports</a>
+                <a href="#faq" class="copy-button documentation-link">FAQ</a>
+                <a href="#troubleshooting" class="copy-button documentation-link">Troubleshooting</a>
+                <a href="#support" class="copy-button documentation-link">Support</a>
             </aside>
 
             <div class="documentation-content">
-                <section id="documentation" class="documentation-card">
-                    <p class="hgvs-info">Documentation</p>
-                    <h2>Overview</h2>
+                <section id="quickstart" class="documentation-card">
+                    <p class="hgvs-info">Quick start</p>
+                    <h2>Design primers in 60 seconds</h2>
 
-                    <p>
-                        PrimerDesigner is a web application that facilitates the design of primer pairs for
-                        variant-containing target regions in PCR and qPCR workflows.
-                        It supports different input types, including genomic positions, transcript-based
-                        variant descriptions, and complete sequences with annotated mutations.
-                    </p>
+                    <ol class="documentation-steps">
+                        <li><strong>Choose a mode</strong>: SNV/Indel, Allele-specific PCR, or Structural variants.</li>
+                        <li><strong>Enter input</strong> (or use <strong>Load Example</strong>).</li>
+                        <li><strong>Generate primers</strong> and inspect highlighted binding sites.</li>
+                        <li><strong>Select a primer pair</strong> from the table (penalty score is a key ranking signal).</li>
+                        <li><strong>Download report</strong> for the selected primer pair.</li>
+                    </ol>
 
-                    <br>
-                    <h2>Technical details</h2>
+                </section>
+
+                <section id="inputs" class="documentation-card">
+                    <p class="hgvs-info">Inputs</p>
+                    <h2>Supported input modes</h2>
+
+                    <div class="doc-callout doc-callout-note">
+                        <strong>Tip:</strong> Every input section has a <strong>?</strong> hover help that shows the expected format.
+                    </div>
+
+                    <h3 id="input-genomic">SNV/Indel via genomic position</h3>
                     <p>
-                        PrimerDesigner is built with modern web technologies and uses the following tools:
+                        Enter chromosome and position and specify the variant. Optionally upload a <strong>VCF</strong>
+                        from the same chromosome to spike background variants into the reference window before designing primers.
                     </p>
-                    <ul>
+                    <figure class="doc-figure">
+                        <img class="doc-figure-image doc-figure-image--contain doc-figure-image--max-h-lg"
+                            src="{% static 'primer_designer_app/images/screenshots/genomic_position_input.png' %}"
+                            alt="Genomic SNV/Indel input">
+                        <figcaption>Genomic SNV/Indel input</figcaption>
+                    </figure>
+
+                    <h3 id="input-transcript">SNV/Indel via transcript</h3>
+                    <p>
+                        Provide a transcript identifier and specify the variant relative to genome or transcript.
+                        This mode supports substitutions and indels.
+                    </p>
+                    <figure class="doc-figure">
+                        <img class="doc-figure-image doc-figure-image--contain doc-figure-image--max-h-lg"
+                            src="{% static 'primer_designer_app/images/screenshots/transcript_input.png' %}"
+                            alt="Transcript SNV/Indel input">
+                        <figcaption>Transcript SNV/Indel input</figcaption>
+                    </figure>
+
+                    <h3 id="input-seq">SNV/Indel via full sequence</h3>
+                    <p>
+                        Paste a full sequence and annotate variants inline using bracket notation.
+                    </p>
+                    <div class="doc-codebox">
+                        <div class="doc-codebox-title">Bracket notation reference (copy/paste)</div>
+                        <pre class="doc-pre"><code>[G&gt;A]          SNV (substitution)
+[-/ATGC]       insertion
+[ATGC/-]       deletion
+[GCAGG/GGTC]   delins (replace REF with ALT)</code></pre>
+                    </div>
+                    <figure class="doc-figure">
+                        <img class="doc-figure-image doc-figure-image--contain doc-figure-image--max-h-lg"
+                            src="{% static 'primer_designer_app/images/screenshots/sequence_input.png' %}"
+                            alt="Sequence SNV/Indel input">
+                        <figcaption>Sequence SNV/Indel input</figcaption>
+                    </figure>
+
+                    <h3 id="input-as-pcr">Allele-specific PCR (AS-PCR / ARMS)</h3>
+                    <p>
+                        Designs <strong>two allele-specific reactions</strong>: a WT-specific and a MUT-specific reaction.
+                        The allele-discriminating base is placed at the <strong>3′ end</strong> of the allele-specific primer.
+                    </p>
+                    <figure class="doc-figure">
+                        <img class="doc-figure-image doc-figure-image--contain doc-figure-image--max-h-lg"
+                            src="{% static 'primer_designer_app/images/screenshots/as_pcr_results.png' %}"
+                            alt="AS-PCR results">
+                        <figcaption>AS-PCR results</figcaption>
+                    </figure>
+
+                    <h3 id="input-sv">Structural variants</h3>
+                    <p>
+                        Provide chromosome and start/end coordinates for the region of interest and select
+                        deletion or duplication. PrimerDesigner designs multiple windows (upstream/internal/downstream)
+                        to support SV validation workflows.
+                    </p>
+                    <figure class="doc-figure">
+                        <img class="doc-figure-image doc-figure-image--contain doc-figure-image--max-h-lg"
+                            src="{% static 'primer_designer_app/images/screenshots/sv_input_page.png' %}"
+                            alt="SV input page">
+                        <figcaption>SV input page</figcaption>
+                    </figure>
+                </section>
+
+                <section id="results" class="documentation-card">
+                    <p class="hgvs-info">Interpreting results</p>
+                    <h2>How to read the output</h2>
+
+                    <ul class="documentation-list">
+                        <li><strong>Penalty score</strong>: lower is generally better (Primer3 ranking signal).</li>
+                        <li><strong>Primer Tm / GC%</strong>: helps assess primer compatibility and PCR conditions.</li>
+                        <li><strong>Product size / Product Tm</strong>: expected amplicon length and melting temperature.</li>
+                        <li><strong>Highlighting</strong>: primers (teal/blue) and variant bracket (green) are highlighted in the sequence snippet.</li>
+                        <li><strong>AS-PCR</strong>: WT and MUT reactions may highlight different bases inside the same bracket annotation.</li>
+                    </ul>
+
+                    <figure class="doc-figure">
+                        <img class="doc-figure-image doc-figure-image--contain doc-figure-image--max-h-lg"
+                            src="{% static 'primer_designer_app/images/screenshots/primer_overview_page.png' %}"
+                            alt="Results page">
+                        <figcaption>Results page</figcaption>
+                    </figure>
+                </section>
+
+                <section id="report" class="documentation-card">
+                    <p class="hgvs-info">Reports</p>
+                    <h2>Download a report</h2>
+                    <p>
+                        After selecting a primer pair, you can download a DOCX report containing the selected
+                        primer details and a sequence snippet with highlighting.
+                    </p>
+                    <figure class="doc-figure">
+                        <img class="doc-figure-image doc-figure-image--contain doc-figure-image--max-h-lg"
+                            src="{% static 'primer_designer_app/images/screenshots/primer_details_page.png' %}"
+                            alt="Primer details page">
+                        <figcaption>Primer details page</figcaption>
+                    </figure>
+                </section>
+
+                <section id="faq" class="documentation-card">
+                    <p class="hgvs-info">FAQ</p>
+                    <h2>Frequently asked questions</h2>
+
+                    <h3>How do you generate the primers?</h3>
+                    <p>
+                        PrimerDesigner uses <strong>Primer3</strong> (via <strong>primer3-py</strong>) to generate primer candidates and
+                        ranks them by Primer3’s <strong>penalty score</strong>. Depending on the selected input mode, PrimerDesigner
+                        first constructs a sequence window around the variant and then runs Primer3 with the chosen
+                        parameter preset (PCR/qPCR or custom).
+                    </p>
+                    <ul class="documentation-list">
+                        <li><strong>Primer design engine</strong>: Primer3 (via <a href="https://github.com/libnano/primer3-py" target="_blank">primer3-py</a>)</li>
+                        <li><strong>Web framework</strong>: <a href="https://www.djangoproject.com/" target="_blank">Django</a></li>
+                        <li><strong>In-silico PCR / amplicon summaries</strong>: <a href="https://github.com/gear-genomics/dicey" target="_blank">Dicey</a> (when enabled)</li>
                         <li>
-                            <a href="https://www.djangoproject.com/" target="_blank">Django</a>
-                        </li>
-                        <li>
-                            <a href="https://github.com/libnano/primer3-py" target="_blank">Primer3-py</a>
-                        </li>
-                        <li>
-                            <a href="https://github.com/gear-genomics/dicey" target="_blank">Dicey</a>
+                            <strong>Reference sequences</strong>:
+                            PrimerDesigner can work with GRCh37/GRCh38 genomic references and transcript references.
+                            Setup details (download links, indexing, file names) are documented in the GitHub repository:
+                            <a href="https://github.com/KuechlerO/PrimerDesigner" target="_blank">PrimerDesigner</a>
+                            (see also the <a href="https://github.com/KuechlerO/PrimerDesigner#2-download-and-prepare-reference-files" target="_blank">reference files section</a>).
                         </li>
                     </ul>
+
+                    <h3>How do you check for amplicons?</h3>
                     <p>
-                        For more information on the technical details, please refer to the <a href="https://github.com/KuechlerO/PrimerDesigner/tree/main" target="_blank">README</a> file.
+                        If the <strong>Amplicon check</strong> option is enabled, PrimerDesigner runs an in-silico PCR-like analysis
+                        against the selected reference context to estimate the number of potential amplicons and to
+                        summarize the most relevant ones (for example, expected product length and genomic location).
+                        This helps you spot primers with many potential off-target products.
+                    </p>
+                    <p>
+                        Note: in some specialized modes (e.g. AS-PCR), the app may intentionally disable certain checks
+                        to keep the design workflow stable and fast.
+                    </p>
+
+                    <h3>How do you check for SNPs?</h3>
+                    <p>
+                        If <strong>SNP checking</strong> is enabled, PrimerDesigner queries the <strong>Ensembl Variation</strong> API for
+                        variants overlapping the current design region and then annotates primer pairs where common
+                        variants overlap primer binding sites.
+                    </p>
+                    <ul class="documentation-list">
+                        <li><strong>Variant source</strong>: Ensembl variation overlap + per-variant frequency lookup (includes gnomAD frequencies where available).</li>
+                        <li><strong>Filter</strong>: keeps only common variants with <strong>global MAF &gt; 1%</strong> (gnomAD/1000G populations).</li>
+                        <li><strong>Output</strong>: a region summary + per-primer-pair status:
+                            <strong>none</strong>, <strong>caution</strong>, <strong>conflict</strong> (binding-site overlap), or <strong>error/skipped</strong>.</li>
+                        <li><strong>UI</strong>: common variants in-region are highlighted (yellow/orange); overlaps with the selected primer binding sites are emphasized and shown in the details modal.</li>
+                        <li><strong>Limitations</strong>: SNP checking requires genomic or transcript coordinates (sequence-only input cannot be mapped reliably).</li>
+                    </ul>
+
+                    <h3>Why do I see two sequences when using AS-PCR?</h3>
+                    <p>
+                        AS-PCR designs <strong>two separate reactions</strong>:
+                        a <strong>WT reaction</strong> and a <strong>MUT reaction</strong>. Both reactions show the same bracket notation
+                        (e.g. <code>[G&gt;A]</code>), but the primer overlap highlighting differs:
+                        in the WT reaction, primer overlap applies to the <strong>reference</strong> base(s); in the MUT reaction,
+                        primer overlap applies to the <strong>alternate</strong> base(s).
+                    </p>
+                    <p>
+                        This is intentional: the allele-specific primer is designed to discriminate at the 3′ end, so the
+                        two reactions are not interchangeable.
+                    </p>
+
+                    <h3>What is the idea behind multiple primer sets for structural variants?</h3>
+                    <p>
+                        Structural variants (SVs) often require more than one primer strategy because breakpoints and
+                        sequence context can vary. PrimerDesigner therefore designs primers in multiple windows around your
+                        region of interest (typically <strong>upstream</strong>, <strong>internal</strong>, and <strong>downstream</strong>).
+                        This increases the chance of obtaining at least one robust assay for validation or screening.
                     </p>
                 </section>
 
-                <section id="tutorial" class="documentation-card">
-                    <p class="hgvs-info">Tutorial</p>
-                    <h2>Step-by-step guide</h2>
+                <section id="troubleshooting" class="documentation-card">
+                    <p class="hgvs-info">Troubleshooting</p>
+                    <h2>Common issues</h2>
 
-                    <p>
-                        Before entering any data, the user can adjust several global settings in the web
-                        application. First, the reference genome can be selected as either <strong>GRCh37</strong>
-                        or <strong>GRCh38</strong>.
-                        Second, the primer settings can either be left at the <strong>default</strong> configuration or adjusted
-                        manually (<strong>PCR</strong> and <strong>qPCR</strong> pre-sets are available).
-                        Third, the amplicon check can be enabled or disabled (disabled by default).
-                    </p>
+                    <h3>No primer pairs returned</h3>
+                    <ul class="documentation-list">
+                        <li>Try relaxing constraints (primer length, Tm range, GC limits).</li>
+                        <li>Adjust product size range.</li>
+                        <li>In transcript mode: verify transcript ID and the selected reference type (cDNA/CDS).</li>
+                        <li>In SV mode: double-check chromosome and coordinate range.</li>
+                    </ul>
 
+                    <h3>Bug reports (unexpected highlighting or other issues)</h3>
                     <p>
-                        After configuring these general settings, one of three input modes can be used.
-                        The first mode is based on a <strong>genomic position</strong>. In this mode, a single
-                        nucleotide variant can be entered in genomic form by specifying the chromosome
-                        position together with the new base. Optionally, a <strong>VCF</strong> file
-                        (same chromosome) can be uploaded: variants from the file are applied to the
-                        Ensembl reference window before primer design, so primers can be designed against
-                        a patient-specific background. Your entered SNV or InDel remains the primary design target.
-                    </p>
-
-                    <p>
-                        The second mode is based on a <strong>transcript ID</strong>. Here, the user can enter
-                        a transcript identifier and choose under <strong>Check against</strong> whether the
-                        variant should be interpreted relative to the genome or the transcript. In
-                        addition, the reference sequence type can be selected, for example <strong>cDNA</strong>
-                        or <strong>CDS</strong>. This mode supports both single nucleotide variants and indels.
-                        For substitutions, a variant position can be entered. For indels, the user can
-                        specify the wild-type start and end positions as well as the inserted bases.
-                    </p>
-
-                    <p>
-                        The third mode is based on a <strong>full input sequence</strong>. In this mode, the user
-                        provides an entire sequence and receives primer suggestions directly for that
-                        sequence context. Sequence variants must be described explicitly within the input
-                        sequence. Substitutions are written in the format <strong>[A&gt;T]</strong>. Indels can be
-                        represented with alternative notations such as <strong>[-/A]</strong>, <strong>[T/-]</strong>, or
-                        <strong>[ATG/CG]</strong>, depending on the type of sequence change that should be described.
-                    </p>
-
-                    <p>
-                        To explore example inputs for the three modes, the user can click the
-                        <strong>Load Example</strong> button repeatedly. Each click cycles through different
-                        example entries. In addition, every mode contains a small question mark icon in
-                        the lower right corner. When the user hovers over this icon, a more detailed
-                        explanation of the expected input format is displayed.
-                    </p>
-
-                    <p>
-                        After clicking <strong>Generate Primers</strong>, the application displays the sequence
-                        context together with visual highlighting. Recommended primers are highlighted in
-                        turquoise blue, while the target region is marked in red. Further down the page,
-                        several candidate primers are listed for selection. For each candidate, additional
-                        properties such as penalty score, temperature, and GC content are shown.
-                    </p>
-
-                    <p>
-                        The <strong>penalty score</strong> is especially important for interpretation: a lower
-                        penalty score indicates a better primer candidate. Once the user has selected a
-                        preferred primer pair, the <strong>Submit</strong> button can be used to continue to the
-                        next page. There, the user can click <strong>Download Report</strong> to obtain the final
-                        result as a report.
+                        If you notice unexpected highlighting or other incorrect behavior, please treat it as a bug and
+                        report it via the GitHub repository (see Support below). Include the used input, selected primer
+                        settings, and a screenshot if possible.
                     </p>
                 </section>
 

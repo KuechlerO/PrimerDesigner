@@ -100,3 +100,33 @@
         padding: 0.5em 0.65em 0.6em;
     }
 }
+
+.vcf-upload-block {
+    margin: 1em auto 0.5em;
+    max-width: 36em;
+    padding: 0.85em 1em;
+    text-align: left;
+    background: color(srgb 0.94 0.98 0.99);
+    border: 1px dashed color(srgb 0.45 0.65 0.72);
+    border-radius: var(--radius-md);
+}
+
+.vcf-upload-heading {
+    margin: 0 0 0.35em;
+    font-size: 1em;
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+.vcf-upload-hint {
+    margin: 0 0 0.65em;
+    font-size: 0.88em;
+    line-height: 1.4;
+    color: color(srgb 0.28 0.42 0.46);
+}
+
+.vcf-upload-block input[type="file"] {
+    font-family: var(--font-main);
+    font-size: 0.9em;
+    max-width: 100%;
+}

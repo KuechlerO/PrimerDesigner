@@ -25,7 +25,7 @@
         <button type="button" class="primer-custom-open-btn" id="primer-custom-open-btn" onclick="openPrimerCustomDialog()">Primer parameters…</button>
     </div>
 
-    {% if not is_structural_variant %}
+    {% if not is_structural_variant and not is_allele_specific %}
     <div class="settings-container settings-container--amplicon-check">
         <h2 class="settings-heading-help" title="Optional search for additional PCR products (Dicey) in the reference genome or transcriptome. None skips this step. Genome uses the primary assembly FASTA file; Transcriptome uses the transcripts FASTA file. See README.md for more information.">Amplicon check</h2>
         <div class="UseCaseDiv" style="display:flex; justify-content: center">

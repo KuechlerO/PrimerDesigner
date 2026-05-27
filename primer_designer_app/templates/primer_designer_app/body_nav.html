@@ -11,6 +11,7 @@
 
         <a href="{% url 'primer_designer_app:snv_indel_index' %}"><li class="page-btn" id="nav-snv-indel">SNVs & Indels</li></a>
         <a href="{% url 'primer_designer_app:structural_variants_index' %}"><li class="page-btn" id="nav-structural-variants">Structural Variants</li></a>
+        <a href="{% url 'primer_designer_app:allele_specific_index' %}"><li class="page-btn" id="nav-allele-specific">Allele-specific PCR</li></a>
         <a href="{% url 'primer_designer_app:documentation' %}"><li class="page-btn" id="nav-documentation">Documentation</li></a>
     </ul>
 </nav>
@@ -23,15 +24,18 @@
 
         const snv = document.getElementById("nav-snv-indel");
         const sv = document.getElementById("nav-structural-variants");
+        const aspcr = document.getElementById("nav-allele-specific");
         const docs = document.getElementById("nav-documentation");
 
         function setActive(el) {
-            [snv, sv, docs].filter(Boolean).forEach((n) => n.classList.remove("page-btn--active"));
+            [snv, sv, aspcr, docs].filter(Boolean).forEach((n) => n.classList.remove("page-btn--active"));
             if (el) el.classList.add("page-btn--active");
         }
 
         if (path.includes("structural")) {
             setActive(sv);
+        } else if (path.includes("allele-specific")) {
+            setActive(aspcr);
         } else if (path.includes("documentation")) {
             setActive(docs);
         } else {

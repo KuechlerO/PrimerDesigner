@@ -21,6 +21,15 @@
         {% csrf_token %}
         {% include "primer_designer_app/_primer_settings_top_row.html" %}
 
+        <div style="max-width: 64em; margin: 0.5em auto 4em; padding: 0.7em 1em; background: color(srgb 0.94 0.97 0.98); border: 1px solid color(srgb 0.55 0.72 0.78); border-radius: var(--radius-md);">
+            <h2 style="margin: 0 0 0.25em;">Structural variants (deletion / duplication)</h2>
+            <p style="margin: 0; line-height: 1.45;">
+                This mode designs primer pairs in multiple windows around your selected region of interest
+                (typically upstream / internal / downstream) to support structural variant validation.
+                Provide chromosome, start/end coordinates, and choose the variant type.
+            </p>
+        </div>
+
         <div id="in">
 
             <!-- 1. Genomic Position -->

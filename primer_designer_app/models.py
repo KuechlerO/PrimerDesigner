@@ -228,5 +228,18 @@ class DesignResultsSummary(models.Model):
         if self.is_structural_variant_design():
             return None
         if self.primer_search_results:
+            if (
+                isinstance(self.primer_search_results, dict)
+                and self.primer_search_results.get("design_type") == "allele_specific"
+            ):
+                data = self.primer_search_results
+                return {
+                    "design_type": "allele_specific",
+                    "common_reverse_primer": data.get("common_reverse_primer"),
+                    "wt_left_force_end": data.get("wt_left_force_end"),
+                    "mut_left_force_end": data.get("mut_left_force_end"),
+                    "wt": PrimerSearchResults.from_dict(data.get("wt") or {}),
+                    "mut": PrimerSearchResults.from_dict(data.get("mut") or {}),
+                }
             return PrimerSearchResults.from_dict(self.primer_search_results)
         return None

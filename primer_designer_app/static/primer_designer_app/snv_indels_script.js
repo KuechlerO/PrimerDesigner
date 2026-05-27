@@ -45,11 +45,13 @@ const SNV = [genom_pos_Field,NewBase].filter(Boolean);
 const SNVList = document.querySelector("#SNV")?.classList;
 const InDel = [IndelChrom, IndelStart, IndelEnd, IndelInst].filter(Boolean);
 const InDelList = document.querySelector("#InDel")?.classList;
+const vcfFileField = document.getElementById("vcf_file");
 const genomicFields = [...SNV, ...InDel];
+const genomicModeFields = genomicFields;
 
 function clearAllInputs() {
     if (!IS_SNV_INDEL_PAGE) return;
-    const inputs = [...idInputFields, ...genomicFields, sequence, ...switches];
+    const inputs = [...idInputFields, ...genomicFields, ...(vcfFileField ? [vcfFileField] : []), sequence, ...switches];
     inputs.forEach(field => {
 
         field.required = false;
@@ -60,6 +62,8 @@ function clearAllInputs() {
             field.value = ""; // Textfelder und Textareas leeren
         } else if (field.tagName === "SELECT") {
             field.selectedIndex = 0; // Dropdown auf die erste Option zurücksetzen
+        } else if (field.type === "file") {
+            field.value = "";
         }
     });
     enableInputField(genomicFields);
@@ -151,6 +155,9 @@ function isFieldGroupFilled(fields) {
             if (field.type === "radio") {
                 return field.checked; // Für Radiobuttons: Prüfen, ob einer ausgewählt ist
             }
+            if (field.type === "file") {
+                return field.files && field.files.length > 0;
+            }
             return field.value; // Für andere Felder: Prüfen, ob ein Wert vorhanden ist
         });
 }
@@ -187,7 +194,7 @@ function handleInputChange(inputId) {
             IdSNVList.remove("grey-transparent");
         }
     }
-    else if (isFieldGroupFilled(genomicFields)){
+    else if (isFieldGroupFilled(genomicModeFields)){
         disableInputField(idInputFields);
         disableInputField([sequenceField]);
         identifier.add("grey-transparent");
@@ -225,11 +232,11 @@ function handleInputChange(inputId) {
     }
 
     ID_hover_label.classList.toggle("hover-label-highlight", isFieldGroupFilled(idInputFields));
-    Genomic_hover_label.classList.toggle("hover-label-highlight", isFieldGroupFilled(genomicFields));
+    Genomic_hover_label.classList.toggle("hover-label-highlight", isFieldGroupFilled(genomicModeFields));
     Sequence_hover_label.classList.toggle("hover-label-highlight", isFieldGroupFilled([sequenceField]));
 
     identifier.toggle("highlight", isFieldGroupFilled(idInputFields));
-    position.toggle("highlight", isFieldGroupFilled(genomicFields));
+    position.toggle("highlight", isFieldGroupFilled(genomicModeFields));
     sequence.toggle("highlight", isFieldGroupFilled([sequenceField]));
     sequenceField.classList.toggle("resize", isFieldGroupFilled([sequenceField]));
 }

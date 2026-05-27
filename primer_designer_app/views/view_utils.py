@@ -1,5 +1,6 @@
 # View utilities for primer design app
 import logging
+from enum import Enum
 from typing import Tuple
 
 
@@ -316,6 +317,59 @@ def handle_sequence_input(request, primer_settings):
     variantInfo = _build_variant_info(request, "sequence_input")
     primer_settings.set_target(variantInfo.relative_pos)
     return _design_primers_and_return_searchID(variantInfo, primer_settings)
+
+
+def handle_allele_specific_input(request, primer_settings: PrimerSettingsModel):
+    """
+    Allele-specific PCR (AS-PCR) entrypoint.
+
+    Builds the same AllelicVariantInfo objects as SNV/Indel mode, but stores
+    allele-specific Primer3 output (WT + MUT) in primer_search_results.
+    """
+    from primer_designer_app.utils.primer_utils import primer3_design_allele_specific
+
+    # Determine input type using the same rules as SNV/Indel index
+    if _get_post(request, "Transcript-ID", None):
+        if _get_post(request, "Position", ""):
+            variantInfo = _build_variant_info(request, "transcript_snv")
+        elif _get_post(request, "IdIndelStart", "") and _get_post(
+            request, "IdIndelEnd", ""
+        ):
+            variantInfo = _build_variant_info(request, "transcript_indel")
+        else:
+            raise InvalidTranscriptInputError(
+                "The transcript input is incomplete or invalid."
+            )
+    elif _get_post(request, "genom_pos", None):
+        variantInfo = _build_variant_info(request, "genomic_snv")
+    elif _get_post(request, "IndelChrom", None):
+        variantInfo = _build_variant_info(request, "genomic_indel")
+    else:
+        variantInfo = _build_variant_info(request, "sequence_input")
+
+    primer_settings.set_target(variantInfo.relative_pos)
+    primer_settings.do_insilico_pcr = False
+    primer_settings.check_known_snps = False
+
+    allele_specific_data = primer3_design_allele_specific(primer_settings, variantInfo)
+
+    # Persist results in DesignResultsSummary (custom serialization)
+    result_sum_obj = DesignResultsSummary()
+    result_sum_obj.primer_settings = primer_settings
+
+    # Serialize AllelicVariantInfo (copy pattern from save_primer_results)
+    variant_info_dict = variantInfo.__dict__.copy()
+    if isinstance(variant_info_dict.get("indel_type"), Enum):
+        variant_info_dict["indel_type"] = variant_info_dict["indel_type"].value
+    if isinstance(variant_info_dict.get("reference_type"), Enum):
+        variant_info_dict["reference_type"] = variant_info_dict["reference_type"].value
+    variant_info_dict["design_type"] = "allele_specific"
+    result_sum_obj.variant_info_data = variant_info_dict
+
+    result_sum_obj.primer_search_results = allele_specific_data
+    result_sum_obj.snp_analysis_data = {}
+    result_sum_obj.save()
+    return result_sum_obj.id
 
 
 def _design_primers_and_return_searchID(variant_info, primer_settings):

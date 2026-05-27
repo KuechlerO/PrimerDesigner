@@ -568,6 +568,44 @@ label, h2, .hover-label, .info-li {
     color: black;
     word-break: break-word;
     font-weight: bold;
+    box-shadow: inset 0 -2px 0 0 rgba(200, 40, 32, 0.95);
+}
+
+/* AS-PCR: variant site stays visible when a primer highlight overlaps it */
+.highlight-primer .highlight-mutation,
+.highlight-mutation.highlight-primer {
+    background-color: rgba(242, 90, 82, 0.82);
+    box-shadow: inset 0 0 0 2px rgba(200, 40, 32, 0.9);
+}
+
+/* AS-PCR SNV: allele base inside [SNV:ref>alt] should look like primer (blue) */
+.highlight-mutation .highlight-primer {
+    background-color: #89cad5;
+    box-shadow: none;
+    display: inline-block;
+    padding: 0 0.12em;
+    border-radius: 0.12em;
+}
+
+.highlight-vcf {
+    background-color: color(srgb 0.88 0.82 0.98);
+    box-shadow: inset 0 0 0 1px color(srgb 0.55 0.42 0.78 / 0.55);
+    font-weight: 600;
+    cursor: help;
+}
+
+.highlight-snp {
+    background-color: color(srgb 1 0.9 0.55);
+    box-shadow: inset 0 0 0 1px color(srgb 0.92 0.68 0.18 / 0.55);
+    font-weight: 600;
+    cursor: help;
+}
+
+.highlight-snp-conflict {
+    background-color: color(srgb 1 0.78 0.38);
+    box-shadow: inset 0 0 0 1px color(srgb 0.85 0.45 0.08 / 0.65);
+    font-weight: 700;
+    cursor: help;
 }
 
 .highlight-primer {
@@ -1057,19 +1095,87 @@ p.output-legend {
 }
 
 .loader-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
-    color: white;
-    font-size: 1.2rem;
+    max-width: min(28em, 92vw);
+    padding: 1.75em 2em;
+    border-radius: var(--radius-md);
+    background: linear-gradient(
+        180deg,
+        var(--color-bg) 0%,
+        var(--color-bg-section) 100%
+    );
+    color: color(srgb 0.15 0.35 0.4);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+    border: 1px solid color(srgb 0.55 0.72 0.78);
+}
+
+.loader-title {
+    margin: 0 0 0.35em;
+    font-family: var(--font-main);
+    font-size: 1.35em;
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+.loader-lead {
+    margin: 0 0 1em;
+    font-size: 0.95em;
+    line-height: 1.45;
+    color: color(srgb 0.25 0.4 0.45);
+}
+
+.loader-steps {
+    margin: 0 auto 1em;
+    padding: 0;
+    list-style: none;
+    text-align: left;
+    font-size: 0.9em;
+    line-height: 1.5;
+    width: fit-content;
+    max-width: 100%;
+    align-self: center;
+}
+
+.loader-step {
+    position: relative;
+    padding: 0.45em 0 0.45em 1.6em;
+    border-bottom: 1px solid color(srgb 0.75 0.88 0.9 / 0.6);
+}
+
+.loader-step:last-child {
+    border-bottom: none;
+}
+
+.loader-step::before {
+    content: "";
+    position: absolute;
+    left: 0.35em;
+    top: 0.85em;
+    width: 0.45em;
+    height: 0.45em;
+    border-radius: 50%;
+    background: var(--color-primary-light);
+}
+
+.loader-footnote {
+    margin: 0;
+    font-size: 0.82em;
+    line-height: 1.4;
+    color: color(srgb 0.35 0.48 0.52);
+    font-style: italic;
 }
 
 .spinner {
-    border: 6px solid #f3f3f3;
-    border-top: 6px solid #3498db;
+    border: 5px solid var(--color-bg-medium);
+    border-top: 5px solid var(--color-primary);
     border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 15px auto;
+    width: 48px;
+    height: 48px;
+    animation: spin 0.9s linear infinite;
+    margin: 0 auto 1.1em auto;
 }
 
 @keyframes spin {
@@ -1260,6 +1366,111 @@ p.output-legend {
     line-height: 1;
     text-decoration: none;
     padding: 0.5em 1em;
+}
+
+.documentation-steps {
+    padding-left: 1.4em;
+    margin: 0.75em 0 1.2em 0;
+}
+
+.documentation-card h3 {
+    margin-top: 1.1em;
+}
+
+.doc-callout {
+    padding: 0.8em 1em;
+    border-radius: 0.9em;
+    margin: 0.9em 0 1.1em 0;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.45);
+}
+
+.doc-callout-note {
+    border-color: color(srgb 0.55 0.72 0.78);
+    background: color(srgb 0.94 0.97 0.98);
+}
+
+.doc-codebox {
+    border-radius: 1em;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 1em;
+    margin: 0.9em 0 1.1em 0;
+    overflow: auto;
+}
+
+.doc-codebox-title {
+    font-weight: 700;
+    margin-bottom: 0.6em;
+}
+
+.doc-pre {
+    margin: 0;
+    font-size: 1em;
+    line-height: 1.5;
+}
+
+.doc-figure {
+    margin: 1.1em 0 0.2em 0;
+}
+
+.doc-figure-image {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    border: 2px dashed rgba(0, 0, 0, 0.25);
+    border-radius: 1em;
+    padding: 0.4em;
+    background: rgba(255, 255, 255, 0.55);
+    box-sizing: border-box;
+}
+
+.doc-figure-image--contain {
+    object-fit: contain;
+}
+
+.doc-figure-image--cover {
+    object-fit: cover;
+}
+
+.doc-figure-image--max-h-sm {
+    max-height: 25em;
+}
+
+.doc-figure-image--max-h-md {
+    max-height: 40em;
+}
+
+.doc-figure-image--max-h-lg {
+    max-height: 55em;
+}
+
+.doc-figure-placeholder {
+    border: 2px dashed rgba(0, 0, 0, 0.25);
+    border-radius: 1em;
+    padding: 1.4em 1em;
+    min-height: 8.5em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3em;
+    background: rgba(255, 255, 255, 0.55);
+    color: rgba(0, 0, 0, 0.65);
+    text-align: center;
+    font-weight: 700;
+}
+
+.doc-figure-placeholder small {
+    font-weight: 500;
+}
+
+.doc-figure figcaption {
+    margin-top: 0.6em;
+    font-size: 1.05em;
+    line-height: 1.5;
+    color: rgba(0, 0, 0, 0.75);
 }
 
 @media (max-width: 1000px) {

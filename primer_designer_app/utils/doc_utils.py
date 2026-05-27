@@ -5,6 +5,7 @@ from typing import Optional
 from primer_designer_app.models import PrimerSettingsModel, DesignResultsSummary
 from primer_designer_app.utils.variant_info import (
     AllelicVariantInfo,
+    IndelType,
     TranscriptVariantInfo,
 )
 from primer_designer_app.utils.helpers import create_hgvs_notation
@@ -36,65 +37,223 @@ def visualize_sequence_as_docx(
     prim_settings: PrimerSettingsModel,
     var_info: AllelicVariantInfo,
     selected_primer_pair: PrimerPairResult,
+    *,
+    seq_override: Optional[str] = None,
+    plain_override: Optional[str] = None,
+    allele: str = "wt",
     line_length: int = 60,
 ):
+    seq = seq_override if seq_override is not None else var_info.get_seq("input")
+    plain = plain_override if plain_override is not None else var_info.ref_seq
 
-    seq = var_info.get_seq("input")
+    primerF_start = int(selected_primer_pair.left_relPos_start)
+    primerF_end = int(selected_primer_pair.left_relPos_end)
+    primerR_start = int(selected_primer_pair.right_relPos_start)
+    primerR_end = int(selected_primer_pair.right_relPos_end)
 
-    primerF_start, primerF_end = [
-        selected_primer_pair.left_relPos_start,
-        selected_primer_pair.left_relPos_end,
-    ]
-    r_primers_offset = (
-        max(1, len(var_info.ref_bases)) + 3
-    )  # +3 for the brackets in the sequence annotation
-    primerR_start, primerR_end = [
-        selected_primer_pair.right_relPos_start + r_primers_offset,
-        selected_primer_pair.right_relPos_end + r_primers_offset,
-    ]
-    logger.debug(
-        "Primer binding sites (relative to target region): "
-        "Forward: %s-%s, Reverse: %s-%s",
-        primerF_start,
-        primerF_end,
-        primerR_start,
-        primerR_end,
-    )
+    def _in_primer(idx: int) -> bool:
+        return (primerF_start <= idx <= primerF_end) or (
+            primerR_start <= idx <= primerR_end
+        )
 
-    start_target = max(prim_settings.target[0], primerF_end + 1)
-    end_target = min(
-        prim_settings.target[0] + prim_settings.target[1], primerR_start - 1
-    )
+    def _template_consumed_by_bracket(body: str, plain_from_here: str) -> int:
+        b = body
+        colon = b.find(":")
+        if colon >= 0:
+            b = b[colon + 1 :]
+        if ">" in b:
+            return 1
+        if b.startswith("-/"):
+            ins = b[2:]
+            if ins and plain_from_here.upper().startswith(ins.upper()):
+                return len(ins)
+            return 0
+        if b.endswith("/-"):
+            ref = b[: b.index("/-")]
+            if allele == "mut":
+                return 0
+            return len(ref)
+        if "/" in b:
+            ref, alt = b.split("/", 1)
+            if alt and plain_from_here.upper().startswith(alt.upper()):
+                return len(alt)
+            if ref and plain_from_here.upper().startswith(ref.upper()):
+                return len(ref)
+            return len(ref)
+        return 1
 
-    # Iterate through the sequence
+    # Walk annotated `seq` while mapping letters back to `plain` indices.
+    plain_i = 0
     counter = 0
-    in_mutation_region = False
-    for i, char in enumerate(seq):
-        run = paragraph.add_run(char)
-        run.font.name = "Courier New"  # Schriftart auf 'PT Mono' ändern
-        run.font.size = Pt(11)
-        if (i >= primerF_start and i <= primerF_end) or (
-            i >= primerR_start and i <= primerR_end
-        ):
-            # Start of forward primer binding site
-            # Highlight this region in the document
-            run.font.highlight_color = 3
-        elif i >= start_target and i < end_target:
-            if char == "[":
-                in_mutation_region = True
-            elif char == "]":
-                in_mutation_region = False
+    ai = 0
+    while ai < len(seq):
+        ch = seq[ai]
 
-            if in_mutation_region or char in ["[", "]"]:
+        if ch != "[":
+            highlight = None
+            if (
+                ch in "ACGTNacgtn"
+                and plain_i < len(plain)
+                and ch.upper() == plain[plain_i].upper()
+            ):
+                if _in_primer(plain_i):
+                    highlight = 3
+                plain_i += 1
+            if highlight is None and ch == "]":
+                highlight = 4
+            run = paragraph.add_run(ch)
+            run.font.name = "Courier New"
+            run.font.size = Pt(11)
+            if highlight is not None:
+                run.font.highlight_color = highlight
+            counter += 1
+            if counter >= line_length:
+                paragraph.add_run(f"  {format(ai+1, ',')}\n")
+                counter = 0
+            ai += 1
+            continue
+
+        # Bracket block
+        bracket_start_plain = plain_i
+        end = ai
+        while end < len(seq) and seq[end] != "]":
+            end += 1
+        if end >= len(seq):
+            end = len(seq) - 1
+        inner = seq[ai + 1 : end]
+        plain_from_here = plain[bracket_start_plain:]
+        consumed = _template_consumed_by_bracket(inner, plain_from_here)
+
+        # Determine if SNV bracket.
+        is_snv = ">" in inner
+
+        # For DEL/DELINS decide which side matches this allele's template.
+        body = inner
+        colon = body.find(":")
+        if colon >= 0:
+            body = body[colon + 1 :]
+        ref_part = ""
+        alt_part = ""
+        allele_part = "ref"
+        if not is_snv and "/" in body and not body.startswith("-/"):
+            ref_part, alt_part = body.split("/", 1)
+            alt_part = "" if alt_part == "-" else alt_part
+            if alt_part and plain_from_here.upper().startswith(alt_part.upper()):
+                allele_part = "alt"
+            elif ref_part and plain_from_here.upper().startswith(ref_part.upper()):
+                allele_part = "ref"
+            elif allele == "mut":
+                allele_part = "alt"
+
+        in_bracket = False
+        phase = "prefix"
+        snv_phase = "prefix"
+        snv_ref_seen = False
+        non_snv_ref_seen = False
+        bracket_plain_cursor = bracket_start_plain
+
+        for k in range(ai, end + 1):
+            c = seq[k]
+            if c == "[":
+                in_bracket = True
+                phase = "prefix"
+                snv_phase = "prefix"
+                run = paragraph.add_run(c)
+                run.font.name = "Courier New"
+                run.font.size = Pt(11)
                 run.font.highlight_color = 4
-            else:
-                # Highlight target region
-                run.font.highlight_color = 5
+                counter += 1
+                continue
+            if c == "]":
+                run = paragraph.add_run(c)
+                run.font.name = "Courier New"
+                run.font.size = Pt(11)
+                run.font.highlight_color = 4
+                counter += 1
+                in_bracket = False
+                continue
+            if c == ":":
+                if is_snv:
+                    snv_phase = "ref"
+                else:
+                    phase = "ref"
+                run = paragraph.add_run(c)
+                run.font.name = "Courier New"
+                run.font.size = Pt(11)
+                run.font.highlight_color = 4
+                counter += 1
+                continue
+            if c == ">":
+                snv_phase = "alt"
+                run = paragraph.add_run(c)
+                run.font.name = "Courier New"
+                run.font.size = Pt(11)
+                run.font.highlight_color = 4
+                counter += 1
+                continue
+            if c == "/":
+                phase = "alt"
+                run = paragraph.add_run(c)
+                run.font.name = "Courier New"
+                run.font.size = Pt(11)
+                run.font.highlight_color = 4
+                counter += 1
+                continue
 
-        counter += 1
-        if counter >= line_length:
-            paragraph.add_run(f"  {format(i+1, ',')}\n")
-            counter = 0
+            highlight = 4 if in_bracket else None
+            template_idx = None
+
+            if c in "ACGTNacgtn":
+                if is_snv:
+                    # SNV without ":" (e.g. [G>A]) starts with ref base immediately.
+                    if snv_phase == "prefix" and not snv_ref_seen:
+                        snv_phase = "ref"
+                        snv_ref_seen = True
+                    # Only the allele-present base maps to the template index.
+                    if (snv_phase == "ref" and allele == "wt") or (
+                        snv_phase == "alt" and allele == "mut"
+                    ):
+                        template_idx = bracket_start_plain
+                else:
+                    # INS: only maps on MUT (inserted bases present in plain).
+                    if body.startswith("-/"):
+                        if (
+                            allele == "mut"
+                            and bracket_plain_cursor < bracket_start_plain + consumed
+                        ):
+                            template_idx = bracket_plain_cursor
+                            bracket_plain_cursor += 1
+                    else:
+                        # DEL/DELINS without ":" starts with REF bases immediately after "["
+                        if phase == "prefix" and not non_snv_ref_seen:
+                            phase = "ref"
+                            non_snv_ref_seen = True
+                        eligible = (allele_part == "ref" and phase == "ref") or (
+                            allele_part == "alt" and phase == "alt"
+                        )
+                        if (
+                            eligible
+                            and bracket_plain_cursor < bracket_start_plain + consumed
+                        ):
+                            template_idx = bracket_plain_cursor
+                            bracket_plain_cursor += 1
+
+            if template_idx is not None and _in_primer(template_idx):
+                highlight = 3
+
+            run = paragraph.add_run(c)
+            run.font.name = "Courier New"
+            run.font.size = Pt(11)
+            if highlight is not None:
+                run.font.highlight_color = highlight
+            counter += 1
+
+            if counter >= line_length:
+                paragraph.add_run(f"  {format(k+1, ',')}\n")
+                counter = 0
+
+        plain_i = bracket_start_plain + consumed
+        ai = end + 1
 
 
 def add_hyperlink(paragraph, url, text, color="0000FF", underline=True):
@@ -223,7 +382,20 @@ def create_primer_report(
     prim_settings = designResultsSummary_obj.primer_settings
     var_info = designResultsSummary_obj.get_variant_info()
     primer_search_results = designResultsSummary_obj.get_primer_search_results()
-    primer_pair = primer_search_results.primer_pairs[selected_primer_index - 1]
+    allele_specific_mode = (
+        isinstance(primer_search_results, dict)
+        and primer_search_results.get("design_type") == "allele_specific"
+    )
+    if allele_specific_mode:
+        wt_res = primer_search_results["wt"]
+        mut_res = primer_search_results["mut"]
+        common_reverse = primer_search_results.get("common_reverse_primer") or ""
+        wt_pair = wt_res.primer_pairs[selected_primer_index - 1]
+        mut_pair = mut_res.primer_pairs[selected_primer_index - 1]
+        # Keep existing report logic intact by treating WT as "selected primer_pair"
+        primer_pair = wt_pair
+    else:
+        primer_pair = primer_search_results.primer_pairs[selected_primer_index - 1]
 
     # create new document
     doc = Document()
@@ -244,7 +416,14 @@ def create_primer_report(
     paragraph.text = f"Created: {datetime.now().strftime('%d.%m.%Y %H:%M')}"
     paragraph.alignment = 2  # 2 = RIGHT
 
-    doc.add_heading("Primer Designer Results", level=0)
+    doc.add_heading(
+        (
+            "Allele-specific PCR Results"
+            if allele_specific_mode
+            else "Primer Designer Results"
+        ),
+        level=0,
+    )
 
     # add a paragraph with the variant information
     doc.add_heading("Input Variant:", level=1)
@@ -299,20 +478,40 @@ def create_primer_report(
                 ("Nr of amplicons (in Transcriptome)", _insilico_report_line()),
             )
 
-    # Creating a table object
-    doc.add_heading("Primer Selection:", level=1)
-    p = doc.add_paragraph("Link to all primer-pairs: ")
-    webAppHost = settings.WEB_APP_HOST  # Load WEB_APP_HOST from settings
-    # Load primer overview URL from urls.py
-    primer_overview_url = reverse(
-        "primer_designer_app:snv_indel_primers_overview_with_uuid",
-        kwargs={"uuid": designResultsSummary_obj.id},
-    )
-    add_hyperlink(
-        p,
-        f"{webAppHost}{primer_overview_url}",
-        "Primer results overview",
-    )
+    if allele_specific_mode:
+        doc.add_heading("Allele reactions (AS-PCR):", level=1)
+        doc.add_paragraph(
+            f"Common reverse primer (shared): {common_reverse}",
+            style="List Bullet",
+        )
+        p = doc.add_paragraph("Link to all primer-pairs: ")
+        webAppHost = settings.WEB_APP_HOST  # Load WEB_APP_HOST from settings
+        primer_overview_url = reverse(
+            "primer_designer_app:allele_specific_primers_overview_with_uuid",
+            kwargs={"uuid": designResultsSummary_obj.id},
+        )
+        add_hyperlink(
+            p,
+            f"{webAppHost}{primer_overview_url}",
+            "Primer results overview",
+        )
+        doc.add_heading("Wild-type reaction primer pair", level=2)
+    else:
+        doc.add_heading("Primer Selection:", level=1)
+
+        # Creating a table object
+        p = doc.add_paragraph("Link to all primer-pairs: ")
+        webAppHost = settings.WEB_APP_HOST  # Load WEB_APP_HOST from settings
+        # Load primer overview URL from urls.py
+        primer_overview_url = reverse(
+            "primer_designer_app:snv_indel_primers_overview_with_uuid",
+            kwargs={"uuid": designResultsSummary_obj.id},
+        )
+        add_hyperlink(
+            p,
+            f"{webAppHost}{primer_overview_url}",
+            "Primer results overview",
+        )
     table = doc.add_table(rows=1, cols=3)
 
     # Adding heading in the 1st row of the table
@@ -336,6 +535,40 @@ def create_primer_report(
         doc.add_paragraph(f"{criteria}: {info}", style="List Bullet")
 
     add_amplicon_detail_table_to_doc(doc, primer_pair, prim_settings)
+
+    if allele_specific_mode:
+        doc.add_heading("Mutant reaction primer pair", level=2)
+        primer_data_mut = (
+            ("Sequence", mut_pair.left_seq, mut_pair.right_seq),
+            (
+                "(Relative) start, end",
+                (f"{mut_pair.left_relPos_start}, {mut_pair.left_relPos_end}"),
+                (f"{mut_pair.right_relPos_start}, {mut_pair.right_relPos_end}"),
+            ),
+            ("Tm", f"{mut_pair.tm[0]} °C", f"{mut_pair.tm[1]} °C"),
+            ("GC-content", f"{mut_pair.gc[0]} %", f"{mut_pair.gc[1]} %"),
+        )
+        product_data_mut = (
+            ("Product size", f"{mut_pair.product_size} bp"),
+            ("Product tm", f"{mut_pair.product_tm} °C "),
+        )
+        table = doc.add_table(rows=1, cols=3)
+        row = table.rows[0].cells
+        row[1].text = ""
+        paragraph = row[1].paragraphs[0]
+        run = paragraph.add_run("Forward")
+        run.bold = True
+        paragraph = row[2].paragraphs[0]
+        run = paragraph.add_run("Reverse")
+        run.bold = True
+        for criteria, Info_F, Info_R in primer_data_mut:
+            row = table.add_row().cells
+            row[0].text = criteria
+            row[1].text = Info_F
+            row[2].text = Info_R
+        for criteria, info in product_data_mut:
+            doc.add_paragraph(f"{criteria}: {info}", style="List Bullet")
+        add_amplicon_detail_table_to_doc(doc, mut_pair, prim_settings)
 
     vcf_applied = getattr(var_info, "vcf_applied_variants", None) or []
     if vcf_applied:
@@ -404,15 +637,55 @@ def create_primer_report(
     )
 
     doc.add_heading("Legend:", level=2)
-    legend_content = [["Primer", 3], ["Target-Region", 5], ["Variant", 4]]
+    legend_content = [["Primer", 3], ["Variant", 4]]
 
     for region, color in legend_content:
         list_obj = doc.add_paragraph(style="List Bullet")
         run = list_obj.add_run(region)
         run.font.highlight_color = color
 
-    paragraph = doc.add_paragraph()
-    visualize_sequence_as_docx(paragraph, prim_settings, var_info, primer_pair)
+    if allele_specific_mode:
+        doc.add_heading("Wild-type reaction", level=2)
+        paragraph = doc.add_paragraph()
+        visualize_sequence_as_docx(
+            paragraph,
+            prim_settings,
+            var_info,
+            wt_pair,
+            seq_override=var_info.get_seq("input"),
+            plain_override=var_info.ref_seq,
+            allele="wt",
+        )
+
+        # Build mutant bracketed sequence on the mutated template (avoid duplicating inserts).
+        from primer_designer_app.utils.helpers import _hgvs_input_on_plain
+
+        mut_plain = var_info.get_seq("mutated")
+        lo, hi = var_info.relative_pos
+        mut_seq = _hgvs_input_on_plain(
+            mut_plain,
+            lo,
+            hi,
+            var_info.indel_type,
+            var_info.ref_bases or "",
+            var_info.new_bases or "",
+            allele="mut",
+        )
+
+        doc.add_heading("Mutant reaction", level=2)
+        paragraph = doc.add_paragraph()
+        visualize_sequence_as_docx(
+            paragraph,
+            prim_settings,
+            var_info,
+            mut_pair,
+            seq_override=mut_seq,
+            plain_override=mut_plain,
+            allele="mut",
+        )
+    else:
+        paragraph = doc.add_paragraph()
+        visualize_sequence_as_docx(paragraph, prim_settings, var_info, primer_pair)
 
     # Save the document to an in-memory file
     buffer = io.BytesIO()

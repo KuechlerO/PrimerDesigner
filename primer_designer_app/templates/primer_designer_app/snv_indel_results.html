@@ -35,12 +35,14 @@
             </div>
         {% endif %}
 
-        <div class="sequence-container" id="sequence-container">
+        <div class="sequence-container" id="sequence-container" data-count-bracket-insertion="0" data-allele-specific="1">
             <ol class="seq-lines">
-                {% for line in highlighted_sequence|chunk_html:100 %}
+                {% for line in display_chunks %}
                 <li class="seq-line">
                     <span class="seq-num">{{ line.start }}</span>
-                    <span class="seq-chunk" data-original="{{ line.chunk|safe }}">{{ line.chunk|safe }}</span>
+                    <span class="seq-chunk"
+                          data-original="{{ line.plain }}"
+                          data-annotated="{{ line.html|escape }}">{{ line.html|safe }}</span>
                 </li>
                 {% endfor %}
             </ol>
