@@ -15,18 +15,7 @@
             <h1 style="margin:0;">Final Primer Design Result: </h1>
             <p class = "hgvs-info">{{hgvs_info}}</p>
         </div>
-        <div class="sequence-container" data-count-bracket-insertion="0" data-allele-specific="1">
-            <ol class="seq-lines">
-                {% for line in display_chunks %}
-                <li class="seq-line">
-                    <span class="seq-num">{{ line.start }}</span>
-                    <span class="seq-chunk"
-                          data-original="{{ line.plain }}"
-                          data-annotated="{{ line.html|escape }}">{{ line.html|safe }}</span>
-                </li>
-                {% endfor %}
-            </ol>
-        </div>
+        {% include "primer_designer_app/_sequence_chunks.html" with display_chunks=display_chunks count_bracket_insertion=0 allele_specific=0 %}
 
         <div style="display:flex; justify-content: center; margin: 1em; cursor: default;">
             <div class="final-output-table-div" style="margin-right: 1em;">

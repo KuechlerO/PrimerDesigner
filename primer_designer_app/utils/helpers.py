@@ -1,7 +1,7 @@
 import json
 import logging
 import re
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, TypedDict
 
 from primer_designer_app.models import PrimerSettingsModel
 from primer_designer_app.utils.variant_info import (
@@ -11,6 +11,11 @@ from primer_designer_app.utils.variant_info import (
     GenomicVariantInfo,
     IndelType,
 )
+from primer_designer_app.utils.hgvs_display import (
+    allele_annotated_seq,
+    hgvs_input_on_plain,
+    normalize_indel_type,
+)
 from primer_designer_app.utils.display_utils import (
     compute_display_bounds,
     shift_template_hits_for_display,
@@ -18,6 +23,12 @@ from primer_designer_app.utils.display_utils import (
 from primer_designer_app.utils.primer_utils import PrimerPairResult
 
 LOGGER = logging.getLogger(__name__)
+
+
+class DisplayChunk(TypedDict):
+    start: int
+    plain: str
+    html: str
 
 
 def vcf_hits_for_display(
@@ -177,7 +188,7 @@ def html_visualize_sequence(
     prim_pair: PrimerPairResult,
     *,
     all_primer_pairs: Optional[Sequence[PrimerPairResult]] = None,
-) -> tuple[str, int, int, list[dict]]:
+) -> tuple[str, int, int, list[DisplayChunk]]:
     """Return (HTML, display_offset, display_length, display_chunks) for the sequence view."""
     pairs = list(all_primer_pairs) if all_primer_pairs else [prim_pair]
     if prim_pair not in pairs:
@@ -189,7 +200,7 @@ def html_visualize_sequence(
     display_offset = 0
     display_length = len(var_info.ref_seq)
     highlighted_sequence = ""
-    display_chunks: list[dict] = []
+    display_chunks: list[DisplayChunk] = []
     orig_ref_bases = var_info.ref_bases or ""
     orig_new_bases = var_info.new_bases or ""
 
@@ -249,75 +260,7 @@ def html_visualize_sequence(
     return highlighted_sequence, display_offset, display_length, display_chunks
 
 
-def _normalize_indel_type(var_info: AllelicVariantInfo) -> IndelType:
-    t = getattr(var_info, "indel_type", None)
-    if isinstance(t, IndelType):
-        return t
-    if isinstance(t, str):
-        try:
-            return IndelType(t)
-        except ValueError:
-            pass
-    return IndelType.NONE
-
-
-def _hgvs_input_on_plain(
-    plain: str,
-    lo: int,
-    hi: int,
-    indel_type: IndelType,
-    ref_bases: str,
-    new_bases: str,
-    *,
-    allele: str = "wt",
-) -> str:
-    """Apply HGVS input bracket notation on a plain template (WT or MUT)."""
-    new_u = (new_bases or "").upper()
-    alt_len = len(new_u) if new_u else 0
-    mut_suffix_start = lo + alt_len if allele == "mut" and alt_len else lo
-
-    if indel_type == IndelType.SNV:
-        return plain[:lo] + "[" + ref_bases + ">" + new_bases + "]" + plain[lo + 1 :]
-    if indel_type == IndelType.INS:
-        return plain[:lo] + "[-/" + new_bases + "]" + plain[mut_suffix_start:]
-    if indel_type == IndelType.DEL:
-        return plain[:lo] + "[" + ref_bases + "/-]" + plain[hi + 1 :]
-    if indel_type == IndelType.DELINS:
-        return (
-            plain[:lo]
-            + "["
-            + ref_bases
-            + "/"
-            + new_bases
-            + "]"
-            + plain[mut_suffix_start if allele == "mut" and alt_len else hi + 1 :]
-        )
-    return plain
-
-
-def _allele_annotated_seq(
-    var_info: AllelicVariantInfo,
-    *,
-    ref_bases: str,
-    new_bases: str,
-    allele: str = "wt",
-) -> str:
-    """
-    Same HGVS input bracket notation on WT and MUT display templates.
-
-    Uses original ref/alt alleles from variant metadata (not bases read back from
-    a sliced mutated template, which would turn SNV [G>A] into [A>A]).
-    """
-    plain = var_info.ref_seq
-    lo, hi = var_info.relative_pos
-    indel_type = _normalize_indel_type(var_info)
-    if allele == "mut" and indel_type == IndelType.DELINS:
-        new_u = (new_bases or "").upper()
-        if new_u:
-            hi = lo + len(new_u) - 1
-    return _hgvs_input_on_plain(
-        plain, lo, hi, indel_type, ref_bases, new_bases, allele=allele
-    )
+## NOTE: HGVS display helpers moved to utils/hgvs_display.py
 
 
 def _highlight_annotated_variant(
@@ -328,7 +271,7 @@ def _highlight_annotated_variant(
 
     def _highlight_variant(match: re.Match) -> str:
         capture = match.group(1)
-        indel_type = _normalize_indel_type(var_info)
+        indel_type = normalize_indel_type(var_info)
         var_text = capture.replace("[", "[" + indel_type.value + ":")
         return f"<span class='highlight-mutation'>{var_text}</span>"
 
@@ -347,7 +290,7 @@ def _highlight_allele_base_in_snv_bracket(
     For SNV, highlight the discriminating base inside the bracket:
     WT highlights ref base, MUT highlights alt base (notation stays [ref>alt]).
     """
-    indel_type = _normalize_indel_type(var_info)
+    indel_type = normalize_indel_type(var_info)
     if indel_type != IndelType.SNV:
         return html
 
@@ -386,7 +329,7 @@ def build_allele_display_chunks(
     ref_bases: str,
     new_bases: str,
     highlight_snv_allele: bool = False,
-) -> list[dict]:
+) -> list[DisplayChunk]:
     """
     Build paired plain/HTML chunks for AS-PCR display.
 
@@ -403,8 +346,8 @@ def build_allele_display_chunks(
         width = 50
 
     lo, hi = var_info.relative_pos
-    indel_type = _normalize_indel_type(var_info)
-    chunks: list[dict] = []
+    indel_type = normalize_indel_type(var_info)
+    chunks: list[DisplayChunk] = []
     for i in range(0, len(plain_template), width):
         plain_chunk = plain_template[i : i + width]
         start_1 = i + 1
@@ -422,7 +365,7 @@ def build_allele_display_chunks(
                 new_u = (new_bases or "").upper()
                 if new_u:
                     hi_local_used = lo_local_used + len(new_u) - 1
-            annotated = _hgvs_input_on_plain(
+            annotated = hgvs_input_on_plain(
                 plain_chunk,
                 lo_local_used,
                 hi_local_used,
@@ -453,7 +396,7 @@ def html_visualize_sequence_allele_specific(
     *,
     allele: str,
     all_primer_pairs: Optional[Sequence[PrimerPairResult]] = None,
-) -> tuple[str, int, int, list[dict]]:
+) -> tuple[str, int, int, list[DisplayChunk]]:
     """
     AS-PCR sequence view: HGVS bracket annotation on WT and MUT templates.
 
@@ -479,7 +422,7 @@ def html_visualize_sequence_allele_specific(
     display_offset = 0
     display_length = len(template_full)
     highlighted_sequence = ""
-    display_chunks: list[dict] = []
+    display_chunks: list[DisplayChunk] = []
 
     try:
         (
@@ -501,7 +444,7 @@ def html_visualize_sequence_allele_specific(
         # ref-relative coordinates on an already-mutated slice and shift downstream
         # highlighting by (ref_len - alt_len).
         _slice_plain = var_info.ref_seq
-        annotated = _allele_annotated_seq(
+        annotated = allele_annotated_seq(
             var_info,
             ref_bases=orig_ref_bases,
             new_bases=orig_new_bases,

@@ -44,10 +44,12 @@
             }
         }
 
+        // Hide overlay on page show
         window.addEventListener("pageshow", function () {
             overlay.style.display = "none";
         });
 
+        // Define trigger for loading overlay
         const settingsForm = document.getElementById("settings");
         if (settingsForm) {
             settingsForm.addEventListener("submit", function () {

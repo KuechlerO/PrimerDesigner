@@ -25,18 +25,7 @@
             <section>
                 <h2 style="margin: 0 0 0.25em 0;">Wild-Type reaction</h2>
 
-                <div class="sequence-container" id="sequence-container-wt" data-count-bracket-insertion="0" data-allele-specific="1">
-                    <ol class="seq-lines">
-                        {% for line in wt_display_chunks %}
-                        <li class="seq-line">
-                            <span class="seq-num">{{ line.start }}</span>
-                            <span class="seq-chunk"
-                                  data-original="{{ line.plain }}"
-                                  data-annotated="{{ line.html|escape }}">{{ line.html|safe }}</span>
-                        </li>
-                        {% endfor %}
-                    </ol>
-                </div>
+                {% include "primer_designer_app/_sequence_chunks.html" with container_id="sequence-container-wt" display_chunks=wt_display_chunks count_bracket_insertion=0 allele_specific=1 %}
 
                 <div class="output-table-div">
                     <table style="width: 100%;" class="output-table" id="primer_results_table_wt">
@@ -76,18 +65,7 @@
             <section>
                 <h2 style="margin: 0 0 0.25em 0;">Mutant reaction</h2>
 
-                <div class="sequence-container" id="sequence-container-mut" data-count-bracket-insertion="0" data-allele-specific="1">
-                    <ol class="seq-lines">
-                        {% for line in mut_display_chunks %}
-                        <li class="seq-line">
-                            <span class="seq-num">{{ line.start }}</span>
-                            <span class="seq-chunk"
-                                  data-original="{{ line.plain }}"
-                                  data-annotated="{{ line.html|escape }}">{{ line.html|safe }}</span>
-                        </li>
-                        {% endfor %}
-                    </ol>
-                </div>
+                {% include "primer_designer_app/_sequence_chunks.html" with container_id="sequence-container-mut" display_chunks=mut_display_chunks count_bracket_insertion=0 allele_specific=1 %}
 
                 <div class="output-table-div">
                     <table style="width: 100%;" class="output-table" id="primer_results_table_mut">
@@ -157,17 +135,8 @@
 
             const positions = row.cells[1].textContent.split(",").map(x => parseInt(x.trim(), 10));
             let [primerF_start, primerF_end, primerR_start, primerR_end] = positions;
-            const downloadLink = document.getElementById("download-report-link");
-            if (downloadLink) {
-                const idx = (id || "").split("-").pop() || "1";
-                const baseHref = downloadLink.getAttribute("href");
-                if (baseHref) {
-                    downloadLink.setAttribute(
-                        "href",
-                        baseHref.replace(/\/\d+\/$/, `/${idx}/`)
-                    );
-                }
-            }
+            const idx = (id || "").split("-").pop() || "1";
+            updateReportDownloadLinkById("download-report-link", idx);
 
             if (kind === "wt") {
                 window.SEQUENCE_DISPLAY_OFFSET = SEQUENCE_DISPLAY_OFFSET_WT;

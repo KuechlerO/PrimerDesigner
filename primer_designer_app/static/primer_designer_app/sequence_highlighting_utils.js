@@ -24,6 +24,19 @@ function _snpTooltip(hit) {
     return `${id}: MAF ${maf}${alleles}`;
 }
 
+function updateReportDownloadLink(downloadLink, selectedIndex) {
+    if (!downloadLink) return;
+    const idx = String(selectedIndex || "1");
+    const baseHref = downloadLink.getAttribute("href");
+    if (!baseHref) return;
+    downloadLink.setAttribute("href", baseHref.replace(/\/\d+\/$/, `/${idx}/`));
+}
+
+function updateReportDownloadLinkById(downloadLinkId, selectedIndex) {
+    const el = document.getElementById(downloadLinkId);
+    updateReportDownloadLink(el, selectedIndex);
+}
+
 function highlightPrimerRegion(html, start, end, cssClass, title, options) {
     const highlightClass = cssClass || "highlight-primer";
     const titleAttr = title ? ` title="${_escapeAttr(title)}"` : "";
@@ -659,7 +672,12 @@ function refreshSequenceHighlights(
             : _chunkTemplateLetterLength(originalHTML, primerHighlightOpts);
         const chunkEnd = chunkStart + Math.max(0, chunkLen - 1);
 
-        let html = isAlleleSpecific ? annotatedHTML : originalHTML;
+        const wantsAnnotatedBase =
+            isAlleleSpecific ||
+            (annotatedHTML &&
+                (annotatedHTML.includes("highlight-mutation") ||
+                    annotatedHTML.includes("[")));
+        let html = wantsAnnotatedBase ? annotatedHTML : originalHTML;
         if (!isAlleleSpecific) {
             html = _applyVcfHighlights(html, chunkStart, chunkEnd);
         }
@@ -705,7 +723,9 @@ function refreshSequenceHighlights(
 
         // Reapply variant highlight from annotated HTML (SNV/Indel views only).
         if (!isAlleleSpecific) {
-            html = _reapplyMutationHighlights(html, annotatedHTML);
+            if (!(html && html.includes("highlight-mutation"))) {
+                html = _reapplyMutationHighlights(html, annotatedHTML);
+            }
         }
 
         const nonConflictHits = [];

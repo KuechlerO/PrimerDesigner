@@ -35,18 +35,7 @@
             </div>
         {% endif %}
 
-        <div class="sequence-container" id="sequence-container" data-count-bracket-insertion="0" data-allele-specific="1">
-            <ol class="seq-lines">
-                {% for line in display_chunks %}
-                <li class="seq-line">
-                    <span class="seq-num">{{ line.start }}</span>
-                    <span class="seq-chunk"
-                          data-original="{{ line.plain }}"
-                          data-annotated="{{ line.html|escape }}">{{ line.html|safe }}</span>
-                </li>
-                {% endfor %}
-            </ol>
-        </div>
+        {% include "primer_designer_app/_sequence_chunks.html" with container_id="sequence-container" display_chunks=display_chunks count_bracket_insertion=0 allele_specific=0 %}
         <form id="primer_selection" method="post" action="{% url 'primer_designer_app:snv_indel_primer_details' uuid=result_sum_obj.id %}">
             {% csrf_token %}
             <div style="display:flex; align-items:center;">

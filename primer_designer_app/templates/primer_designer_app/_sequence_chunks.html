@@ -1,0 +1,17 @@
+{# Shared sequence display chunk list (used by multiple result pages). #}
+<div class="sequence-container"
+    {% if container_id %}id="{{ container_id }}"{% endif %}
+    data-count-bracket-insertion="{{ count_bracket_insertion|default_if_none:0 }}"
+    data-allele-specific="{{ allele_specific|default_if_none:1 }}"
+>
+    <ol class="seq-lines">
+        {% for line in display_chunks %}
+        <li class="seq-line">
+            <span class="seq-num">{{ line.start }}</span>
+            <span class="seq-chunk"
+                  data-original="{{ line.plain }}"
+                  data-annotated="{{ line.html|escape }}">{{ line.html|safe }}</span>
+        </li>
+        {% endfor %}
+    </ol>
+</div>

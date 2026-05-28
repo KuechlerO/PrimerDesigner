@@ -5,8 +5,11 @@ from typing import Optional
 from primer_designer_app.models import PrimerSettingsModel, DesignResultsSummary
 from primer_designer_app.utils.variant_info import (
     AllelicVariantInfo,
-    IndelType,
     TranscriptVariantInfo,
+)
+from primer_designer_app.utils.hgvs_display import (
+    hgvs_input_on_plain,
+    template_bases_consumed_by_bracket,
 )
 from primer_designer_app.utils.helpers import create_hgvs_notation
 from primer_designer_app.utils.amplicon_display import (
@@ -56,32 +59,6 @@ def visualize_sequence_as_docx(
             primerR_start <= idx <= primerR_end
         )
 
-    def _template_consumed_by_bracket(body: str, plain_from_here: str) -> int:
-        b = body
-        colon = b.find(":")
-        if colon >= 0:
-            b = b[colon + 1 :]
-        if ">" in b:
-            return 1
-        if b.startswith("-/"):
-            ins = b[2:]
-            if ins and plain_from_here.upper().startswith(ins.upper()):
-                return len(ins)
-            return 0
-        if b.endswith("/-"):
-            ref = b[: b.index("/-")]
-            if allele == "mut":
-                return 0
-            return len(ref)
-        if "/" in b:
-            ref, alt = b.split("/", 1)
-            if alt and plain_from_here.upper().startswith(alt.upper()):
-                return len(alt)
-            if ref and plain_from_here.upper().startswith(ref.upper()):
-                return len(ref)
-            return len(ref)
-        return 1
-
     # Walk annotated `seq` while mapping letters back to `plain` indices.
     plain_i = 0
     counter = 0
@@ -122,7 +99,9 @@ def visualize_sequence_as_docx(
             end = len(seq) - 1
         inner = seq[ai + 1 : end]
         plain_from_here = plain[bracket_start_plain:]
-        consumed = _template_consumed_by_bracket(inner, plain_from_here)
+        consumed = template_bases_consumed_by_bracket(
+            inner, plain_from_here, allele=allele
+        )
 
         # Determine if SNV bracket.
         is_snv = ">" in inner
@@ -657,12 +636,11 @@ def create_primer_report(
             allele="wt",
         )
 
-        # Build mutant bracketed sequence on the mutated template (avoid duplicating inserts).
-        from primer_designer_app.utils.helpers import _hgvs_input_on_plain
-
+        # Build mutant bracketed sequence on the mutated template
+        # (avoid duplicating inserts).
         mut_plain = var_info.get_seq("mutated")
         lo, hi = var_info.relative_pos
-        mut_seq = _hgvs_input_on_plain(
+        mut_seq = hgvs_input_on_plain(
             mut_plain,
             lo,
             hi,
@@ -806,10 +784,14 @@ def create_structural_variant_primer_report(
         _add_bullet_field(doc, "GC target", f"{prim_settings.gc} %")
         _add_bullet_field(doc, "Max poly-X", str(prim_settings.max_poly_x))
         if prim_settings.productsize_range:
+            prod_range = (
+                f"{prim_settings.productsize_range[0]}–"
+                f"{prim_settings.productsize_range[1]} bp"
+            )
             _add_bullet_field(
                 doc,
                 "Product size range",
-                f"{prim_settings.productsize_range[0]}–{prim_settings.productsize_range[1]} bp",
+                prod_range,
             )
 
     doc.add_heading("Designed primer pairs", level=1)
