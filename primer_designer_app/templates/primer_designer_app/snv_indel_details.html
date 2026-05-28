@@ -6,6 +6,7 @@
 <head>
     {% include "primer_designer_app/header.html" %}
     <link rel="stylesheet" href = "{% static 'primer_designer_app/indel_details.css' %}">
+    <link rel="stylesheet" href = "{% static 'primer_designer_app/indel_results.css' %}">
 </head>
 <body>
     {% include "primer_designer_app/body_nav.html" %}
@@ -14,16 +15,7 @@
             <h1 style="margin:0;">Final Primer Design Result: </h1>
             <p class = "hgvs-info">{{hgvs_info}}</p>
         </div>
-        <div class="sequence-container">
-            <ol class="seq-lines">
-                {% for line in highlighted_sequence|chunk_html:100 %}
-                <li class="seq-line">
-                    <span class="seq-num">{{ line.start }}</span>
-                    <span class="seq-chunk" data-original="{{ line.chunk|safe }}">{{ line.chunk|safe }}</span>
-                </li>
-                {% endfor %}
-            </ol>
-        </div>
+        {% include "primer_designer_app/_sequence_chunks.html" with display_chunks=display_chunks count_bracket_insertion=0 allele_specific=0 %}
 
         <div style="display:flex; justify-content: center; margin: 1em; cursor: default;">
             <div class="final-output-table-div" style="margin-right: 1em;">
@@ -88,6 +80,14 @@
                             <td class="final-output-td">Product tm</td>
                             <td class="final-output-td" colspan="2">{{ primer_pair.product_tm }} °C</td>
                         </tr>
+                        {% if snp_analysis.enabled %}
+                        <tr>
+                            <td class="final-output-td">SNP risk (gnomAD)</td>
+                            <td class="final-output-td {{ primer_pair.snp_status|snp_cell_class }}" colspan="2" title="{{ primer_pair.snp_conflicts|snp_conflict_summary }}">
+                                {{ primer_pair.snp_status|snp_status_label }}
+                            </td>
+                        </tr>
+                        {% endif %}
                     </tbody>
                 </table>
 
@@ -136,14 +136,33 @@
         // Function to initialize primer highlighting on page load
         function initializePrimerHighlighting() {
             // Get relative primer positions
-            const primerF_start = parseInt(document.getElementById("left_relPos_start").textContent, 10);
-            const primerF_end = parseInt(document.getElementById("left_relPos_end").textContent, 10);
-            const primerR_start = parseInt(document.getElementById("right_relPos_start").textContent, 10);
-            const primerR_end = parseInt(document.getElementById("right_relPos_end").textContent, 10);
+            let primerF_start = parseInt(document.getElementById("left_relPos_start").textContent, 10);
+            let primerF_end = parseInt(document.getElementById("left_relPos_end").textContent, 10);
+            let primerR_start = parseInt(document.getElementById("right_relPos_start").textContent, 10);
+            let primerR_end = parseInt(document.getElementById("right_relPos_end").textContent, 10);
+            const displayOffset = typeof SEQUENCE_DISPLAY_OFFSET !== "undefined"
+                ? SEQUENCE_DISPLAY_OFFSET
+                : 0;
+            primerF_start -= displayOffset;
+            primerF_end -= displayOffset;
+            primerR_start -= displayOffset;
+            primerR_end -= displayOffset;
 
-            // Highlight primers in the sequence
-            highlightPrimers(primerF_start, primerF_end, primerR_start, primerR_end);
+            refreshSequenceHighlights(
+                primerF_start,
+                primerF_end,
+                primerR_start,
+                primerR_end
+            );
         }
+
+        const SEQUENCE_DISPLAY_OFFSET = {{ sequence_display_offset|default:0 }};
+        const VCF_REGION_HITS = {{ vcf_hits_json|safe }};
+        {% if snp_analysis and snp_analysis.hits %}
+        const SNP_REGION_HITS = {{ snp_hits_json|safe }};
+        {% else %}
+        const SNP_REGION_HITS = [];
+        {% endif %}
 
         window.onload = function() {
             initializePrimerHighlighting();

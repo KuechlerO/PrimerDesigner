@@ -1,0 +1,45 @@
+<dialog id="snp-region-modal" class="amplicon-dialog">
+    <div class="amplicon-dialog-panel">
+        <h3 class="amplicon-dialog-title">Known variants in design region</h3>
+        <p class="amplicon-reference-note">
+            gnomAD variants from Ensembl with global MAF &gt; 1% overlapping the Primer3 template interval
+            (excluding your input variant). Reference: {{ snp_analysis.reference_genome }}.
+        </p>
+        {% if snp_analysis.region %}
+            <p class="amplicon-reference-note">
+                chr{{ snp_analysis.region.chromosome }}:{{ snp_analysis.region.start }}-{{ snp_analysis.region.end }}
+            </p>
+        {% endif %}
+        {% if snp_analysis.hits %}
+            <div class="amplicon-dialog-scroll">
+                <table class="output-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th class="output-th">ID</th>
+                            <th class="output-th">Position</th>
+                            <th class="output-th">Alleles</th>
+                            <th class="output-th">MAF</th>
+                            <th class="output-th">Consequence</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for hit in snp_analysis.hits %}
+                            <tr>
+                                <td>{{ hit.id }}</td>
+                                <td>{{ hit.genomic_start }}–{{ hit.genomic_end }}</td>
+                                <td>{{ hit.alleles }}</td>
+                                <td>{% if hit.maf %}{{ hit.maf|floatformat:4 }}{% else %}—{% endif %}</td>
+                                <td>{{ hit.consequence_type }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="amplicon-reference-note">No common gnomAD variants (MAF &gt; 1%) reported for this region.</p>
+        {% endif %}
+        <div class="amplicon-dialog-actions">
+            <button type="button" class="amplicon-dialog-close-btn" onclick="document.getElementById('snp-region-modal').close()">Close</button>
+        </div>
+    </div>
+</dialog>

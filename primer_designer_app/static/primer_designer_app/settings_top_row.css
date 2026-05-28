@@ -11,6 +11,27 @@
     -webkit-overflow-scrolling: touch;
 }
 
+.settings-container--snp-check {
+    min-width: 10em;
+}
+
+.snp-check-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+    margin-top: 0.5em;
+    font-size: 1em;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.snp-check-label input {
+    width: 1.1em;
+    height: 1.1em;
+    cursor: pointer;
+}
+
 /* Amplicon check: same toggle family as Reference genome / Use case (3 positions); wide track so each label stays one line. */
 .button-cover.amplicon-button-cover {
     width: min(100%, 38em);

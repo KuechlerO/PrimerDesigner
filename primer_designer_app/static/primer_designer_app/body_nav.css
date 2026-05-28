@@ -18,14 +18,25 @@ nav ul li {
 
 nav ul li.page-btn {
     padding: 0.4em 0.8em;
-    background-color: #02758A;
-    color: white;
+    /* Match Reference genome toggle's light track */
+    background-color: #ebf7fc;
+    border: 1px solid rgba(2, 117, 138, 0.28);
+    color: #02758A;
     border-radius: 0.3em;
     cursor: pointer;
+    font-weight: 600;
 }
 
 nav ul li.page-btn:hover {
-    background-color: #0097B2;
+    background-color: rgba(2, 117, 138, 0.10);
+}
+
+/* Active page indicator (minimal, high-contrast) */
+nav ul li.page-btn.page-btn--active {
+    background-color: #02758A;
+    border-color: #02758A;
+    color: white;
+    box-shadow: 0 0.6em 1.1em -0.9em rgba(39, 52, 56, 0.45);
 }
 
 /* BIH logo — top left; top right kept clear for primer overview on SNV index */
