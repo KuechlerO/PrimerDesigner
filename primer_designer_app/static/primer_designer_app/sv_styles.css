@@ -1,0 +1,62 @@
+/* Structural variants: SV-only styling */
+
+/* Sketch panel */
+.sv-sketch {
+    position: relative;
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(87, 163, 176, 0.35);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-light);
+    padding: 0.75rem 0.75rem 0.6rem;
+}
+
+/* Arrow pointing from genomic inputs to sketch */
+.sv-sketch::before {
+    content: "";
+    position: absolute;
+    left: -14px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-width: 10px 14px 10px 0;
+    border-style: solid;
+    border-color: transparent rgba(87, 163, 176, 0.35) transparent transparent;
+}
+.sv-sketch::after {
+    content: "";
+    position: absolute;
+    left: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-width: 9px 13px 9px 0;
+    border-style: solid;
+    border-color: transparent rgba(255, 255, 255, 0.82) transparent transparent;
+}
+
+@media (max-width: 900px) {
+    .sv-sketch::before,
+    .sv-sketch::after {
+        display: none;
+    }
+}
+
+.sv-sketch-title {
+    font-family: var(--font-main);
+    font-weight: 700;
+    color: rgb(45, 133, 120);
+    font-size: 1.1em;
+    margin-bottom: 0.25rem;
+}
+
+.sv-sketch-subtitle {
+    font-family: var(--font-main);
+    color: color(srgb 0.2429 0.5607 0.615);
+    font-size: 0.95em;
+    margin-bottom: 0.5rem;
+}
+
+.sv-sketch-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+}

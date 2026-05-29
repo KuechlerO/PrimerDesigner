@@ -46,20 +46,42 @@ def chunk_html(seq_html: str, width: int = 100) -> List[Dict]:
 
     # Tokenize into tags and text
     # matches tags or text: 1. starts with '<' and ends with '>', or 2. any text not containing '<'
-    token_re = re.compile(r'(<[^>]+>)|([^<]+)', re.DOTALL)  # matches tags or text
-    open_tag_name_re = re.compile(r'^<\s*([A-Za-z0-9:-]+)')
-    close_tag_name_re = re.compile(r'^</\s*([A-Za-z0-9:-]+)')
-    void_tags = {"br", "img", "hr", "input", "meta", "link", "area", "base", "col", "embed", "param", "source", "track", "wbr"}
+    token_re = re.compile(r"(<[^>]+>)|([^<]+)", re.DOTALL)  # matches tags or text
+    open_tag_name_re = re.compile(r"^<\s*([A-Za-z0-9:-]+)")
+    close_tag_name_re = re.compile(r"^</\s*([A-Za-z0-9:-]+)")
+    void_tags = {
+        "br",
+        "img",
+        "hr",
+        "input",
+        "meta",
+        "link",
+        "area",
+        "base",
+        "col",
+        "embed",
+        "param",
+        "source",
+        "track",
+        "wbr",
+    }
 
     def is_dna_base(ch: str) -> bool:
         return ch.upper() in ("A", "C", "G", "T", "N")
 
     chunks: List[Dict] = []
-    open_tags: List[str] = []          # stack of open tag names
-    open_tag_strings: List[str] = []   # corresponding opening tag strings (with attributes)
+    open_tags: List[str] = []  # stack of open tag names
+    open_tag_strings: List[str] = (
+        []
+    )  # corresponding opening tag strings (with attributes)
     current_parts: List[str] = []
     visible_count = 0
     chunk_start = None  # 1-based visible index for current chunk
+    # Track HGVS bracket state across tokens (text can be split by nested tags).
+    inside_variant_bracket = False
+    count_bases_in_bracket = False
+    bracket_seen_colon = False
+    bracket_collect_ref = False
 
     def close_all_open_tags() -> str:
         # Return closing tags string in reverse order
@@ -77,7 +99,10 @@ def chunk_html(seq_html: str, width: int = 100) -> List[Dict]:
         if tag:
             # handle tag token
             is_closing = tag.startswith("</")
-            is_self_closing = tag.endswith("/>") or bool(open_tag_name_re.match(tag) and open_tag_name_re.match(tag).group(1).lower() in void_tags)
+            is_self_closing = tag.endswith("/>") or bool(
+                open_tag_name_re.match(tag)
+                and open_tag_name_re.match(tag).group(1).lower() in void_tags
+            )
             if is_closing:
                 # append closing tag
                 # try to pop matching open tag from stack
@@ -106,27 +131,61 @@ def chunk_html(seq_html: str, width: int = 100) -> List[Dict]:
             # iterate character-by-character but preserve original chars in output
             pos = 0
             text_len = len(text)
-            variant_annotation_ignore = False
             while pos < text_len:
                 ch = text[pos]
                 if ch == "[":
-                    variant_annotation_ignore = True
-                elif ch in ["/", ">"]:
-                    variant_annotation_ignore = False
+                    inside_variant_bracket = True
+                    count_bases_in_bracket = False
+                    bracket_seen_colon = False
+                    bracket_collect_ref = False
+                elif ch == "]":
+                    inside_variant_bracket = False
+                    count_bases_in_bracket = False
+                    bracket_seen_colon = False
+                    bracket_collect_ref = False
+                elif inside_variant_bracket and ch == ":":
+                    bracket_seen_colon = True
+                    bracket_collect_ref = True
+                elif inside_variant_bracket and ch in (">", "/"):
+                    bracket_collect_ref = False
+                elif (
+                    inside_variant_bracket
+                    and ch == "/"
+                    and pos > 0
+                    and text[pos - 1] == "+"
+                ):
+                    # MUT [+/inserted]: count inserted bases on the template
+                    count_bases_in_bracket = True
 
                 # if starting fresh chunk set chunk_start
                 if (visible_count % width) == 0:
                     chunk_start = visible_count + 1
                 # append the char to output parts
                 current_parts.append(ch)
-                # increment visible count only for DNA bases
-                if is_dna_base(ch) and not variant_annotation_ignore:
+                is_ref_base_in_bracket = (
+                    inside_variant_bracket
+                    and is_dna_base(ch)
+                    and not count_bases_in_bracket
+                    and (
+                        (bracket_seen_colon and bracket_collect_ref)
+                        or (not bracket_seen_colon and pos > 0 and text[pos - 1] == "[")
+                    )
+                )
+                # Count template bases 1:1; reference allele bases inside typed brackets count too.
+                count_visible = is_dna_base(ch) and (
+                    (not inside_variant_bracket)
+                    or count_bases_in_bracket
+                    or is_ref_base_in_bracket
+                )
+                if count_visible:
                     visible_count += 1
                 pos += 1
 
                 # If we've filled a chunk (visible_count divisible by width) finalize it
-                if (visible_count % width == 0) and visible_count > 0 and is_dna_base(ch) and not variant_annotation_ignore:
-                    LOGGER.debug(f"Processing char: {ch}, visible_count={visible_count}")
+                if (visible_count % width == 0) and visible_count > 0 and count_visible:
+                    LOGGER.debug(
+                        f"Processing char: {ch}, visible_count={visible_count}"
+                    )
                     # close open tags for this chunk
                     closing = close_all_open_tags()
                     chunk_html_str = "".join(current_parts) + closing
@@ -136,13 +195,17 @@ def chunk_html(seq_html: str, width: int = 100) -> List[Dict]:
                     # chunk_start becomes next visible index on next iteration
                     chunk_start = None
 
-        LOGGER.debug(f"Current parts: {current_parts}, visible_count: {visible_count}, chunk_start: {chunk_start}")
+        LOGGER.debug(
+            f"Current parts: {current_parts}, visible_count: {visible_count}, chunk_start: {chunk_start}"
+        )
 
     # after loop, add remaining content if any visible chars left or tags present
     if current_parts:
         # ensure chunk_start is set for final remainder
         if chunk_start is None:
-            chunk_start = visible_count - (visible_count % width) + 1 if visible_count else 1
+            chunk_start = (
+                visible_count - (visible_count % width) + 1 if visible_count else 1
+            )
         closing = close_all_open_tags()
         chunk_html_str = "".join(current_parts) + closing
         chunks.append({"start": chunk_start, "chunk": chunk_html_str})

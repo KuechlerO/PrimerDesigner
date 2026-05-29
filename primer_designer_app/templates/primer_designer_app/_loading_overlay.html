@@ -1,0 +1,61 @@
+<div id="loading-overlay" role="alertdialog" aria-modal="true" aria-labelledby="loader-title" aria-busy="true">
+    <div class="loader-content">
+        <div class="spinner" aria-hidden="true"></div>
+        <h2 class="loader-title" id="loader-title">Designing your primers</h2>
+        <p class="loader-lead">Finding optimal primer pairs for your variant.</p>
+        <ul class="loader-steps" id="loader-steps" aria-live="polite"></ul>
+        <p class="loader-footnote">Please keep this tab open — the page will update when finished.</p>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const overlay = document.getElementById("loading-overlay");
+        const stepsList = document.getElementById("loader-steps");
+
+        function addStep(text) {
+            const item = document.createElement("li");
+            item.className = "loader-step";
+            item.textContent = text;
+            stepsList.appendChild(item);
+        }
+
+        function populateLoaderSteps() {
+            stepsList.innerHTML = "";
+            addStep("Running Primer3…");
+
+            const snpCheck = document.getElementById("snp-check");
+            if (snpCheck && snpCheck.checked) {
+                addStep(
+                    "Checking common variants in gnomAD (Ensembl) — can take up to 30 s"
+                );
+            }
+
+            const ampliconHidden = document.getElementById("amplicon-check-hidden");
+            const ampliconMode = ampliconHidden ? ampliconHidden.value : "none";
+            if (ampliconMode && ampliconMode !== "none") {
+                const scope =
+                    ampliconMode === "transcriptome" ? "transcriptome" : "genome";
+                addStep(
+                    "Running in-silico amplicon check (" +
+                        scope +
+                        ") — can take up to 30 s"
+                );
+            }
+        }
+
+        // Hide overlay on page show
+        window.addEventListener("pageshow", function () {
+            overlay.style.display = "none";
+        });
+
+        // Define trigger for loading overlay
+        const settingsForm = document.getElementById("settings");
+        if (settingsForm) {
+            settingsForm.addEventListener("submit", function () {
+                populateLoaderSteps();
+                overlay.style.display = "flex";
+            });
+        }
+    })();
+</script>

@@ -1,0 +1,174 @@
+{% load static %}
+{% load seq_tags %}
+{% load custom_filters %}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    {% include "primer_designer_app/header.html" %}
+    <link rel="stylesheet" href="{% static 'primer_designer_app/indel_results.css' %}">
+</head>
+<body>
+    {% include "primer_designer_app/body_nav.html" %}
+    <main>
+        <div style="display:flex; margin:0.5em; align-items: baseline;">
+            <h1 style="margin:0;">Allele-specific PCR Result:</h1>
+            <p class="hgvs-info" style="margin-left: 1em;">{{ hgvs_info }}</p>
+        </div>
+
+        <div style="margin: 0.5em 0.75em;">
+            <p style="margin: 0.25em 0;">
+                Common reverse primer (shared): <span class="highlight-primer" style="padding: 0.1em 0.25em;">{{ common_reverse_primer }}</span>
+            </p>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1em; padding: 0.5em;">
+            <section>
+                <h2 style="margin: 0 0 0.25em 0;">Wild-Type reaction</h2>
+
+                {% include "primer_designer_app/_sequence_chunks.html" with container_id="sequence-container-wt" display_chunks=wt_display_chunks count_bracket_insertion=0 allele_specific=1 %}
+
+                <div class="output-table-div">
+                    <table style="width: 100%;" class="output-table" id="primer_results_table_wt">
+                        <thead>
+                            <tr>
+                                <th class="output-th">Primer-Pair</th>
+                                <th class="output-th" style="display:none;">Positions</th>
+                                <th class="output-th">Penalty</th>
+                                <th class="output-th">Product size</th>
+                                <th class="output-th">Product tm</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pair_res in wt_results.primer_pairs %}
+                            <tr class="selectable-row" onclick="updateSelectedPrimerFor('wt', this, 'wt-{{ forloop.counter }}')">
+                                <td class="output-td primer-selector">
+                                    <div>
+                                        <strong>F:</strong> {{ pair_res.left_seq }}
+                                        (Tm: {{ pair_res.tm.0 }} °C, GC: {{ pair_res.gc.0 }}%)
+                                    </div>
+                                    <div>
+                                        <strong>R:</strong> {{ pair_res.right_seq }}
+                                        (Tm: {{ pair_res.tm.1 }} °C, GC: {{ pair_res.gc.1 }}%)
+                                    </div>
+                                </td>
+                                <td class="output-td" style="display:none;">{{ pair_res.left_relPos_start }},{{ pair_res.left_relPos_end }},{{ pair_res.right_relPos_start }},{{ pair_res.right_relPos_end }}</td>
+                                <td class="output-td">{{ pair_res.penalty }}</td>
+                                <td class="output-td">{{ pair_res.product_size }}</td>
+                                <td class="output-td">{{ pair_res.product_tm }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section>
+                <h2 style="margin: 0 0 0.25em 0;">Mutant reaction</h2>
+
+                {% include "primer_designer_app/_sequence_chunks.html" with container_id="sequence-container-mut" display_chunks=mut_display_chunks count_bracket_insertion=0 allele_specific=1 %}
+
+                <div class="output-table-div">
+                    <table style="width: 100%;" class="output-table" id="primer_results_table_mut">
+                        <thead>
+                            <tr>
+                                <th class="output-th">Primer-Pair</th>
+                                <th class="output-th" style="display:none;">Positions</th>
+                                <th class="output-th">Penalty</th>
+                                <th class="output-th">Product size</th>
+                                <th class="output-th">Product tm</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pair_res in mut_results.primer_pairs %}
+                            <tr class="selectable-row" onclick="updateSelectedPrimerFor('mut', this, 'mut-{{ forloop.counter }}')">
+                                <td class="output-td primer-selector">
+                                    <div>
+                                        <strong>F:</strong> {{ pair_res.left_seq }}
+                                        (Tm: {{ pair_res.tm.0 }} °C, GC: {{ pair_res.gc.0 }}%)
+                                    </div>
+                                    <div>
+                                        <strong>R:</strong> {{ pair_res.right_seq }}
+                                        (Tm: {{ pair_res.tm.1 }} °C, GC: {{ pair_res.gc.1 }}%)
+                                    </div>
+                                </td>
+                                <td class="output-td" style="display:none;">{{ pair_res.left_relPos_start }},{{ pair_res.left_relPos_end }},{{ pair_res.right_relPos_start }},{{ pair_res.right_relPos_end }}</td>
+                                <td class="output-td">{{ pair_res.penalty }}</td>
+                                <td class="output-td">{{ pair_res.product_size }}</td>
+                                <td class="output-td">{{ pair_res.product_tm }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <div style="display:flex; justify-content:center; padding: 0.75em 0 1.25em 0;">
+            <a id="download-report-link"
+               href="{% url 'primer_designer_app:allele_specific_generate_report' uuid=result_sum_obj.id selected_primer_index=1 %}"
+               class="copy-button"
+               style="text-decoration:none;">
+                <img class="download-icon"
+                     src="{% static 'primer_designer_app/images/download_icon.png' %}"
+                     alt="download_icon"
+                     width="30"
+                     height="30">
+                Download Report
+            </a>
+        </div>
+    </main>
+
+    <script src="{% static 'primer_designer_app/sequence_highlighting_utils.js' %}"></script>
+    <script>
+        const SEQUENCE_DISPLAY_OFFSET_WT = {{ sequence_display_offset_wt|default:0 }};
+        const SEQUENCE_DISPLAY_OFFSET_MUT = {{ sequence_display_offset_mut|default:0 }};
+        const VCF_REGION_HITS_WT = {{ vcf_hits_json_wt|default:"[]"|safe }};
+        const VCF_REGION_HITS_MUT = {{ vcf_hits_json_mut|default:"[]"|safe }};
+        const SNP_REGION_HITS_WT = [];
+        const SNP_REGION_HITS_MUT = [];
+
+        function updateSelectedPrimerFor(kind, row, id) {
+            // row highlight (per table)
+            const table = row.closest("table");
+            table.querySelectorAll("tr.selectable-row").forEach(r => r.classList.remove("selected"));
+            row.classList.add("selected");
+
+            const positions = row.cells[1].textContent.split(",").map(x => parseInt(x.trim(), 10));
+            let [primerF_start, primerF_end, primerR_start, primerR_end] = positions;
+            const idx = (id || "").split("-").pop() || "1";
+            updateReportDownloadLinkById("download-report-link", idx);
+
+            if (kind === "wt") {
+                window.SEQUENCE_DISPLAY_OFFSET = SEQUENCE_DISPLAY_OFFSET_WT;
+                window.VCF_REGION_HITS = VCF_REGION_HITS_WT;
+                window.SNP_REGION_HITS = SNP_REGION_HITS_WT;
+                const root = document.getElementById("sequence-container-wt");
+                const displayOffset = window.SEQUENCE_DISPLAY_OFFSET || 0;
+                primerF_start -= displayOffset;
+                primerF_end -= displayOffset;
+                primerR_start -= displayOffset;
+                primerR_end -= displayOffset;
+                refreshSequenceHighlights(primerF_start, primerF_end, primerR_start, primerR_end, root);
+            } else {
+                window.SEQUENCE_DISPLAY_OFFSET = SEQUENCE_DISPLAY_OFFSET_MUT;
+                window.VCF_REGION_HITS = VCF_REGION_HITS_MUT;
+                window.SNP_REGION_HITS = SNP_REGION_HITS_MUT;
+                const root = document.getElementById("sequence-container-mut");
+                const displayOffset = window.SEQUENCE_DISPLAY_OFFSET || 0;
+                primerF_start -= displayOffset;
+                primerF_end -= displayOffset;
+                primerR_start -= displayOffset;
+                primerR_end -= displayOffset;
+                refreshSequenceHighlights(primerF_start, primerF_end, primerR_start, primerR_end, root);
+            }
+        }
+
+        window.onload = function() {
+            const firstWt = document.querySelector("#primer_results_table_wt tr.selectable-row");
+            if (firstWt) updateSelectedPrimerFor("wt", firstWt, "wt-1");
+            const firstMut = document.querySelector("#primer_results_table_mut tr.selectable-row");
+            if (firstMut) updateSelectedPrimerFor("mut", firstMut, "mut-1");
+        };
+    </script>
+</body>
+</html>

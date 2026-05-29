@@ -1,0 +1,31 @@
+<dialog id="vcf-applied-modal" class="amplicon-dialog">
+    <div class="amplicon-dialog-panel">
+        <h3 class="amplicon-dialog-title">Variants spiked from VCF</h3>
+        <p class="vcf-modal-lead">
+            These rows were applied to the Ensembl reference before your primary SNV/InDel was used for primer targeting.
+        </p>
+        <div class="amplicon-dialog-scroll">
+            <table class="output-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th class="output-th">ID</th>
+                        <th class="output-th">Genomic</th>
+                        <th class="output-th">REF → ALT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in result_sum_obj.variant_info_data.vcf_applied_variants %}
+                        <tr>
+                            <td>{{ v.id }}</td>
+                            <td>chr{{ v.chrom }}:{{ v.pos }}</td>
+                            <td>{{ v.ref }} → {{ v.alt }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="amplicon-dialog-actions">
+            <button type="button" class="amplicon-dialog-close-btn" onclick="document.getElementById('vcf-applied-modal').close()">Close</button>
+        </div>
+    </div>
+</dialog>

@@ -1,28 +1,48 @@
 {% load static %}
 <link rel="stylesheet" href = "{% static 'primer_designer_app/body_nav.css' %}">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
 <nav>
     <ul>
-        <li class="github-logo-li">
-            <a href="https://github.com/KuechlerO/PrimerDesigner" target="_blank">
-                <i class="fa-brands fa-github github-icon"></i>
+        <li class="bih-logo-li">
+            <a href="https://www.bihealth.org/en/" target="_blank" rel="noopener noreferrer">
+                <img src="{% static 'primer_designer_app/images/BIH_logo.png' %}" class="bih_logo" alt="Berlin Institute of Health at Charité">
             </a>
         </li>
 
-        <a href="{% url 'primer_designer_app:snv_indel_index' %}"><li class="page-btn">SNVs & Indels</li></a>
-        <a href="{% url 'primer_designer_app:structural_variants_index' %}"><li class="page-btn">Structural Variants</li></a>
-        <!--- <li class="page-btn" style="margin-right:0;">Primer Search</li> -->
-        <!-- <li>Other Apps</li>
-        <li>Language</li> -->
-        <li class="bih-logo-li">
-            <a href="https://www.bihealth.org/en/">
-                <img src="{% static 'primer_designer_app/images/BIH_logo.png' %}" class="bih_logo" alt="Logo">
-            </a>
-        </li>
+        <a href="{% url 'primer_designer_app:snv_indel_index' %}"><li class="page-btn" id="nav-snv-indel">SNVs & Indels</li></a>
+        <a href="{% url 'primer_designer_app:structural_variants_index' %}"><li class="page-btn" id="nav-structural-variants">Structural Variants</li></a>
+        <a href="{% url 'primer_designer_app:allele_specific_index' %}"><li class="page-btn" id="nav-allele-specific">Allele-specific PCR</li></a>
+        <a href="{% url 'primer_designer_app:documentation' %}"><li class="page-btn" id="nav-documentation">Documentation</li></a>
     </ul>
 </nav>
 <a href="{% url 'primer_designer_app:snv_indel_index' %}"><img src="{% static 'primer_designer_app/images/logo_PrimerDesigner.png' %}" alt="PrimerDesigner Logo" style="width: 32em;height: auto;"></a>
+
+<script>
+    (function () {
+        // Mark current nav tab as active (minimal, no server-side wiring).
+        const path = (window.location && window.location.pathname) ? window.location.pathname : "";
+
+        const snv = document.getElementById("nav-snv-indel");
+        const sv = document.getElementById("nav-structural-variants");
+        const aspcr = document.getElementById("nav-allele-specific");
+        const docs = document.getElementById("nav-documentation");
+
+        function setActive(el) {
+            [snv, sv, aspcr, docs].filter(Boolean).forEach((n) => n.classList.remove("page-btn--active"));
+            if (el) el.classList.add("page-btn--active");
+        }
+
+        if (path.includes("structural")) {
+            setActive(sv);
+        } else if (path.includes("allele-specific")) {
+            setActive(aspcr);
+        } else if (path.includes("documentation")) {
+            setActive(docs);
+        } else {
+            setActive(snv);
+        }
+    })();
+</script>
 
 <div class="ui-scale-fab" role="group" aria-label="UI size controls">
     <div class="ui-scale-fab-label" aria-hidden="true">UI size</div>

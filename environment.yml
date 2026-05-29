@@ -14,3 +14,6 @@ dependencies:
         - primer3-py
         - python-docx
         - python-decouple
+        - pytest
+        - pytest-django
+        - gunicorn

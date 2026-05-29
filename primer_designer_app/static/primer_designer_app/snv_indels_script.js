@@ -1,63 +1,16 @@
-function updateReferenceGenome() {
-    const switchButton = document.getElementById("reference-genome-switch");
-    const hiddenInput = document.getElementById("reference-genome");
+// Primer parameter / overview utilities were extracted into `primer_params_utils.js`.
+// This file now contains only SNV/InDel-specific form behaviour.
 
-    // Aktualisiere den Wert basierend auf dem Zustand des Switch-Buttons
-    hiddenInput.value = switchButton.checked ? "GRCh38" : "GRCh37";
+// SNV/InDel-specific form logic.
+// This file is also included on other pages (e.g. structural variants), where
+// these elements do not exist. Keep all DOM lookups nullable so the script
+// doesn't throw during initial parse, and make SNV/InDel handlers no-op when
+// the form isn't present.
+const IS_SNV_INDEL_PAGE = Boolean(document.getElementById("Identifier"));
 
-    console.log("Selected Reference Genome:", hiddenInput.value); // Debugging
-}
-
-function updateUsecase() {
-    const switchButton = document.getElementById("usecase-switch");
-    const hiddenInput = document.getElementById("usecase");
-
-    // Aktualisiere den Wert basierend auf dem Zustand des Switch-Buttons
-    hiddenInput.value = switchButton.checked ? "qPCR" : "PCR";
-
-    if (switchButton.checked){
-        document.getElementById("product_size_min").value = 80;
-        document.getElementById("product_size_max").value = 150;
-    }
-    else{
-        document.getElementById("product_size_min").value = 400;
-        document.getElementById("product_size_max").value = 800;
-    }
-    console.log(document.getElementById("product_size_min").value)
-    console.log("Selected Usecase:", hiddenInput.value); // Debugging
-}
-
-function togglePrimerSettings() {
-    const primerParams = document.getElementById("primer-params");
-    const switchButton = document.getElementById("primer-settings-switch");
-    const label = document.getElementById("primer-settings-label");
-    const hiddenInput = document.getElementById("primer-settings");
-    hiddenInput.value = switchButton.checked ? "custom" : "default";  
-    const UseCaseSwitch = document.getElementById("usecase-switch");
-
-    if (switchButton.checked) {
-        primerParams.style.display = "flex"; // Menü anzeigen
-        primerParams.style.flexDirection = "column";
-        primerParams.style.textAlign = "left"; // Text auf "custom" ändern
-    } else {
-        primerParams.style.display = "none"; // Menü ausblenden// Text auf "default" ändern
-        document.getElementById("tm").value = 60; // Standardwert für tm
-        document.getElementById("gc_content").value = 50; // Standardwert für gc_content
-        document.getElementById("max_poly_X").value = 4;
-        if (UseCaseSwitch.checked == false){
-            document.getElementById("product_size_min").value = 400;
-            document.getElementById("product_size_max").value = 800;
-        }
-        else{
-            document.getElementById("product_size_min").value = 80;
-            document.getElementById("product_size_max").value = 150;
-        }
-    }
-}
-
-const identifier = document.querySelector("#Identifier").classList;
-const position = document.querySelector("#Genomic_Position").classList;
-const sequence = document.querySelector("#Sequence").classList;
+const identifier = document.querySelector("#Identifier")?.classList;
+const position = document.querySelector("#Genomic_Position")?.classList;
+const sequence = document.querySelector("#Sequence")?.classList;
 const transcriptIDField = document.getElementById("Transcript-ID");
 const rel_pos_Field = document.getElementById("Position");
 const IdNewBase =  document.getElementById("IDnew_base");
@@ -65,67 +18,63 @@ const IdIndelStart = document.getElementById("IdIndelStart");
 const IdIndelEnd = document.getElementById("IdIndelEnd");
 const IdIndelInst = document.getElementById("IdIndelIns");
 const genom_pos_Field = document.getElementById("genom_pos");
+const IndelChrom = document.getElementById("IndelChrom");
 const IndelStart = document.getElementById("IndelStart");
 const IndelEnd = document.getElementById("IndelEnd");
 const IndelInst = document.getElementById("IndelIns");
 const NewBase =  document.getElementById("new_base");
 const sequenceField = document.getElementById("sequence");
 const referenceSelectors = Array.from(document.getElementsByName("Reference"));
-const IdContextSelectors= Array.from(document.getElementsByName("context"));
 const cdnaSelector = document.getElementById("cdna");
 const cdsSelector = document.getElementById("cds");
-const IdGenomeSelector = document.getElementById("genomic");
-const IdTranscriptomeSelector = document.getElementById("transcriptomic");
 const ID_hover_label = document.getElementById("ID-hover-label");
 const Genomic_hover_label = document.getElementById("Genomic-hover-label");
 const Sequence_hover_label = document.getElementById("Sequence-hover-label");
 
-const primer_settings_switch = document.getElementById("primer-settings-switch"); // Standardwert für Primer Settings
-const reference_genome_switch = document.getElementById("reference-genome-switch"); // Standardwert für Reference Genome
-const use_case_switch = document.getElementById("usecase-switch");
-const switches = [primer_settings_switch, reference_genome_switch, use_case_switch];
+const reference_genome_switch = document.getElementById("reference-genome-switch");
+const switches = reference_genome_switch ? [reference_genome_switch] : [];
 
-const IdAlwaysRequired = [transcriptIDField, cdnaSelector, cdsSelector, IdGenomeSelector, IdTranscriptomeSelector];
-const IdSNV= [rel_pos_Field, IdNewBase];
-const IdSNVList = document.querySelector("#IdSNV").classList;
-const IdInDel = [IdIndelStart, IdIndelEnd, IdIndelInst];
-const IdInDelList = document.querySelector("#IdInDel").classList;
-const idInputFields = [...IdAlwaysRequired, ...IdSNV, ...IdInDel];
+const IdTranscriptBase = [transcriptIDField, cdnaSelector, cdsSelector].filter(Boolean);
+const IdSNV= [rel_pos_Field, IdNewBase].filter(Boolean);
+const IdSNVList = document.querySelector("#IdSNV")?.classList;
+const IdInDel = [IdIndelStart, IdIndelEnd, IdIndelInst].filter(Boolean);
+const IdInDelList = document.querySelector("#IdInDel")?.classList;
+const idInputFields = [...IdTranscriptBase, ...IdSNV, ...IdInDel];
 
-const SNV = [genom_pos_Field,NewBase];
-const SNVList = document.querySelector("#SNV").classList;
-const InDel = [IndelChrom, IndelStart, IndelEnd, IndelInst];
-const InDelList = document.querySelector("#InDel").classList;
+const SNV = [genom_pos_Field,NewBase].filter(Boolean);
+const SNVList = document.querySelector("#SNV")?.classList;
+const InDel = [IndelChrom, IndelStart, IndelEnd, IndelInst].filter(Boolean);
+const InDelList = document.querySelector("#InDel")?.classList;
+const vcfFileField = document.getElementById("vcf_file");
 const genomicFields = [...SNV, ...InDel];
+const genomicModeFields = genomicFields;
 
 function clearAllInputs() {
-    const inputs = [...idInputFields, ...genomicFields, sequence, ...switches];
+    if (!IS_SNV_INDEL_PAGE) return;
+    const inputs = [...idInputFields, ...genomicFields, ...(vcfFileField ? [vcfFileField] : []), sequence, ...switches];
     inputs.forEach(field => {
 
         field.required = false;
         if (field.type === "radio"){
-            field.checked = false; 
+            field.checked = false;
             console.log(field.checked);
         } else if (field.tagName === "TEXTAREA" || field.tagName === "INPUT") {
             field.value = ""; // Textfelder und Textareas leeren
         } else if (field.tagName === "SELECT") {
             field.selectedIndex = 0; // Dropdown auf die erste Option zurücksetzen
+        } else if (field.type === "file") {
+            field.value = "";
         }
     });
     enableInputField(genomicFields);
     enableInputField(idInputFields);
     enableInputField([sequenceField]);
 
-    document.getElementById("primer-settings").value = "hidden"; // Dropdown auf "Default Parameter" setzen
-    document.getElementById("tm").value = 60; // Standardwert für tm
-    document.getElementById("gc_content").value = 50; // Standardwert für gc_content
-    document.getElementById("max_poly_X").value = 4;
-    document.getElementById("product_size_min").value = 400;
-    document.getElementById("product_size_max").value = 800;
-    document.getElementById("primer-params").style.display = "none"; // Benutzerdefinierte Parameter ausblenden
-    document.getElementById("primer-settings").value = "default"; // Standardwert für Primer Settings
+    const tp = document.getElementById("dlg_target_padding");
+    if (tp) tp.value = "50";
+    restorePrimerDialogDefaults();
     document.getElementById("reference-genome").value = "GRCh37"; // Standardwert für Reference Genome
-    document.getElementById("usecase").value = "PCR"; // Standardwert für Use Case
+    setAmpliconCheck("none");
     const labels = [ID_hover_label.classList,Genomic_hover_label.classList, Sequence_hover_label.classList]
     labels.forEach(label => label.remove("hover-label-highlight"))
 
@@ -138,12 +87,13 @@ function clearAllInputs() {
 
 let clickCount = 0;
 function loadExampleData() {
-    clearAllInputs(); 
+    if (!IS_SNV_INDEL_PAGE) return;
+    clearAllInputs();
     if (clickCount === 0) {
         document.getElementById("genom_pos").value = "ChrY:2655000";
         document.getElementById("new_base").value = "A";
         handleInputChange('genom_pos');
-    
+
     }
     else if (clickCount === 1){
         document.getElementById("Transcript-ID").value = "ENST00000340855";
@@ -151,7 +101,7 @@ function loadExampleData() {
         document.getElementById("IdIndelEnd").value = "1244";
         document.getElementById("IdIndelIns").value = "GGTC";// Benutzerdefinierte Parameter ausblenden
         document.getElementById("cds").checked = true;
-        document.getElementById("genomic").checked = true;
+        setAmpliconCheck("genome");
         handleInputChange('Transcript-ID');
     }
     else{
@@ -164,6 +114,7 @@ function loadExampleData() {
 }
 
 function enableInputField(fields){
+    if (!IS_SNV_INDEL_PAGE) return;
     fields.forEach(field => {
 
         field.disabled = false;
@@ -176,31 +127,36 @@ function enableInputField(fields){
         field.style.opacity = 1;
         field.style.backgroundColor = "";
         }
-        
+
     })
 }
 
 function disableInputField(fields){
+    if (!IS_SNV_INDEL_PAGE) return;
     fields.forEach(field => {
         field.disabled = true;
-        if (field.type !== "radio"){ 
+        if (field.type !== "radio"){
             field.value = "";
         }
         let label = document.querySelector(`label[for="${field.id}"]`);
         if (label) {
             label.style.opacity = 0.3;
             label.style.backgroundColor = "#f0f0f"; // Optional: Label ausgrauen
-            label.style.pointerEvents = "none"; 
+            label.style.pointerEvents = "none";
             label.style.transition= "all 0.2s ease";
         }
-        
+
     });
 }
 
 function isFieldGroupFilled(fields) {
+        if (!IS_SNV_INDEL_PAGE) return false;
         return fields.some(field => {
             if (field.type === "radio") {
                 return field.checked; // Für Radiobuttons: Prüfen, ob einer ausgewählt ist
+            }
+            if (field.type === "file") {
+                return field.files && field.files.length > 0;
             }
             return field.value; // Für andere Felder: Prüfen, ob ein Wert vorhanden ist
         });
@@ -208,13 +164,14 @@ function isFieldGroupFilled(fields) {
 
 // Funktion, um die anderen Felder zu deaktivieren, wenn eines ausgefüllt ist
 function handleInputChange(inputId) {
+    if (!IS_SNV_INDEL_PAGE) return;
     if (isFieldGroupFilled(idInputFields)){
         console.log("ID Input Fields filled");
         disableInputField(genomicFields);
         disableInputField([sequenceField]);
         sequence.add("grey-transparent");
         position.add("grey-transparent");
-        IdAlwaysRequired.forEach(field => field.required = true); 
+        IdTranscriptBase.forEach(field => field.required = true);
         if(isFieldGroupFilled(IdSNV)){
             IdInDelList.add("grey-transparent");
             IdInDel.forEach(field => field.required = false);
@@ -237,7 +194,7 @@ function handleInputChange(inputId) {
             IdSNVList.remove("grey-transparent");
         }
     }
-    else if (isFieldGroupFilled(genomicFields)){
+    else if (isFieldGroupFilled(genomicModeFields)){
         disableInputField(idInputFields);
         disableInputField([sequenceField]);
         identifier.add("grey-transparent");
@@ -267,21 +224,21 @@ function handleInputChange(inputId) {
         [identifier, position, sequence, IdInDelList, IdSNVList, InDelList, SNVList].forEach(container => container.remove("grey-transparent"));
         IdInDel.forEach(field => field.required = false);
         IdSNV.forEach(field => field.required = false);
-        IdAlwaysRequired.forEach(field => field.required = false);
-        IdContextSelectors.forEach(radio => radio.checked = false);
+        IdTranscriptBase.forEach(field => field.required = false);
         referenceSelectors.forEach(radio => radio.checked = false);
         InDel.forEach(field => field.required = false);
         SNV.forEach(field => field.required = false);
+        setAmpliconCheck("none");
     }
 
     ID_hover_label.classList.toggle("hover-label-highlight", isFieldGroupFilled(idInputFields));
-    Genomic_hover_label.classList.toggle("hover-label-highlight", isFieldGroupFilled(genomicFields));
+    Genomic_hover_label.classList.toggle("hover-label-highlight", isFieldGroupFilled(genomicModeFields));
     Sequence_hover_label.classList.toggle("hover-label-highlight", isFieldGroupFilled([sequenceField]));
 
     identifier.toggle("highlight", isFieldGroupFilled(idInputFields));
-    position.toggle("highlight", isFieldGroupFilled(genomicFields));
-    sequence.toggle("highlight", isFieldGroupFilled([sequenceField])); 
-    sequenceField.classList.toggle("resize", isFieldGroupFilled([sequenceField])); 
+    position.toggle("highlight", isFieldGroupFilled(genomicModeFields));
+    sequence.toggle("highlight", isFieldGroupFilled([sequenceField]));
+    sequenceField.classList.toggle("resize", isFieldGroupFilled([sequenceField]));
 }
 
 document.querySelectorAll("td").forEach(td => {

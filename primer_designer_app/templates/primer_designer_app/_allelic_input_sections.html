@@ -1,0 +1,123 @@
+{# Shared input sections: genomic, transcript, sequence (SNV/Indel). #}
+
+<div id="in">
+
+    <!-- 1. Genomic Position -->
+    <section id="Genomic_Position">
+        <div id="Genomic-hover-label" class="hover-label">Via genomic position</div>
+        <div class="info-icon">?</div>
+        <div class="info-overlay">
+            <ul>
+                <li class="info-li" style="list-style: none;"><strong>Format/Info:</strong></li>
+                <li class="info-li">Positions must correspond to the selected reference genome.</li>
+                <li class="info-li">For SNVs, the position refers to the exact location of the variant.</li>
+                <li class="info-li">For InDels, the two positions refer to the start and end position of the sequence region that is substituted with the given variant sequence.</li>
+                <li class="info-li">Inserted bases can be specified either as a base sequence (e.g., AGT) or as the number of inserted bases (e.g., 3)</li>
+                <li class="info-li">Allowed format: <span style ="color: color(srgb 0.095 0.4408 0.5);">ChrY:2655470</style></li>
+                <li class="info-li">Optional: upload a <strong>VCF</strong> (same chromosome as your variant) to spike additional variants into the reference sequence before primer design (patient-specific background).</li>
+            </ul>
+        </div>
+        <h2>Genomic position</h2>
+        <div class="dual_input" id="SNV">
+            <div class="column">SNV</div>
+            <div class="snv_column">
+                <input type="text" id="genom_pos" name="genom_pos" placeholder="e.g. chrX:7187746" oninput="handleInputChange('genom_pos')">
+                <input type="text" id="new_base" name="new_base" placeholder="New base" oninput="handleInputChange('new_base')">
+            </div>
+        </div>
+
+        <div class="dual_input" id="InDel" style="margin-top: 0.5em; margin-bottom: 0.5em;">
+            <div class="column">InDel</div>
+            <div class="second_column" style="width: 80%;">
+                <input type="text" id="IndelChrom" name="IndelChrom" placeholder="Chromosome" oninput="handleInputChange('IndelChrom')" style="width: 100%;">
+                <input type="text" id="IndelStart" name="IndelStart" placeholder="Wildtype start position" oninput="handleInputChange('IndelStart')" style="width: 100%;">
+                <input type="text" id="IndelEnd" name="IndelEnd" placeholder="Wildtype end position" oninput="handleInputChange('IndelEnd')"style="width: 100%; ">
+                <input type="text" id="IndelIns" name="IndelIns" placeholder="Inserted bases" oninput="handleInputChange('IndelIns')" style="width: 100%; border: none; ">
+            </div>
+        </div>
+
+        <div class="vcf-upload-block" id="vcf-upload-block">
+            <h3 class="vcf-upload-heading">Optional: VCF (same chromosome)</h3>
+            <p class="vcf-upload-hint">
+                Variants from the file are applied to the reference window (gnomAD-style MAF not required).
+                Your SNV/InDel above remains the primary design variant.
+            </p>
+            <input type="file" id="vcf_file" name="vcf_file" accept=".vcf,.vcf.gz,text/plain" onchange="handleInputChange('vcf_file')">
+        </div>
+    </section>
+
+    <!-- 2. Transcript Postion -->
+    <section id="Identifier">
+        <div id="ID-hover-label" class="hover-label">Via transcript-ID</div>
+        <div class="info-icon">?</div>
+        <div class="info-overlay">
+            <ul><li class="info-li" style="list-style: none;"><strong>Format/Info:</strong></li>
+                <li class="info-li">Positions must correspond to the selected reference genome and sequence type.</li>
+                {% if not is_allele_specific %}
+                <li class="info-li">Optional amplicon check (Dicey: None, genome, or transcriptome) is configured in the top settings row.</li>
+                <li class="info-li">Optional <strong>Known SNPs (gnomAD)</strong> check queries Ensembl for common variants (MAF &gt; 1%) overlapping the displayed design window and flags primer pairs where common SNPs overlap binding sites.</li>
+                {% endif %}
+                <li class="info-li">For SNVs, the position refers to the exact location of the variant.</li>
+                <li class="info-li">For InDels, the two positions refer to the start and end position of the sequence region that is substituted with the given variant sequence.</li>
+                <li class="info-li">Inserted bases can be specified either as a base sequence (e.g., AGT) or as the number of inserted bases (e.g., 3)</li>
+            </ul>
+        </div>
+        <div class="identifier-transcript-row">
+            <h2 class="ID_h2">Transcript-ID</h2>
+            <input type="text" id="Transcript-ID" name="Transcript-ID" placeholder="e.g. ENST00000340855" oninput="handleInputChange('Transcript-ID')">
+        </div>
+        <div class="identifier-two-col-wrap identifier-two-col-wrap--reference-only">
+            <div class="identifier-col">
+                <h2 class="ID_h2">Reference</h2>
+                <div style="display:flex; flex-direction: column; width: 100%; justify-content: center; border-radius: 0em 0em 0.5em 0.5em; background-color: color(srgb 0.9068 0.9645 0.975); box-shadow: 0 0em 1em -0.5em #8baaaa;">
+                    <input type="radio" name="Reference" value="cdna" id="cdna" onchange="handleInputChange('cdna')">
+                    <label for="cdna">cDNA</label>
+                    <input type="radio" name="Reference" value="cds" id="cds" onchange="handleInputChange('cds')">
+                    <label for="cds">CDS</label>
+                </div>
+            </div>
+        </div>
+
+        <h2>Relative position</h2>
+        <div class="dual_input" id="IdSNV">
+            <div class="column">SNV</div>
+            <div class="snv_column">
+                <input type="text" id="Position" name="Position" placeholder="e.g. 2781" oninput="handleInputChange('Position')">
+                <input type="text" id="IDnew_base" name="IDnew_base" placeholder="New base" oninput="handleInputChange('IDnew_base')">
+            </div>
+        </div>
+
+        <div class="dual_input" id="IdInDel" style="margin-top: 0.5em; margin-bottom: 0.5em;">
+            <div class="column">InDel</div>
+            <div class="second_column" style="width: 80%; ">
+                <input type="text" id="IdIndelStart" name="IdIndelStart" placeholder="Wildtype start position" oninput="handleInputChange('IdIndelStart')"style="width: 100%;  ">
+                <input type="text" id="IdIndelEnd" name="IdIndelEnd" placeholder="Wildtype end position" oninput="handleInputChange('IdIndelEnd')"sstyle="width: 100%; ">
+                <input type="text" id="IdIndelIns" name="IdIndelIns" placeholder="Inserted bases" oninput="handleInputChange('IdIndelIns')" style="width: 100%; border:none;">
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Sequence Input -->
+    <section id="Sequence">
+        <div class="info-icon">?</div>
+        <div class="info-overlay" style="text-align: left; gap: 2em;">
+            <p><strong>Accepted formats:</strong><br>
+                CGACT[A&gt;G]GC<br>
+                CGACT[AC/-]GC<br>
+                CGACT[-/TT]GC<br>
+                CGACT[ACA/TT]GC
+            </p>
+            <p><br>
+                A substituted by G (SNV)<br>
+                AC deleted <br>
+                TT inserted <br>
+                ACA substituted by TT (DelIns)
+            </p>
+        </div>
+        <div id="Sequence-hover-label" class="hover-label">Via sequence input</div>
+        <h2>Sequence</h2>
+        <textarea id="sequence" name="sequence" placeholder="e.g. ATCGGTAGG[TCA/G]ACTGCGATAGT" rows="4" cols="50" oninput="handleInputChange('sequence')"></textarea><br>
+    </section>
+</div>
+
+{% include "primer_designer_app/_primer_custom_dialog.html" %}
