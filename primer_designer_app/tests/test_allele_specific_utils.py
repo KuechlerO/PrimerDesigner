@@ -93,6 +93,25 @@ class TestAlleleSpecificUtils(unittest.TestCase):
         self.assertFalse(after_bracket.startswith(insert))
         self.assertTrue(after_bracket.startswith("G"))
 
+    def test_build_allele_display_chunks_single_bracket_at_chunk_boundary(self):
+        """DelIns at display index 99 must not annotate both chunk 1 and chunk 101."""
+        from primer_designer_app.utils.helpers import build_allele_display_chunks
+
+        plain = "A" * 200
+        plain = plain[:99] + "GGTC" + plain[103:]
+        v = SimpleNamespace(relative_pos=(99, 103), indel_type=IndelType.DELINS)
+        chunks = build_allele_display_chunks(
+            plain,
+            v,
+            allele="wt",
+            width=100,
+            ref_bases="GCAGG",
+            new_bases="GGTC",
+            highlight_snv_allele=False,
+        )
+        bracket_starts = [c["start"] for c in chunks if "[" in c["html"]]
+        self.assertEqual(bracket_starts, [1])
+
     def test_hgvs_delins_mut_plain_suffix_skips_duplicate_alt(self):
         from primer_designer_app.utils.hgvs_display import hgvs_input_on_plain
         from primer_designer_app.utils.variant_info import IndelType

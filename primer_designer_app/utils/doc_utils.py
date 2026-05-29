@@ -1,14 +1,22 @@
 import io
+from dataclasses import replace
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional, Sequence, Union
 
 from primer_designer_app.models import PrimerSettingsModel, DesignResultsSummary
 from primer_designer_app.utils.variant_info import (
     AllelicVariantInfo,
+    IndelType,
     TranscriptVariantInfo,
+)
+from primer_designer_app.utils.display_utils import (
+    REPORT_DISPLAY_FLANK,
+    compute_report_display_bounds,
+    shift_template_hits_for_display,
 )
 from primer_designer_app.utils.hgvs_display import (
     hgvs_input_on_plain,
+    normalize_indel_type,
     template_bases_consumed_by_bracket,
 )
 from primer_designer_app.utils.helpers import create_hgvs_notation
@@ -34,6 +42,211 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Word highlight indices (docx.enum.text.WD_COLOR_INDEX values)
+HIGHLIGHT_PRIMER = 3  # TURQUOISE
+HIGHLIGHT_VARIANT = 4  # BRIGHT_GREEN
+HIGHLIGHT_VCF = "vcf"  # custom light lavender (matches web .highlight-vcf)
+HIGHLIGHT_SNP = 7  # YELLOW
+HIGHLIGHT_SNP_CONFLICT = "orange"  # custom run shading (no Word preset)
+
+HighlightColor = Union[int, str]
+
+_CUSTOM_HIGHLIGHT_FILLS: dict[str, str] = {
+    HIGHLIGHT_VCF: "E0D1FA",
+    HIGHLIGHT_SNP_CONFLICT: "FFC761",
+}
+
+
+def _set_run_highlight(run, color: Optional[HighlightColor]) -> None:
+    if color is None:
+        return
+    fill = _CUSTOM_HIGHLIGHT_FILLS.get(color) if isinstance(color, str) else None
+    if fill:
+        r_pr = run._element.get_or_add_rPr()
+        shd = OxmlElement("w:shd")
+        shd.set(qn("w:val"), "clear")
+        shd.set(qn("w:color"), "auto")
+        shd.set(qn("w:fill"), fill)
+        r_pr.append(shd)
+        return
+    run.font.highlight_color = color
+
+
+def _intervals_overlap(a0: int, a1: int, b0: int, b1: int) -> bool:
+    return a0 <= b1 and b0 <= a1
+
+
+def _apply_highlight_range(
+    lookup: List[Optional[HighlightColor]], start: int, end: int, color: HighlightColor
+) -> None:
+    for i in range(max(0, start), min(len(lookup), end + 1)):
+        lookup[i] = color
+
+
+def _snp_binding_conflict(
+    hit: dict,
+    primer_f_start: int,
+    primer_f_end: int,
+    primer_r_start: int,
+    primer_r_end: int,
+) -> bool:
+    ts = int(hit["template_start"])
+    te = int(hit["template_end"])
+    in_forward = ts <= primer_f_end and te >= primer_f_start
+    in_reverse = ts <= primer_r_end and te >= primer_r_start
+    return in_forward or in_reverse
+
+
+def build_template_highlight_lookup(
+    plain_len: int,
+    *,
+    vcf_hits: Sequence[dict],
+    snp_hits: Sequence[dict],
+    primer_pair: PrimerPairResult,
+    skip_snp_interval: Optional[tuple[int, int]] = None,
+) -> List[Optional[HighlightColor]]:
+    """
+    Map template indices to Word highlight colors for report sequence snippets.
+
+    Layer order mirrors the web UI: VCF → SNP → primer → SNP binding conflict.
+    Variant bracket styling is applied separately in visualize_sequence_as_docx.
+    """
+    lookup: List[Optional[HighlightColor]] = [None] * max(0, plain_len)
+
+    for hit in vcf_hits or []:
+        _apply_highlight_range(
+            lookup,
+            int(hit["template_start"]),
+            int(hit["template_end"]),
+            HIGHLIGHT_VCF,
+        )
+
+    for hit in snp_hits or []:
+        ts = int(hit["template_start"])
+        te = int(hit["template_end"])
+        if skip_snp_interval and _intervals_overlap(
+            ts, te, skip_snp_interval[0], skip_snp_interval[1]
+        ):
+            continue
+        _apply_highlight_range(lookup, ts, te, HIGHLIGHT_SNP)
+
+    pf_s = int(primer_pair.left_relPos_start)
+    pf_e = int(primer_pair.left_relPos_end)
+    pr_s = int(primer_pair.right_relPos_start)
+    pr_e = int(primer_pair.right_relPos_end)
+    _apply_highlight_range(lookup, pf_s, pf_e, HIGHLIGHT_PRIMER)
+    _apply_highlight_range(lookup, pr_s, pr_e, HIGHLIGHT_PRIMER)
+
+    for hit in snp_hits or []:
+        ts = int(hit["template_start"])
+        te = int(hit["template_end"])
+        if skip_snp_interval and _intervals_overlap(
+            ts, te, skip_snp_interval[0], skip_snp_interval[1]
+        ):
+            continue
+        if _snp_binding_conflict(hit, pf_s, pf_e, pr_s, pr_e):
+            _apply_highlight_range(lookup, ts, te, HIGHLIGHT_SNP_CONFLICT)
+
+    return lookup
+
+
+def _report_region_hits(
+    design_summary: DesignResultsSummary,
+    var_info: AllelicVariantInfo,
+) -> tuple[list[dict], list[dict]]:
+    """VCF and gnomAD SNP hits for sequence-snippet highlighting in reports."""
+    vcf_hits = list(getattr(var_info, "vcf_applied_variants", None) or [])
+    snp_hits: list[dict] = []
+    snp_analysis = getattr(design_summary, "snp_analysis_data", None) or {}
+    if snp_analysis.get("enabled"):
+        rel = getattr(var_info, "relative_pos", None)
+        for hit in snp_analysis.get("hits") or []:
+            if rel and _intervals_overlap(
+                int(hit["template_start"]),
+                int(hit["template_end"]),
+                int(rel[0]),
+                int(rel[1]),
+            ):
+                continue
+            snp_hits.append(hit)
+    return vcf_hits, snp_hits
+
+
+def _shift_primer_pair(
+    primer_pair: PrimerPairResult, display_offset: int
+) -> PrimerPairResult:
+    return replace(
+        primer_pair,
+        left_relPos_start=int(primer_pair.left_relPos_start) - display_offset,
+        left_relPos_end=int(primer_pair.left_relPos_end) - display_offset,
+        right_relPos_start=int(primer_pair.right_relPos_start) - display_offset,
+        right_relPos_end=int(primer_pair.right_relPos_end) - display_offset,
+    )
+
+
+def prepare_report_sequence_view(
+    var_info: AllelicVariantInfo,
+    prim_settings: PrimerSettingsModel,
+    primer_pair: PrimerPairResult,
+    *,
+    design_template: Optional[str] = None,
+    allele: str,
+    vcf_hits: Sequence[dict],
+    snp_hits: Sequence[dict],
+) -> tuple[str, str, PrimerPairResult, list[dict], list[dict], tuple[int, int]]:
+    """
+    Slice the primer3 design template to a report window (variant, target, both
+    primers, ±REPORT_DISPLAY_FLANK). Coordinates match SEQUENCE_TEMPLATE (mutated).
+    """
+    full_template = (
+        design_template if design_template is not None else var_info.get_seq("mutated")
+    )
+    orig_ref_bases = var_info.ref_bases or ""
+    orig_new_bases = var_info.new_bases or ""
+    var_lo, var_hi = var_info.relative_pos
+    display_start, display_end = compute_report_display_bounds(
+        len(full_template),
+        var_lo,
+        var_hi,
+        prim_settings.target[0],
+        prim_settings.target[1],
+        primer_pair,
+    )
+    plain_slice = full_template[display_start:display_end]
+    lo_local = var_lo - display_start
+    hi_local = var_hi - display_start
+    hi_local_used = hi_local
+    indel_type = normalize_indel_type(var_info)
+    if allele == "mut" and indel_type == IndelType.DELINS:
+        new_u = (orig_new_bases or "").upper()
+        if new_u:
+            hi_local_used = lo_local + len(new_u) - 1
+    annotated = hgvs_input_on_plain(
+        plain_slice,
+        lo_local,
+        hi_local_used,
+        indel_type,
+        orig_ref_bases,
+        orig_new_bases,
+        allele=allele,
+    )
+    display_length = len(plain_slice)
+    shifted_vcf = shift_template_hits_for_display(
+        list(vcf_hits), display_start, display_length
+    )
+    shifted_snp = shift_template_hits_for_display(
+        list(snp_hits), display_start, display_length
+    )
+    shifted_pair = _shift_primer_pair(primer_pair, display_start)
+    return (
+        annotated,
+        plain_slice,
+        shifted_pair,
+        shifted_vcf,
+        shifted_snp,
+        (lo_local, hi_local),
+    )
+
 
 def visualize_sequence_as_docx(
     paragraph,
@@ -45,6 +258,9 @@ def visualize_sequence_as_docx(
     plain_override: Optional[str] = None,
     allele: str = "wt",
     line_length: int = 60,
+    vcf_hits: Optional[Sequence[dict]] = None,
+    snp_hits: Optional[Sequence[dict]] = None,
+    skip_snp_interval: Optional[tuple[int, int]] = None,
 ):
     seq = seq_override if seq_override is not None else var_info.get_seq("input")
     plain = plain_override if plain_override is not None else var_info.ref_seq
@@ -54,10 +270,29 @@ def visualize_sequence_as_docx(
     primerR_start = int(selected_primer_pair.right_relPos_start)
     primerR_end = int(selected_primer_pair.right_relPos_end)
 
-    def _in_primer(idx: int) -> bool:
-        return (primerF_start <= idx <= primerF_end) or (
-            primerR_start <= idx <= primerR_end
-        )
+    if skip_snp_interval is None:
+        rel = getattr(var_info, "relative_pos", None)
+        skip_snp_interval = tuple(rel) if rel else None
+    plain_highlight = build_template_highlight_lookup(
+        len(plain),
+        vcf_hits=vcf_hits or [],
+        snp_hits=snp_hits or [],
+        primer_pair=selected_primer_pair,
+        skip_snp_interval=skip_snp_interval,
+    )
+
+    def _plain_highlight(idx: int) -> Optional[HighlightColor]:
+        if idx < 0 or idx >= len(plain_highlight):
+            return None
+        return plain_highlight[idx]
+
+    def _add_seq_run(char: str, highlight: Optional[HighlightColor]) -> None:
+        nonlocal counter
+        run = paragraph.add_run(char)
+        run.font.name = "Courier New"
+        run.font.size = Pt(11)
+        _set_run_highlight(run, highlight)
+        counter += 1
 
     # Walk annotated `seq` while mapping letters back to `plain` indices.
     plain_i = 0
@@ -73,17 +308,11 @@ def visualize_sequence_as_docx(
                 and plain_i < len(plain)
                 and ch.upper() == plain[plain_i].upper()
             ):
-                if _in_primer(plain_i):
-                    highlight = 3
+                highlight = _plain_highlight(plain_i)
                 plain_i += 1
             if highlight is None and ch == "]":
-                highlight = 4
-            run = paragraph.add_run(ch)
-            run.font.name = "Courier New"
-            run.font.size = Pt(11)
-            if highlight is not None:
-                run.font.highlight_color = highlight
-            counter += 1
+                highlight = HIGHLIGHT_VARIANT
+            _add_seq_run(ch, highlight)
             if counter >= line_length:
                 paragraph.add_run(f"  {format(ai+1, ',')}\n")
                 counter = 0
@@ -137,18 +366,10 @@ def visualize_sequence_as_docx(
                 in_bracket = True
                 phase = "prefix"
                 snv_phase = "prefix"
-                run = paragraph.add_run(c)
-                run.font.name = "Courier New"
-                run.font.size = Pt(11)
-                run.font.highlight_color = 4
-                counter += 1
+                _add_seq_run(c, HIGHLIGHT_VARIANT)
                 continue
             if c == "]":
-                run = paragraph.add_run(c)
-                run.font.name = "Courier New"
-                run.font.size = Pt(11)
-                run.font.highlight_color = 4
-                counter += 1
+                _add_seq_run(c, HIGHLIGHT_VARIANT)
                 in_bracket = False
                 continue
             if c == ":":
@@ -156,30 +377,18 @@ def visualize_sequence_as_docx(
                     snv_phase = "ref"
                 else:
                     phase = "ref"
-                run = paragraph.add_run(c)
-                run.font.name = "Courier New"
-                run.font.size = Pt(11)
-                run.font.highlight_color = 4
-                counter += 1
+                _add_seq_run(c, HIGHLIGHT_VARIANT)
                 continue
             if c == ">":
                 snv_phase = "alt"
-                run = paragraph.add_run(c)
-                run.font.name = "Courier New"
-                run.font.size = Pt(11)
-                run.font.highlight_color = 4
-                counter += 1
+                _add_seq_run(c, HIGHLIGHT_VARIANT)
                 continue
             if c == "/":
                 phase = "alt"
-                run = paragraph.add_run(c)
-                run.font.name = "Courier New"
-                run.font.size = Pt(11)
-                run.font.highlight_color = 4
-                counter += 1
+                _add_seq_run(c, HIGHLIGHT_VARIANT)
                 continue
 
-            highlight = 4 if in_bracket else None
+            highlight = HIGHLIGHT_VARIANT if in_bracket else None
             template_idx = None
 
             if c in "ACGTNacgtn":
@@ -217,15 +426,14 @@ def visualize_sequence_as_docx(
                             template_idx = bracket_plain_cursor
                             bracket_plain_cursor += 1
 
-            if template_idx is not None and _in_primer(template_idx):
-                highlight = 3
+            if template_idx is not None:
+                region_hl = _plain_highlight(template_idx)
+                if region_hl is not None:
+                    highlight = region_hl
+                elif in_bracket:
+                    highlight = HIGHLIGHT_VARIANT
 
-            run = paragraph.add_run(c)
-            run.font.name = "Courier New"
-            run.font.size = Pt(11)
-            if highlight is not None:
-                run.font.highlight_color = highlight
-            counter += 1
+            _add_seq_run(c, highlight)
 
             if counter >= line_length:
                 paragraph.add_run(f"  {format(k+1, ',')}\n")
@@ -589,7 +797,7 @@ def create_primer_report(
             )
         conflicts = getattr(primer_pair, "snp_conflicts", None) or []
         if conflicts:
-            doc.add_heading("SNP overlap with selected primers", level=2)
+            doc.add_heading("SNPs contained in PCR amplified region", level=2)
             table = doc.add_table(rows=1 + len(conflicts), cols=5)
             table.style = "Table Grid"
             for j, title in enumerate(["ID", "Genomic", "Alleles", "MAF", "Primer"]):
@@ -603,7 +811,7 @@ def create_primer_report(
                     f"{hit.get('genomic_start')}–{hit.get('genomic_end')}",
                     hit.get("alleles", ""),
                     maf_str,
-                    hit.get("primer", ""),
+                    hit.get("primer", "-- no primer overlap --"),
                 ]
                 for j, val in enumerate(values):
                     _set_cell_run(row_cells[j], val, size_pt=8)
@@ -611,43 +819,70 @@ def create_primer_report(
     # 3. Sequence visualization
     doc.add_heading("Sequence snippet:", level=1)
     doc.add_paragraph(
-        "Sequence snippet is soft-masked: UTRs and introns are shown in lowercase "
-        "letters, exons in uppercase letters."
+        "Sequence snippet shows the region of interest (input variant, target region, "
+        f"selected primers, ±{REPORT_DISPLAY_FLANK} bp flank). UTRs and introns are "
+        "lowercase; exons are uppercase."
     )
 
     doc.add_heading("Legend:", level=2)
-    legend_content = [["Primer", 3], ["Variant", 4]]
+    vcf_hits, snp_hits = _report_region_hits(designResultsSummary_obj, var_info)
+    legend_content = [
+        ["Primer", HIGHLIGHT_PRIMER],
+        ["Input variant", HIGHLIGHT_VARIANT],
+    ]
+    if vcf_hits:
+        legend_content.append(["VCF spiked variant", HIGHLIGHT_VCF])
+    if snp_hits:
+        legend_content.append(["Common SNP (gnomAD)", HIGHLIGHT_SNP])
+        legend_content.append(["SNP at primer binding site", HIGHLIGHT_SNP_CONFLICT])
 
     for region, color in legend_content:
         list_obj = doc.add_paragraph(style="List Bullet")
         run = list_obj.add_run(region)
-        run.font.highlight_color = color
+        _set_run_highlight(run, color)
 
     if allele_specific_mode:
         doc.add_heading("Wild-type reaction", level=2)
+        wt_annotated, wt_slice, wt_shifted, _, _, wt_skip = (
+            prepare_report_sequence_view(
+                var_info,
+                prim_settings,
+                wt_pair,
+                design_template=var_info.ref_seq,
+                allele="wt",
+                vcf_hits=[],
+                snp_hits=[],
+            )
+        )
         paragraph = doc.add_paragraph()
         visualize_sequence_as_docx(
             paragraph,
             prim_settings,
             var_info,
-            wt_pair,
-            seq_override=var_info.get_seq("input"),
-            plain_override=var_info.ref_seq,
+            wt_shifted,
+            seq_override=wt_annotated,
+            plain_override=wt_slice,
             allele="wt",
+            vcf_hits=[],
+            snp_hits=[],
+            skip_snp_interval=wt_skip,
         )
 
-        # Build mutant bracketed sequence on the mutated template
-        # (avoid duplicating inserts).
-        mut_plain = var_info.get_seq("mutated")
-        lo, hi = var_info.relative_pos
-        mut_seq = hgvs_input_on_plain(
-            mut_plain,
-            lo,
-            hi,
-            var_info.indel_type,
-            var_info.ref_bases or "",
-            var_info.new_bases or "",
+        (
+            mut_annotated,
+            mut_slice,
+            mut_shifted,
+            mut_vcf,
+            mut_snp,
+            mut_skip,
+        ) = prepare_report_sequence_view(
+            var_info,
+            prim_settings,
+            mut_pair,
+            design_template=var_info.get_seq("mutated"),
             allele="mut",
+            vcf_hits=vcf_hits,
+            snp_hits=snp_hits,
         )
 
         doc.add_heading("Mutant reaction", level=2)
@@ -656,14 +891,43 @@ def create_primer_report(
             paragraph,
             prim_settings,
             var_info,
-            mut_pair,
-            seq_override=mut_seq,
-            plain_override=mut_plain,
+            mut_shifted,
+            seq_override=mut_annotated,
+            plain_override=mut_slice,
             allele="mut",
+            vcf_hits=mut_vcf,
+            snp_hits=mut_snp,
+            skip_snp_interval=mut_skip,
         )
     else:
+        (
+            seq_annotated,
+            plain_slice,
+            shifted_pair,
+            shifted_vcf,
+            shifted_snp,
+            skip_interval,
+        ) = prepare_report_sequence_view(
+            var_info,
+            prim_settings,
+            primer_pair,
+            allele="mut",
+            vcf_hits=vcf_hits,
+            snp_hits=snp_hits,
+        )
         paragraph = doc.add_paragraph()
-        visualize_sequence_as_docx(paragraph, prim_settings, var_info, primer_pair)
+        visualize_sequence_as_docx(
+            paragraph,
+            prim_settings,
+            var_info,
+            shifted_pair,
+            seq_override=seq_annotated,
+            plain_override=plain_slice,
+            allele="mut",
+            vcf_hits=shifted_vcf,
+            snp_hits=shifted_snp,
+            skip_snp_interval=skip_interval,
+        )
 
     # Save the document to an in-memory file
     buffer = io.BytesIO()

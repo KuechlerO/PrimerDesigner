@@ -3,6 +3,8 @@
 from typing import List, Protocol, Sequence
 
 DISPLAY_FLANK = 250
+# Wider flank for DOCX reports so both primers and the full amplicon stay visible.
+REPORT_DISPLAY_FLANK = 500
 
 
 class PrimerPairCoords(Protocol):
@@ -35,6 +37,8 @@ def compute_display_bounds(
     target_start: int,
     target_len: int,
     primer_pairs: Sequence[PrimerPairCoords],
+    *,
+    flank: int = DISPLAY_FLANK,
 ) -> tuple[int, int]:
     """Return (display_start, display_end) half-open indices on the full template."""
     target_end = target_start + target_len - 1
@@ -45,9 +49,29 @@ def compute_display_bounds(
         span_lo = min(span_lo, p_lo)
         span_hi = max(span_hi, p_hi)
 
-    display_start = max(0, span_lo - DISPLAY_FLANK)
-    display_end = min(template_len, span_hi + DISPLAY_FLANK + 1)
+    display_start = max(0, span_lo - flank)
+    display_end = min(template_len, span_hi + flank + 1)
     return display_start, display_end
+
+
+def compute_report_display_bounds(
+    template_len: int,
+    var_lo: int,
+    var_hi: int,
+    target_start: int,
+    target_len: int,
+    primer_pair: PrimerPairCoords,
+) -> tuple[int, int]:
+    """Report sequence window: same span as the UI but with a wider flank."""
+    return compute_display_bounds(
+        template_len,
+        var_lo,
+        var_hi,
+        target_start,
+        target_len,
+        [primer_pair],
+        flank=REPORT_DISPLAY_FLANK,
+    )
 
 
 def shift_template_hits_for_display(

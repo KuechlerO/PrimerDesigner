@@ -380,7 +380,7 @@ def annotate_primer_pairs_with_snp_awareness(
         base_summary["message"] = (
             f"{len(hits)} common variant(s) in design region "
             f"(gnomAD via Ensembl, MAF > {pct}%). "
-            f"{conflict_pairs} primer pair(s) overlap SNP binding sites."
+            f"{conflict_pairs} primer pair(s) with SNPs in amplified region."
         )
     else:
         base_summary["message"] = (

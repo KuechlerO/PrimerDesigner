@@ -352,7 +352,10 @@ def build_allele_display_chunks(
         plain_chunk = plain_template[i : i + width]
         start_1 = i + 1
         chunk_end_0 = i + len(plain_chunk)
-        if lo < chunk_end_0 and hi >= i:
+        # Annotate only the chunk that contains the variant start (lo). Overlap-based
+        # checks (lo < chunk_end and hi >= i) duplicate brackets when lo sits on a
+        # 100 bp chunk boundary (e.g. display position 99).
+        if i <= lo < chunk_end_0:
             lo_local = lo - i
             hi_local = hi - i
             lo_local_used = lo_local

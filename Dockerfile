@@ -28,9 +28,10 @@ RUN micromamba run -n base python manage.py migrate
 
 EXPOSE 8000
 
-# 9. Start the server and run migrations at runtime
+# 8. Start the server and run migrations at runtime
 CMD ["micromamba", "run", "-n", "base", \
-     "bash", "-c", "python manage.py makemigrations &&\
+     "bash", "-c", "python manage.py collectstatic --noinput && \
+     python manage.py makemigrations &&\
      python manage.py migrate &&\
      python manage.py makemigrations primer_designer_app &&\
      python manage.py migrate primer_designer_app &&\
