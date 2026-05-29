@@ -17,6 +17,7 @@ from primer_designer_app.utils.variant_info import (
     VARIANT_FLANKING,
 )
 from primer_designer_app.utils.insilico_analysis import do_insilico_analysis
+from primer_designer_app.utils.design_validation import validate_primer_search_results
 
 LOGGER = logging.getLogger(__name__)
 
@@ -317,6 +318,7 @@ def primer3_design_primers(
     LOGGER.info(
         f"Primer positions relative to variant: {[(res.right_relPos_start, res.right_relPos_end) for res in prim3_res.primer_pairs]}"
     )
+    validate_primer_search_results(prim3_res)
     return prim3_res
 
 

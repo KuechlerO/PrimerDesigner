@@ -13,6 +13,7 @@ from primer_designer_app.utils.helpers import (
 )
 from primer_designer_app.utils.doc_utils import create_primer_report
 from primer_designer_app.utils.insilico_analysis import insilico_reference_description
+from primer_designer_app.utils.design_validation import validate_primer_search_results
 from primer_designer_app.views.view_utils import (
     _get_post,
     build_form_data_from_request,
@@ -87,6 +88,7 @@ def primers_overview(request, uuid=None):
         logger.debug(f"DesignResultsSummary data2: {designResults_obj}")
 
     prim_search_results = designResults_obj.get_primer_search_results()
+    validate_primer_search_results(prim_search_results)
     var_info = designResults_obj.get_variant_info()
 
     highlighted_seq_snippet, display_offset, display_length, display_chunks = (

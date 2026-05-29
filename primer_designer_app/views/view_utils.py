@@ -48,8 +48,10 @@ def _process_genome_pos_snv_input(input_pos: str, end_offset=0) -> dict:
     cleaned = input_pos.replace(",", "").strip()
     # simple parser: accept chrN:POS or chrMT:POS
     if ":" not in cleaned:
-        LOGGER.debug("Invalid genome position input: %s", input_pos)
-        return {"chr": chromosome, "pos": position, "strand_type": "sense"}
+        raise ValueError(
+            f"Invalid genomic position '{input_pos}'. "
+            "Expected format ChrN:position (e.g. chr13:2655000)."
+        )
     left, right = cleaned.split(":", 1)
     chromosome = left.lower().replace("chr", "").upper()
     try:
@@ -179,8 +181,12 @@ def _build_variant_info(request, input_type: str) -> AllelicVariantInfo:
 
     if input_type == "genomic_snv":
         genomic_pos = _get_post(request, "genom_pos", "")
-        new_base = _get_post(request, "new_base", "")
-        assert len(new_base) == 1, "For SNV input, new_base must be a single character."
+        new_base = _get_post(request, "new_base", "").strip().upper()
+        if len(new_base) != 1 or new_base not in "ACGT":
+            raise ValueError(
+                "For genomic SNV input, provide exactly one alternate base (A, C, G, or T) "
+                "in the New base field."
+            )
         gpos = _process_genome_pos_snv_input(genomic_pos, len(new_base) - 1)
         vcf_records = _parse_optional_vcf_upload(request, gpos["chr"])
         rel_pos = (

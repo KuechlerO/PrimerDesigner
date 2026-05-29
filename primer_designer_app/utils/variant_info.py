@@ -10,6 +10,9 @@ from primer_designer_app.utils.vcf_utils import (
     spike_vcf_variants,
     template_range_for_genomic,
 )
+from primer_designer_app.utils.design_validation import (
+    validate_reference_sequence_for_design,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -262,6 +265,8 @@ class GenomicVariantInfo(AllelicVariantInfo):
             if relative_pos is None:
                 self.relative_pos = self._default_relative_pos()
 
+        validate_reference_sequence_for_design(self.ref_seq)
+
         if not self.ref_bases:
             self.ref_bases = self.ref_seq[
                 self.relative_pos[0] : self.relative_pos[1] + 1
@@ -328,6 +333,7 @@ class GenomicVariantInfo(AllelicVariantInfo):
             t_start,
             t_end,
         )
+        validate_reference_sequence_for_design(self.ref_seq)
 
     def _get_sequence_snippet(
         self, ensembl_client: EnsemblClient, flank: int = VARIANT_FLANKING
@@ -376,6 +382,7 @@ class TranscriptVariantInfo(AllelicVariantInfo):
         self.ref_seq = ensembl_client.get_transcript_sequence(
             self.transcript_id, self.reference_type.value
         )
+        validate_reference_sequence_for_design(self.ref_seq)
 
         LOGGER.debug(
             f"Before extracting ref_bases, ref_seq: {self.ref_seq}, "
