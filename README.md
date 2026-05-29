@@ -10,6 +10,9 @@ PrimerDesigner is a web application for designing PCR primers around human varia
 
 **In-app user guide:** On the live site or after local install, open [Help & Documentation](https://genometaster.charite.de/primer-designer/documentation/) (`/primer-designer/documentation/`) for input formats, result interpretation, screenshots, and FAQ.
 
+<img width="1916" height="962" alt="index_page" src="https://github.com/user-attachments/assets/e323b90e-8c3f-4518-9479-6f2d44a779e2" />
+
+
 ---
 
 ## Table of Contents
@@ -82,9 +85,23 @@ For local development without Docker, see [Running the application](#running-the
 
 Parameter presets (PCR/qPCR/custom), amplicon check, SNP checking, and result interpretation are documented in the [in-app Help](https://genometaster.charite.de/primer-designer/documentation/) page.
 
----
+   ```bash
+   cd /path/to/your/reference_genome_files
 
-## Prerequisites
+   # GRCh37
+   wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/GRCh37_mapping/gencode.v37lift37.transcripts.fa.gz
+   gunzip gencode.v37lift37.transcripts.fa.gz
+   bgzip gencode.v37lift37.transcripts.fa
+   dicey index -o gencode.v37lift37.transcripts.fa.fm9 gencode.v37lift37.transcripts.fa.gz
+   samtools faidx gencode.v37lift37.transcripts.fa.gz
+
+   # GRCh38
+   wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_49/gencode.v49.transcripts.fa.gz
+   gunzip gencode.v49.transcripts.fa.gz
+   bgzip gencode.v49.transcripts.fa
+   dicey index -o gencode.v49.transcripts.fa.fm9 gencode.v49.transcripts.fa.gz
+   samtools faidx gencode.v49.transcripts.fa.gz
+   ```
 
 Complete these before running locally. When using Docker, the Conda environment is created inside the image (skip step 1).
 
