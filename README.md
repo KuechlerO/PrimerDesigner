@@ -10,8 +10,6 @@ PrimerDesigner is a web application for designing PCR primers around human varia
 
 **In-app user guide:** On the live site or after local install, open [Help & Documentation](https://genometaster.charite.de/primer-designer/documentation/) (`/primer-designer/documentation/`) for input formats, result interpretation, screenshots, and FAQ.
 
-<img width="1916" height="962" alt="index_page" src="https://github.com/user-attachments/assets/e323b90e-8c3f-4518-9479-6f2d44a779e2" />
-
 
 ---
 
