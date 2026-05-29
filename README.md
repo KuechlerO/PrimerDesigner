@@ -2,7 +2,13 @@
 
 PrimerDesigner is a web application for designing PCR primers around human variants. It uses Primer3 for primer design, Dicey for in-silico PCR, and optional SNP/VCF awareness. Results can be explored in the browser and exported as Word (DOCX) reports with highlighted sequence context.
 
-**In-app user guide:** After starting the app, open [Help & Documentation](http://localhost:8000/primer-designer/documentation/) (`/primer-designer/documentation/`) for input formats, result interpretation, screenshots, and FAQ.
+**Live instance:** [genometaster.charite.de/primer-designer](https://genometaster.charite.de/primer-designer/) (Charité / BIH GenomeTaster)
+
+[![SNV/Indel design — genomic position input](primer_designer_app/static/primer_designer_app/images/screenshots/genomic_position_input.png)](https://genometaster.charite.de/primer-designer/)
+
+*Screenshot: SNV/Indel mode with genomic position input, reference genome selection, primer settings, optional VCF upload, and SNP checking. Click the image to open the live app.*
+
+**In-app user guide:** On the live site or after local install, open [Help & Documentation](https://genometaster.charite.de/primer-designer/documentation/) (`/primer-designer/documentation/`) for input formats, result interpretation, screenshots, and FAQ.
 
 ---
 
@@ -22,6 +28,8 @@ PrimerDesigner is a web application for designing PCR primers around human varia
 ---
 
 ## Overview
+
+A public deployment is available at **[https://genometaster.charite.de/primer-designer/](https://genometaster.charite.de/primer-designer/)**. No local setup is required to try the UI; reference-backed features (amplicon check, in-silico PCR) still need indexed FASTA files when you run your own instance.
 
 PrimerDesigner supports three design workflows:
 
@@ -72,7 +80,7 @@ For local development without Docker, see [Running the application](#running-the
 | Allele-specific PCR | `/primer-designer/allele-specific/` | Same coordinate types as SNV/Indel; designs paired WT and MUT reactions |
 | Structural variants | `/primer-designer/structural-variant/` | Genomic region / SV context; multiple primer strategies per window |
 
-Parameter presets (PCR/qPCR/custom), amplicon check, SNP checking, and result interpretation are documented in the [in-app Help](http://localhost:8000/primer-designer/documentation/) page.
+Parameter presets (PCR/qPCR/custom), amplicon check, SNP checking, and result interpretation are documented in the [in-app Help](https://genometaster.charite.de/primer-designer/documentation/) page.
 
 ---
 
@@ -97,7 +105,7 @@ Copy `.env.example` to `.env` and configure:
 | `DEBUG` | `True` for development, `False` for production |
 | `ALLOWED_HOSTS` | Comma-separated hosts, e.g. `127.0.0.1,localhost` or your production domain |
 | `REFERENCE_DATA_DIR` | Absolute path to the directory containing indexed reference FASTA files (see below) |
-| `WEB_APP_HOST` | Base URL users use to reach the app (e.g. `http://localhost:8000`). Used for hyperlinks embedded in DOCX reports |
+| `WEB_APP_HOST` | Base URL users use to reach the app (e.g. `http://localhost:8000` locally, or `https://genometaster.charite.de` for the Charité deployment). Used for hyperlinks embedded in DOCX reports |
 
 **Docker:** `docker-compose.yml` mounts `${REFERENCE_DATA_DIR}` from your host to `/app/references` (read-only) inside the container. The compose file also sets `REFERENCE_DATA_DIR=/app/references` for the app process.
 
@@ -311,6 +319,7 @@ System tools from Conda/bioconda include `samtools`, `pandoc`, and `dicey` (see 
 
 ## Support
 
+- **Live app:** [genometaster.charite.de/primer-designer](https://genometaster.charite.de/primer-designer/)
 - **GitHub:** [KuechlerO/PrimerDesigner](https://github.com/KuechlerO/PrimerDesigner)
-- **In-app Help:** `/primer-designer/documentation/` (screenshots, troubleshooting, FAQ)
+- **In-app Help:** [genometaster.charite.de/primer-designer/documentation/](https://genometaster.charite.de/primer-designer/documentation/) (screenshots, troubleshooting, FAQ)
 - **Bug reports:** Include input, primer settings, and screenshots when reporting unexpected highlighting or other issues via the repository
