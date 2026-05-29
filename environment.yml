@@ -16,3 +16,4 @@ dependencies:
         - python-decouple
         - pytest
         - pytest-django
+        - gunicorn
