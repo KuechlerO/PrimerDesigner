@@ -102,6 +102,7 @@ function setAmpliconCheck(value) {
     if (root) root.dataset.position = String(i);
     if (hidden) hidden.value = AMP_CHECK_VALUES[i];
     updateAmpliconCheckAria();
+    document.dispatchEvent(new Event("ampliconcheckchange"));
 }
 
 // Initialize the amplicon toggle

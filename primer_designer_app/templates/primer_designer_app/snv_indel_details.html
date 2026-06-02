@@ -63,7 +63,7 @@
                                 {% elif primer_pair.insilico_status == 'ok_empty' %}
                                     No amplicons
                                 {% elif primer_pair.insilico_status == 'not_applicable' %}
-                                    Not applicable
+                                    <span class="amplicon-not-selected" title="Amplicon analysis was not selected. Enable it in the input page under “Amplicon check” (Genome or Transcriptome), then regenerate primers to see predicted amplicons.">not selected</span>
                                 {% elif primer_pair.insilico_status == 'error' %}
                                     <span class="amplicon-error-label" title="{{ primer_pair.insilico_error_detail|default:'In-silico search failed' }}">Failed</span>
                                 {% else %}

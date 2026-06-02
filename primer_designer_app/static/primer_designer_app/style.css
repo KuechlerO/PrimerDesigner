@@ -401,6 +401,18 @@ input#new_base, input#IDnew_base, input#sv_end_position {
     justify-content: center;
 }
 
+.input-warning-banner {
+    max-width: 64em;
+    margin: 0.5em auto 0.75em;
+    padding: 0.75em 1em;
+    border-radius: var(--radius-md);
+    background: lightsalmon;
+    border: 1px solid color(srgb 0.82 0.42 0.08 / 0.45);
+    color: color(srgb 0.26 0.11 0.03);
+    line-height: 1.45;
+    box-shadow: var(--shadow-light);
+}
+
 .ui-scale-controls {
     display: inline-flex;
     align-items: center;
