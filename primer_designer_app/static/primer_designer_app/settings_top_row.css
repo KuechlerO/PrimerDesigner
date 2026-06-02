@@ -3,6 +3,18 @@
     justify-content: center;
     margin-top: 0.5em;
     flex-wrap: wrap;
+    /* Top-align tiles so headings share the same baseline. */
+    align-items: flex-start;
+}
+
+.primer-settings-top-row .settings-container {
+    /* Overrides global .settings-container { justify-content: center; } */
+    justify-content: flex-start;
+}
+
+.primer-settings-top-row .settings-heading-help {
+    /* Remove default top margin so headings start aligned. */
+    margin-top: 0;
 }
 
 .settings-container--amplicon-check {
