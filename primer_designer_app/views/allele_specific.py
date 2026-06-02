@@ -6,6 +6,7 @@ import logging
 from primer_designer_app.models import DesignResultsSummary
 from primer_designer_app.utils.doc_utils import create_primer_report
 from primer_designer_app.utils.primer_utils import PrimerSearchResults
+from primer_designer_app.exceptions import NoPrimerPairsFoundError
 from primer_designer_app.views.view_utils import (
     _get_post,
     build_form_data_from_request,
@@ -56,10 +57,13 @@ def primers_overview(request, uuid=None):
     wt_results = as_res["wt"]
     mut_results = as_res["mut"]
 
-    if not (wt_results.primer_pairs and mut_results.primer_pairs):
-        return HttpResponse(
-            "AS-PCR: Primer3 did not return any primer pairs for WT and/or MUT.",
-            status=400,
+    if not wt_results.primer_pairs:
+        raise NoPrimerPairsFoundError(
+            "Primer3 did not return any primer pairs for the WT allele-specific reaction."
+        )
+    if not mut_results.primer_pairs:
+        raise NoPrimerPairsFoundError(
+            "Primer3 did not return any primer pairs for the MUT allele-specific reaction."
         )
 
     from primer_designer_app.utils.helpers import (

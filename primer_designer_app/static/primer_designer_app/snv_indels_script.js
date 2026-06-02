@@ -49,6 +49,29 @@ const vcfFileField = document.getElementById("vcf_file");
 const genomicFields = [...SNV, ...InDel];
 const genomicModeFields = genomicFields;
 
+function _isSequenceOnlyMode() {
+    return (
+        isFieldGroupFilled([sequenceField]) &&
+        !isFieldGroupFilled(idInputFields) &&
+        !isFieldGroupFilled(genomicModeFields)
+    );
+}
+
+function updateTopRowWarnings() {
+    if (!IS_SNV_INDEL_PAGE) return;
+    const snpWarn = document.getElementById("warning-snp-sequence");
+    const ampWarn = document.getElementById("warning-amplicon-sequence");
+    const snpCheck = document.getElementById("snp-check");
+    const ampHidden = document.getElementById("amplicon-check-hidden");
+
+    const seqOnly = _isSequenceOnlyMode();
+    const snpOn = Boolean(snpCheck && snpCheck.checked);
+    const ampOn = Boolean(ampHidden && (ampHidden.value || "").toLowerCase() !== "none");
+
+    if (snpWarn) snpWarn.hidden = !(seqOnly && snpOn);
+    if (ampWarn) ampWarn.hidden = !(seqOnly && ampOn);
+}
+
 function clearAllInputs() {
     if (!IS_SNV_INDEL_PAGE) return;
     const inputs = [...idInputFields, ...genomicFields, ...(vcfFileField ? [vcfFileField] : []), sequence, ...switches];
@@ -83,6 +106,7 @@ function clearAllInputs() {
     containers.forEach(el => {
         classesToRemove.forEach(cls => el.remove(cls));
     });
+    updateTopRowWarnings();
 }
 
 let clickCount = 0;
@@ -239,7 +263,17 @@ function handleInputChange(inputId) {
     position.toggle("highlight", isFieldGroupFilled(genomicModeFields));
     sequence.toggle("highlight", isFieldGroupFilled([sequenceField]));
     sequenceField.classList.toggle("resize", isFieldGroupFilled([sequenceField]));
+
+    updateTopRowWarnings();
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+    if (!IS_SNV_INDEL_PAGE) return;
+    const snpCheck = document.getElementById("snp-check");
+    if (snpCheck) snpCheck.addEventListener("change", updateTopRowWarnings);
+    document.addEventListener("ampliconcheckchange", updateTopRowWarnings);
+    updateTopRowWarnings();
+});
 
 document.querySelectorAll("td").forEach(td => {
     td.addEventListener("mouseenter", function () {

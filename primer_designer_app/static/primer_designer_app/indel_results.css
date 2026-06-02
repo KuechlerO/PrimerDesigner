@@ -59,6 +59,11 @@ p {
     border-bottom: 1px dotted currentColor;
 }
 
+.amplicon-not-selected {
+    cursor: help;
+    border-bottom: 1px dotted currentColor;
+}
+
 .amplicon-count-wrap {
     display: inline-flex;
     align-items: center;
@@ -156,9 +161,9 @@ p {
 }
 
 .snp-banner--warn {
-    background: linear-gradient(180deg, color(srgb 1 0.92 0.72) 0%, color(srgb 1 0.82 0.45) 100%);
-    border-color: color(srgb 0.82 0.42 0.08);
-    color: color(srgb 0.42 0.18 0.02);
+    background: lightsalmon;
+    border-color: color(srgb 0.82 0.42 0.08 / 0.55);
+    color: color(srgb 0.26 0.11 0.03);
 }
 
 .vcf-banner--active {

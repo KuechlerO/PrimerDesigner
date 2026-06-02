@@ -9,10 +9,18 @@
             </a>
         </li>
 
-        <a href="{% url 'primer_designer_app:snv_indel_index' %}"><li class="page-btn" id="nav-snv-indel">SNVs & Indels</li></a>
-        <a href="{% url 'primer_designer_app:structural_variants_index' %}"><li class="page-btn" id="nav-structural-variants">Structural Variants</li></a>
-        <a href="{% url 'primer_designer_app:allele_specific_index' %}"><li class="page-btn" id="nav-allele-specific">Allele-specific PCR</li></a>
-        <a href="{% url 'primer_designer_app:documentation' %}"><li class="page-btn" id="nav-documentation">Documentation</li></a>
+        <li class="page-btn" id="nav-snv-indel">
+            <a class="page-btn-link" href="{% url 'primer_designer_app:snv_indel_index' %}">SNVs &amp; Indels</a>
+        </li>
+        <li class="page-btn" id="nav-structural-variants">
+            <a class="page-btn-link" href="{% url 'primer_designer_app:structural_variants_index' %}">Structural Variants</a>
+        </li>
+        <li class="page-btn" id="nav-allele-specific">
+            <a class="page-btn-link" href="{% url 'primer_designer_app:allele_specific_index' %}">Allele-specific PCR</a>
+        </li>
+        <li class="page-btn" id="nav-documentation">
+            <a class="page-btn-link" href="{% url 'primer_designer_app:documentation' %}">Documentation</a>
+        </li>
     </ul>
 </nav>
 <a href="{% url 'primer_designer_app:snv_indel_index' %}"><img src="{% static 'primer_designer_app/images/logo_PrimerDesigner.png' %}" alt="PrimerDesigner Logo" style="width: 32em;height: auto;"></a>

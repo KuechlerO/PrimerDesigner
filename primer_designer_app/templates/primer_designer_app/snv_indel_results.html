@@ -15,6 +15,22 @@
             <p class = "hgvs-info" style = "margin-left: 1em;">{{ hgvs_info }}</p>
         </div>
 
+        {% if show_snp_sequence_warning %}
+            <div class="snp-banner snp-banner--warn">
+                <span class="snp-banner__message">
+                    <strong>Warning:</strong> SNP checking requires genomic or transcript coordinates and is not available for sequence-only input.
+                </span>
+            </div>
+        {% endif %}
+        {% if show_amplicon_sequence_warning %}
+            <div class="snp-banner snp-banner--warn">
+                <span class="snp-banner__message">
+                    <strong>Warning:</strong> Amplicon analysis is not supported for sequence-only input.
+                    Please use genomic/transcript input or set <strong>Amplicon check</strong> to <strong>None</strong>.
+                </span>
+            </div>
+        {% endif %}
+
         {% if result_sum_obj.variant_info_data and result_sum_obj.variant_info_data.vcf_applied_variants %}
             <div class="snp-banner vcf-banner--active">
                 <span class="snp-banner__message">
@@ -26,7 +42,7 @@
             </div>
         {% endif %}
 
-        {% if snp_analysis and snp_analysis.enabled %}
+        {% if snp_analysis and snp_analysis.enabled and not show_snp_sequence_warning %}
             <div class="snp-banner{% if snp_analysis.hits %} snp-banner--active{% endif %}{% if snp_analysis.pairs_with_binding_conflict %} snp-banner--warn{% endif %}">
                 <span class="snp-banner__message">{{ snp_analysis.message }}</span>
                 {% if snp_analysis.hits %}
@@ -43,7 +59,7 @@
                 <div class="output-info-icon">?</div>
                 <div class="output-info-overlay">
                     <ul><li class="info-li" style="list-style: none;"><strong>Info:</strong></li>
-                        <li class="info-li">The sequence above shows a snippet of the relevant DNA including the <span style="color:color(srgb 0.1928 0.5967 0.665)">recommended primer pair</span> and <span style="color:color(srgb 0.83 0.4543 0.4482)">target region</span>.</li>
+                        <li class="info-li">The sequence above shows a snippet of the relevant DNA including the <span style="color: rgb(49, 152, 170);">recommended primer pair</span> and <span style="color: rgb(212, 116, 114);">target region</span>.</li>
                         {% if result_sum_obj.variant_info_data.vcf_applied_variants %}
                         <li class="info-li">Variants spiked from your VCF are highlighted in <span class="vcf-legend-sample">lavender</span> (hover for ID and alleles).</li>
                         {% endif %}
@@ -59,7 +75,7 @@
                             It presents he value of the objective function for this pair. (lower is better).
                         </li>
                         <li class="info-li">
-                            Best primer pairs: <span style="font-weight:bold; color:color(srgb 0.83 0.4543 0.4482)">lower score is better </span>
+                            Best primer pairs: <span style="font-weight:bold; color: rgb(212, 116, 114);">lower score is better </span>
                         </li>
                     </ul>
                 </div>
@@ -112,7 +128,7 @@
                                 {% elif pair_res.insilico_status == 'ok_empty' %}
                                     No amplicons
                                 {% elif pair_res.insilico_status == 'not_applicable' %}
-                                    Not applicable
+                                    <span class="amplicon-not-selected" title="Amplicon analysis was not selected. Enable it in the input page under “Amplicon check” (Genome or Transcriptome), then regenerate primers to see predicted amplicons.">not selected</span>
                                 {% elif pair_res.insilico_status == 'error' %}
                                     <span class="amplicon-error-label" title="{{ pair_res.insilico_error_detail|default:'In-silico search failed' }}">Failed</span>
                                 {% else %}

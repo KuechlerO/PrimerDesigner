@@ -13,7 +13,7 @@
                 <li class="info-li">For SNVs, the position refers to the exact location of the variant.</li>
                 <li class="info-li">For InDels, the two positions refer to the start and end position of the sequence region that is substituted with the given variant sequence.</li>
                 <li class="info-li">Inserted bases can be specified either as a base sequence (e.g., AGT) or as the number of inserted bases (e.g., 3)</li>
-                <li class="info-li">Allowed format: <span style ="color: color(srgb 0.095 0.4408 0.5);">ChrY:2655470</style></li>
+                <li class="info-li">Allowed format: <span style="color: rgb(24, 112, 128);">ChrY:2655470</span></li>
                 <li class="info-li">Optional: upload a <strong>VCF</strong> (same chromosome as your variant) to spike additional variants into the reference sequence before primer design (patient-specific background).</li>
             </ul>
         </div>
@@ -31,7 +31,7 @@
             <div class="second_column" style="width: 80%;">
                 <input type="text" id="IndelChrom" name="IndelChrom" placeholder="Chromosome" oninput="handleInputChange('IndelChrom')" style="width: 100%;">
                 <input type="text" id="IndelStart" name="IndelStart" placeholder="Wildtype start position" oninput="handleInputChange('IndelStart')" style="width: 100%;">
-                <input type="text" id="IndelEnd" name="IndelEnd" placeholder="Wildtype end position" oninput="handleInputChange('IndelEnd')"style="width: 100%; ">
+                <input type="text" id="IndelEnd" name="IndelEnd" placeholder="Wildtype end position" oninput="handleInputChange('IndelEnd')" style="width: 100%;">
                 <input type="text" id="IndelIns" name="IndelIns" placeholder="Inserted bases" oninput="handleInputChange('IndelIns')" style="width: 100%; border: none; ">
             </div>
         </div>
@@ -69,9 +69,9 @@
         <div class="identifier-two-col-wrap identifier-two-col-wrap--reference-only">
             <div class="identifier-col">
                 <h2 class="ID_h2">Reference</h2>
-                <div style="display:flex; flex-direction: column; width: 100%; justify-content: center; border-radius: 0em 0em 0.5em 0.5em; background-color: color(srgb 0.9068 0.9645 0.975); box-shadow: 0 0em 1em -0.5em #8baaaa;">
+                <div style="display:flex; flex-direction: column; width: 100%; justify-content: center; border-radius: 0em 0em 0.5em 0.5em; background-color: rgb(231, 246, 249); box-shadow: 0 0em 1em -0.5em #8baaaa;">
                     <input type="radio" name="Reference" value="cdna" id="cdna" onchange="handleInputChange('cdna')">
-                    <label for="cdna">cDNA</label>
+                    <label for="cdna">cDNA (with UTRs)</label>
                     <input type="radio" name="Reference" value="cds" id="cds" onchange="handleInputChange('cds')">
                     <label for="cds">CDS</label>
                 </div>
@@ -90,8 +90,8 @@
         <div class="dual_input" id="IdInDel" style="margin-top: 0.5em; margin-bottom: 0.5em;">
             <div class="column">InDel</div>
             <div class="second_column" style="width: 80%; ">
-                <input type="text" id="IdIndelStart" name="IdIndelStart" placeholder="Wildtype start position" oninput="handleInputChange('IdIndelStart')"style="width: 100%;  ">
-                <input type="text" id="IdIndelEnd" name="IdIndelEnd" placeholder="Wildtype end position" oninput="handleInputChange('IdIndelEnd')"sstyle="width: 100%; ">
+                <input type="text" id="IdIndelStart" name="IdIndelStart" placeholder="Wildtype start position" oninput="handleInputChange('IdIndelStart')" style="width: 100%;">
+                <input type="text" id="IdIndelEnd" name="IdIndelEnd" placeholder="Wildtype end position" oninput="handleInputChange('IdIndelEnd')" style="width: 100%;">
                 <input type="text" id="IdIndelIns" name="IdIndelIns" placeholder="Inserted bases" oninput="handleInputChange('IdIndelIns')" style="width: 100%; border:none;">
             </div>
         </div>

@@ -73,14 +73,23 @@ function syncAssayPresetButtonHighlight() {
 const AMP_CHECK_VALUES = ["none", "genome", "transcriptome"];
 const AMP_CHECK_LABELS = ["None", "Genome", "Transcriptome"];
 
-// Update the aria-valuenow and aria-valuetext attributes of the amplicon button
+// Update pressed state for the segmented control buttons.
 function updateAmpliconCheckAria() {
     const root = document.getElementById("amplicon-button");
     if (!root) return; // exit if no amplicon button found
     const i = parseInt(root.dataset.position, 10);
     const idx = Number.isNaN(i) ? 0 : i;
-    root.setAttribute("aria-valuenow", String(idx));
-    root.setAttribute("aria-valuetext", AMP_CHECK_LABELS[idx] || "None");
+    root.querySelectorAll(".amplicon-opt").forEach((btn) => {
+        const b = parseInt(btn.dataset.idx, 10);
+        const pressed = !Number.isNaN(b) && b === idx;
+        btn.setAttribute("aria-pressed", pressed ? "true" : "false");
+        btn.classList.toggle("is-selected", pressed);
+    });
+    // Keep a readable label for assistive tech on the group.
+    root.setAttribute(
+        "aria-label",
+        `Amplicon check: ${AMP_CHECK_LABELS[idx] || "None"}`
+    );
 }
 
 // Set the amplicon check value and update the aria-valuenow
@@ -93,6 +102,7 @@ function setAmpliconCheck(value) {
     if (root) root.dataset.position = String(i);
     if (hidden) hidden.value = AMP_CHECK_VALUES[i];
     updateAmpliconCheckAria();
+    document.dispatchEvent(new Event("ampliconcheckchange"));
 }
 
 // Initialize the amplicon toggle

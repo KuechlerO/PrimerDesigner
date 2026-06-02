@@ -27,6 +27,13 @@ nav ul li.page-btn {
     font-weight: 600;
 }
 
+/* Make the inner link fill the clickable tab. */
+nav ul li.page-btn a.page-btn-link {
+    display: inline-block;
+    color: inherit;
+    text-decoration: none;
+}
+
 nav ul li.page-btn:hover {
     background-color: rgba(2, 117, 138, 0.10);
 }

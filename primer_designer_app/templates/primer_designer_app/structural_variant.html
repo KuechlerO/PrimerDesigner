@@ -21,7 +21,7 @@
         {% csrf_token %}
         {% include "primer_designer_app/_primer_settings_top_row.html" %}
 
-        <div style="max-width: 64em; margin: 0.5em auto 4em; padding: 0.7em 1em; background: color(srgb 0.94 0.97 0.98); border: 1px solid color(srgb 0.55 0.72 0.78); border-radius: var(--radius-md);">
+        <div style="max-width: 64em; margin: 0.5em auto 4em; padding: 0.7em 1em; background: rgb(240, 247, 250); border: 1px solid rgb(140, 184, 199); border-radius: var(--radius-md);">
             <h2 style="margin: 0 0 0.25em;">Structural variants (deletion / duplication)</h2>
             <p style="margin: 0; line-height: 1.45;">
                 This mode designs primer pairs in multiple windows around your selected region of interest
@@ -39,7 +39,7 @@
                 <div class="info-overlay">
                     <ul>
                         <li class="info-li" style="list-style: none;"><strong>Format/Info:</strong></li>
-                        <li class="info-li">Chromosome should match your selected reference genome (e.g. <span style="color: color(srgb 0.095 0.4408 0.5);">chr12</span>).</li>
+                        <li class="info-li">Chromosome should match your selected reference genome (e.g. <span style="color: rgb(24, 112, 128);">chr12</span>).</li>
                         <li class="info-li">Start/end define the affected interval in genomic coordinates.</li>
                         <li class="info-li">Choose deletion or duplication.</li>
                     </ul>

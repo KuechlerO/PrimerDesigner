@@ -13,6 +13,8 @@ from primer_designer_app.utils.helpers import (
 )
 from primer_designer_app.utils.doc_utils import create_primer_report
 from primer_designer_app.utils.insilico_analysis import insilico_reference_description
+from primer_designer_app.utils.design_validation import validate_primer_search_results
+from primer_designer_app.utils.variant_info import SequenceVariantInfo
 from primer_designer_app.views.view_utils import (
     _get_post,
     build_form_data_from_request,
@@ -87,6 +89,7 @@ def primers_overview(request, uuid=None):
         logger.debug(f"DesignResultsSummary data2: {designResults_obj}")
 
     prim_search_results = designResults_obj.get_primer_search_results()
+    validate_primer_search_results(prim_search_results)
     var_info = designResults_obj.get_variant_info()
 
     highlighted_seq_snippet, display_offset, display_length, display_chunks = (
@@ -125,6 +128,20 @@ def primers_overview(request, uuid=None):
         vcf_applied, display_offset, display_length
     )
 
+    is_sequence_only = isinstance(var_info, SequenceVariantInfo) and not getattr(
+        var_info, "genomic_pos", None
+    )
+    amplicon_requested = bool(
+        getattr(designResults_obj.primer_settings, "do_insilico_pcr", False)
+    )
+    show_amplicon_sequence_warning = is_sequence_only and amplicon_requested
+    show_snp_sequence_warning = (
+        bool(snp_analysis.get("enabled"))
+        and is_sequence_only
+        and "requires genomic or transcript coordinates"
+        in str(snp_analysis.get("message", ""))
+    )
+
     return render(
         request,
         "primer_designer_app/snv_indel_results.html",
@@ -137,6 +154,8 @@ def primers_overview(request, uuid=None):
             "snp_hits_json": snp_hits_json,
             "vcf_hits_json": vcf_hits_json,
             "sequence_display_offset": display_offset,
+            "show_amplicon_sequence_warning": show_amplicon_sequence_warning,
+            "show_snp_sequence_warning": show_snp_sequence_warning,
             "insilico_reference_note": insilico_reference_description(
                 designResults_obj.primer_settings
             ),
