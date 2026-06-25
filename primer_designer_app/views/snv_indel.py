@@ -131,10 +131,7 @@ def primers_overview(request, uuid=None):
     is_sequence_only = isinstance(var_info, SequenceVariantInfo) and not getattr(
         var_info, "genomic_pos", None
     )
-    amplicon_requested = bool(
-        getattr(designResults_obj.primer_settings, "do_insilico_pcr", False)
-    )
-    show_amplicon_sequence_warning = is_sequence_only and amplicon_requested
+
     show_snp_sequence_warning = (
         bool(snp_analysis.get("enabled"))
         and is_sequence_only
@@ -154,7 +151,6 @@ def primers_overview(request, uuid=None):
             "snp_hits_json": snp_hits_json,
             "vcf_hits_json": vcf_hits_json,
             "sequence_display_offset": display_offset,
-            "show_amplicon_sequence_warning": show_amplicon_sequence_warning,
             "show_snp_sequence_warning": show_snp_sequence_warning,
             "insilico_reference_note": insilico_reference_description(
                 designResults_obj.primer_settings

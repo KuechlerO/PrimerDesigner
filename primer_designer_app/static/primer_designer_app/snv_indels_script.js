@@ -60,16 +60,12 @@ function _isSequenceOnlyMode() {
 function updateTopRowWarnings() {
     if (!IS_SNV_INDEL_PAGE) return;
     const snpWarn = document.getElementById("warning-snp-sequence");
-    const ampWarn = document.getElementById("warning-amplicon-sequence");
     const snpCheck = document.getElementById("snp-check");
-    const ampHidden = document.getElementById("amplicon-check-hidden");
 
     const seqOnly = _isSequenceOnlyMode();
     const snpOn = Boolean(snpCheck && snpCheck.checked);
-    const ampOn = Boolean(ampHidden && (ampHidden.value || "").toLowerCase() !== "none");
 
     if (snpWarn) snpWarn.hidden = !(seqOnly && snpOn);
-    if (ampWarn) ampWarn.hidden = !(seqOnly && ampOn);
 }
 
 function clearAllInputs() {
