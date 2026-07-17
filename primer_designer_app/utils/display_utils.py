@@ -1,10 +1,47 @@
 """Sequence display window helpers (no Django / primer3 dependency)."""
 
-from typing import List, Protocol, Sequence
+from typing import List, Protocol, Sequence, Union
 
 DISPLAY_FLANK = 250
 # Wider flank for DOCX reports so both primers and the full amplicon stay visible.
 REPORT_DISPLAY_FLANK = 500
+# Default characters per line when splitting annotated sequences for display.
+DEFAULT_CHUNK_WIDTH = 100
+
+GenomicCoord = Union[int, str, float, None]
+
+
+def intervals_overlap(a_start: int, a_end: int, b_start: int, b_end: int) -> bool:
+    """True if inclusive integer intervals [a_start, a_end] and [b_start, b_end] overlap."""
+    return a_start <= b_end and b_start <= a_end
+
+
+def format_genomic_coord(value: GenomicCoord) -> str:
+    """Format a genomic coordinate with period thousands separators (19.997.582)."""
+    if value is None or value == "":
+        return ""
+    try:
+        return f"{int(value):,}".replace(",", ".")
+    except (TypeError, ValueError):
+        return str(value)
+
+
+def format_genomic_range(
+    start: GenomicCoord,
+    end: GenomicCoord,
+    *,
+    sep: str = " - ",
+) -> str:
+    """Format a start–end genomic range for display."""
+    left = format_genomic_coord(start)
+    right = format_genomic_coord(end)
+    if not left and not right:
+        return ""
+    if not left:
+        return right
+    if not right:
+        return left
+    return f"{left}{sep}{right}"
 
 
 class PrimerPairCoords(Protocol):

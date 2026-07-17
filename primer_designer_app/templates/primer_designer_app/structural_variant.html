@@ -1,4 +1,5 @@
 {% load static %}
+{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -114,7 +115,7 @@
                     <div style="display:flex; margin:0.5em 0; align-items: baseline; gap: 1em;">
                         <h2 style="margin:0;">{{ label | title }}</h2>
                         <p class="hgvs-info" style="margin:0;">
-                            Window: {{ result.design_window.window_start_genomic }} - {{ result.design_window.window_end_genomic }}
+                            Window: {{ result.design_window.window_start_genomic|genomic_range:result.design_window.window_end_genomic }}
                         </p>
                     </div>
 
@@ -157,10 +158,10 @@
                                                 {% endif %}
                                             </td>
                                             <td style="font-size: 1.1em;">
-                                                {{ row.genomic_positions.forward_start }} - {{ row.genomic_positions.forward_end }}
+                                                {{ row.genomic_positions.forward_start|genomic_range:row.genomic_positions.forward_end }}
                                             </td>
                                             <td style="font-size: 1.1em;">
-                                                {{ row.genomic_positions.reverse_start }} - {{ row.genomic_positions.reverse_end }}
+                                                {{ row.genomic_positions.reverse_start|genomic_range:row.genomic_positions.reverse_end }}
                                             </td>
                                         </tr>
                                     {% endfor %}

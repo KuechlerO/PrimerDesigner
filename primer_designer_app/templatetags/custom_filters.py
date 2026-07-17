@@ -5,6 +5,10 @@ from primer_designer_app.utils.amplicon_display import (
     extract_amplicon_summary,
     format_penalty_score,
 )
+from primer_designer_app.utils.display_utils import (
+    format_genomic_coord,
+    format_genomic_range,
+)
 from primer_designer_app.utils.primer_utils import (
     INSILICO_ERROR,
     INSILICO_NOT_APPLICABLE,
@@ -95,3 +99,15 @@ def snp_conflict_summary(conflicts):
     if len(conflicts) > 3:
         text += f" (+{len(conflicts) - 3} more)"
     return text
+
+
+@register.filter
+def genomic_coord(value):
+    """Format a genomic position as 19.997.582."""
+    return format_genomic_coord(value)
+
+
+@register.filter
+def genomic_range(start, end):
+    """Format start–end genomic positions: {{ start|genomic_range:end }}."""
+    return format_genomic_range(start, end)

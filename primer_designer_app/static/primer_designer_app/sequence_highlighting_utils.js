@@ -7,10 +7,23 @@ function _escapeAttr(value) {
         .replace(/</g, "&lt;");
 }
 
+function _formatGenomicCoord(pos) {
+    const n = Number(pos);
+    if (!Number.isFinite(n)) return String(pos ?? "");
+    try {
+        return new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 }).format(n);
+    } catch {
+        return String(pos);
+    }
+}
+
 function _vcfTooltip(hit) {
     const id = hit.id || "VCF variant";
     const alleles = `${hit.ref || "?"} → ${hit.alt || "?"}`;
-    const genomic = hit.chrom && hit.pos ? `chr${hit.chrom}:${hit.pos}` : "";
+    const genomic =
+        hit.chrom && hit.pos != null && hit.pos !== ""
+            ? `chr${hit.chrom}:${_formatGenomicCoord(hit.pos)}`
+            : "";
     return genomic ? `${id} (${genomic}) — ${alleles}` : `${id} — ${alleles}`;
 }
 

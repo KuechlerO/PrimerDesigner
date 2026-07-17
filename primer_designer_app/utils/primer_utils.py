@@ -18,6 +18,7 @@ from primer_designer_app.utils.variant_info import (
 )
 from primer_designer_app.utils.insilico_analysis import do_insilico_analysis
 from primer_designer_app.utils.design_validation import validate_primer_search_results
+from primer_designer_app.utils.primer3_post import PRIMER3_OVERRIDE_FIELDS
 
 LOGGER = logging.getLogger(__name__)
 
@@ -26,6 +27,11 @@ INSILICO_NOT_APPLICABLE = "not_applicable"
 INSILICO_ERROR = "error"
 INSILICO_OK_EMPTY = "ok_empty"
 INSILICO_OK = "ok"
+
+# AS-PCR: minimum gap (bp) between forced left end and common reverse start
+ASPCR_MIN_REVERSE_GAP = 80
+ASPCR_PRODUCT_SIZE_MIN = 80
+ASPCR_PRODUCT_SIZE_MAX = 2000
 
 
 @dataclass
@@ -168,7 +174,9 @@ def get_primers_from_primer3(dicey_primer) -> List["PrimerPairResult"]:
                 right_relPos_start = right_pos_5p - (right_len - 1)
                 right_relPos_end = right_pos_5p
             except Exception:
-                # skip malformed entries
+                LOGGER.debug(
+                    "Skipping malformed Primer3 pair index %s", i, exc_info=True
+                )
                 continue
 
             pair = PrimerPairResult(
@@ -233,8 +241,47 @@ def build_primer3_global_args(prim_set) -> dict:
         "PRIMER_INSIDE_PENALTY": 1.0,
     }
     overrides = getattr(prim_set, "primer3_overrides", None) or {}
-    merged = {**base, **overrides}
+    allowed = {key for key, _ in PRIMER3_OVERRIDE_FIELDS}
+    filtered = {k: v for k, v in overrides.items() if k in allowed}
+    rejected = set(overrides) - allowed
+    if rejected:
+        LOGGER.warning(
+            "Ignoring non-whitelisted primer3_overrides keys: %s", sorted(rejected)
+        )
+    merged = {**base, **filtered}
     return merged
+
+
+def _mark_insilico_not_applicable(primer_pairs) -> None:
+    for pair in primer_pairs:
+        pair.amplicons = []
+        pair.insilico_status = INSILICO_NOT_APPLICABLE
+        pair.insilico_error_detail = None
+
+
+def _apply_insilico_or_mark_na(varInfo_obj, primSet_obj, primer_search_results) -> None:
+    """Run Dicey in-silico PCR when enabled, otherwise mark pairs N/A."""
+    if isinstance(varInfo_obj, (TranscriptVariantInfo, GenomicVariantInfo)):
+        LOGGER.info("Loading primer start and end positions for genomic context")
+        primer_search_results.load_primer_start_and_end_pos(varInfo_obj)
+        if getattr(primSet_obj, "do_insilico_pcr", False):
+            LOGGER.info("Running in-silico analysis for designed primer pairs")
+            do_insilico_analysis(primSet_obj, primer_search_results.primer_pairs)
+        else:
+            LOGGER.info("In-silico PCR disabled; skipping Dicey")
+            _mark_insilico_not_applicable(primer_search_results.primer_pairs)
+    elif isinstance(varInfo_obj, SequenceVariantInfo):
+        if getattr(primSet_obj, "do_insilico_pcr", False):
+            LOGGER.info("Running in-silico analysis for sequence input")
+            do_insilico_analysis(primSet_obj, primer_search_results.primer_pairs)
+        else:
+            LOGGER.debug("Sequence input: in-silico PCR disabled; skipping Dicey")
+            _mark_insilico_not_applicable(primer_search_results.primer_pairs)
+    else:
+        LOGGER.debug(
+            "No genomic/transcript variant info; in-silico search not applicable"
+        )
+        _mark_insilico_not_applicable(primer_search_results.primer_pairs)
 
 
 def primer3_design_primers(
@@ -279,40 +326,7 @@ def primer3_design_primers(
         primSet_obj.context,
         getattr(primSet_obj, "do_insilico_pcr", False),
     )
-    # run in-silico analysis and populate amplicon summary (optional)
-    if isinstance(varInfo_obj, (TranscriptVariantInfo, GenomicVariantInfo)):
-        LOGGER.info("Loading primer start and end positions for genomic context")
-        prim3_res.load_primer_start_and_end_pos(varInfo_obj)
-        if getattr(primSet_obj, "do_insilico_pcr", False):
-            LOGGER.info("Running in-silico analysis for designed primer pairs")
-            do_insilico_analysis(primSet_obj, prim3_res.primer_pairs)
-            LOGGER.info("In-silico analysis completed: ", prim3_res.primer_pairs)
-        else:
-            LOGGER.info("In-silico PCR disabled; skipping Dicey")
-            for pair in prim3_res.primer_pairs:
-                pair.amplicons = []
-                pair.insilico_status = INSILICO_NOT_APPLICABLE
-                pair.insilico_error_detail = None
-    elif isinstance(varInfo_obj, SequenceVariantInfo):
-        # No genomic coordinates: skip mapped primer positions; Dicey still searches
-        # the selected reference when the user enables amplicon check.
-        if getattr(primSet_obj, "do_insilico_pcr", False):
-            LOGGER.info("Running in-silico analysis for sequence input")
-            do_insilico_analysis(primSet_obj, prim3_res.primer_pairs)
-        else:
-            LOGGER.debug("Sequence input: in-silico PCR disabled; skipping Dicey")
-            for pair in prim3_res.primer_pairs:
-                pair.amplicons = []
-                pair.insilico_status = INSILICO_NOT_APPLICABLE
-                pair.insilico_error_detail = None
-    else:
-        LOGGER.debug(
-            "No genomic/transcript variant info; in-silico search not applicable"
-        )
-        for pair in prim3_res.primer_pairs:
-            pair.amplicons = []
-            pair.insilico_status = INSILICO_NOT_APPLICABLE
-            pair.insilico_error_detail = None
+    _apply_insilico_or_mark_na(varInfo_obj, primSet_obj, prim3_res)
 
     LOGGER.info(f"Primer positions: {prim3_res.mapped_primer_positions}")
     LOGGER.info(
@@ -326,7 +340,7 @@ def _pick_common_reverse_from_primer3(
     raw: dict,
     *,
     min_left_end: int,
-    min_gap: int = 80,
+    min_gap: int = ASPCR_MIN_REVERSE_GAP,
 ) -> tuple[str, int] | None:
     """
     Pick a reverse primer sequence that lies downstream of the discriminating site.
@@ -554,11 +568,14 @@ def primer3_design_allele_specific(
             ):
                 # Extend both ends; transcript/sequence contexts often yield longer products.
                 ga["PRIMER_PRODUCT_SIZE_RANGE"] = [
-                    min(80, int(psr[0])),
-                    max(int(psr[1]), 2000),
+                    min(ASPCR_PRODUCT_SIZE_MIN, int(psr[0])),
+                    max(int(psr[1]), ASPCR_PRODUCT_SIZE_MAX),
                 ]
         except Exception:
-            pass
+            LOGGER.debug(
+                "Could not relax PRIMER_PRODUCT_SIZE_RANGE for AS-PCR; leaving as-is",
+                exc_info=True,
+            )
 
         # Sequence input often has higher Tm/hairpin constraints at forced ends; relax mildly for AS-PCR.
         if ga.get("PRIMER_OPT_TM") is not None:
@@ -585,28 +602,7 @@ def primer3_design_allele_specific(
 
     # Populate in-silico + mapped positions like standard design
     for res in (wt_res, mut_res):
-        if isinstance(varInfo_obj, (TranscriptVariantInfo, GenomicVariantInfo)):
-            res.load_primer_start_and_end_pos(varInfo_obj)
-            if getattr(primSet_obj, "do_insilico_pcr", False):
-                do_insilico_analysis(primSet_obj, res.primer_pairs)
-            else:
-                for pair in res.primer_pairs:
-                    pair.amplicons = []
-                    pair.insilico_status = INSILICO_NOT_APPLICABLE
-                    pair.insilico_error_detail = None
-        elif isinstance(varInfo_obj, SequenceVariantInfo):
-            if getattr(primSet_obj, "do_insilico_pcr", False):
-                do_insilico_analysis(primSet_obj, res.primer_pairs)
-            else:
-                for pair in res.primer_pairs:
-                    pair.amplicons = []
-                    pair.insilico_status = INSILICO_NOT_APPLICABLE
-                    pair.insilico_error_detail = None
-        else:
-            for pair in res.primer_pairs:
-                pair.amplicons = []
-                pair.insilico_status = INSILICO_NOT_APPLICABLE
-                pair.insilico_error_detail = None
+        _apply_insilico_or_mark_na(varInfo_obj, primSet_obj, res)
 
     return {
         "design_type": "allele_specific",

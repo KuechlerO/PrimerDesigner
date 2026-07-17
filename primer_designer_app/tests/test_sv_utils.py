@@ -2,6 +2,7 @@ import sys
 import types
 import unittest
 from dataclasses import dataclass
+from unittest.mock import patch
 
 # `primer_designer_app.utils.sv_utils` imports `primer_utils`, which imports `primer3`.
 # Unit tests for request parsing shouldn't require the primer3 dependency, so we stub
@@ -11,7 +12,12 @@ _primer_utils_stub.primer3_design_primers = lambda *args, **kwargs: None
 sys.modules.setdefault("primer_designer_app.utils.primer_utils", _primer_utils_stub)
 
 from primer_designer_app.utils.sv_utils import (  # noqa: E402
+    _calculate_genomic_primer_positions,
     build_structural_variant_info_from_request,
+    design_structural_variant_primers,
+)
+from primer_designer_app.utils.variant_info import (  # noqa: E402
+    StructuralVariantWindow,
 )
 
 
@@ -108,3 +114,94 @@ class BuildStructuralVariantInfoFromRequestTests(unittest.TestCase):
         # SV type is not parsed here, so request parsing should still succeed.
         info = build_structural_variant_info_from_request(req)
         self.assertEqual(info.chromosome, "1")
+
+
+class CalculateGenomicPrimerPositionsTests(unittest.TestCase):
+    def test_positions_are_offset_by_window_start(self):
+        window = StructuralVariantWindow(
+            label="upstream",
+            window_start_genomic=1000,
+            window_end_genomic=2000,
+        )
+        pair = types.SimpleNamespace(
+            left_relPos_start=5,
+            left_relPos_end=24,
+            right_relPos_start=100,
+            right_relPos_end=119,
+        )
+        positions = _calculate_genomic_primer_positions(window, pair)
+        self.assertEqual(
+            positions,
+            {
+                "forward_start": 1005,
+                "forward_end": 1024,
+                "reverse_start": 1100,
+                "reverse_end": 1119,
+            },
+        )
+
+
+class DesignStructuralVariantPrimersTests(unittest.TestCase):
+    def _sv_info(self):
+        from primer_designer_app.utils.variant_info import StructuralVariantInfo
+
+        sv_info = StructuralVariantInfo(
+            chromosome="1",
+            start_position=1000,
+            end_position=5000,
+            reference_genome="GRCh37",
+        )
+        sv_info.create_design_windows()
+        return sv_info
+
+    def test_designs_primers_for_every_window(self):
+        sv_info = self._sv_info()
+        primer_settings = types.SimpleNamespace()
+
+        fake_pair = types.SimpleNamespace(
+            left_relPos_start=5,
+            left_relPos_end=24,
+            right_relPos_start=100,
+            right_relPos_end=119,
+        )
+        fake_search_results = types.SimpleNamespace(primer_pairs=[fake_pair])
+
+        with patch.object(
+            StructuralVariantWindow, "load_window_sequence", lambda self, **kw: None
+        ), patch(
+            "primer_designer_app.utils.sv_utils.primer3_design_primers",
+            return_value=fake_search_results,
+        ) as mock_design:
+            results = design_structural_variant_primers(sv_info, primer_settings)
+
+        self.assertEqual(mock_design.call_count, len(sv_info.windows))
+        self.assertEqual(set(results.keys()), {w.label for w in sv_info.windows})
+
+        upstream = results["upstream"]
+        self.assertIs(
+            upstream["design_window"],
+            next(w for w in sv_info.windows if w.label == "upstream"),
+        )
+        self.assertEqual(len(upstream["primer_rows"]), 1)
+        row = upstream["primer_rows"][0]
+        self.assertIs(row["pair"], fake_pair)
+        self.assertEqual(
+            row["genomic_positions"]["forward_start"],
+            upstream["design_window"].window_start_genomic + 5,
+        )
+
+    def test_no_primer_pairs_yields_empty_primer_rows(self):
+        sv_info = self._sv_info()
+        primer_settings = types.SimpleNamespace()
+        fake_search_results = types.SimpleNamespace(primer_pairs=[])
+
+        with patch.object(
+            StructuralVariantWindow, "load_window_sequence", lambda self, **kw: None
+        ), patch(
+            "primer_designer_app.utils.sv_utils.primer3_design_primers",
+            return_value=fake_search_results,
+        ):
+            results = design_structural_variant_primers(sv_info, primer_settings)
+
+        for window_result in results.values():
+            self.assertEqual(window_result["primer_rows"], [])

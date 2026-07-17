@@ -24,3 +24,7 @@ class InvalidReferenceSequenceError(PrimerDesignerError):
 
 class NoPrimerPairsFoundError(PrimerDesignerError):
     """Primer3 completed but returned zero primer pairs."""
+
+
+class InvalidInputError(PrimerDesignerError):
+    """User-facing validation error for malformed or incomplete form input."""

@@ -59,11 +59,6 @@ urlpatterns = [
         name="allele_specific_primers_overview_with_uuid",
     ),
     path(
-        "allele-specific/primer-details/<uuid:uuid>/",
-        allele_specific.primer_details,
-        name="allele_specific_primer_details",
-    ),
-    path(
         "allele-specific/generate-report/<uuid:uuid>/<int:selected_primer_index>/",
         allele_specific.generate_report,
         name="allele_specific_generate_report",

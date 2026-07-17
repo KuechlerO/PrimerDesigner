@@ -5,7 +5,10 @@ from __future__ import annotations
 import logging
 from typing import Any, List, Optional, Sequence, Tuple
 
-from primer_designer_app.utils.display_utils import compute_display_bounds
+from primer_designer_app.utils.display_utils import (
+    compute_display_bounds,
+    intervals_overlap,
+)
 from primer_designer_app.utils.ensembl_client import (
     GNOMAD_VARIANT_SET,
     EnsemblClient,
@@ -31,7 +34,7 @@ SNP_STATUS_ERROR = "error"
 
 
 def _intervals_overlap(a_start: int, a_end: int, b_start: int, b_end: int) -> bool:
-    return a_start <= b_end and b_start <= a_end
+    return intervals_overlap(a_start, a_end, b_start, b_end)
 
 
 def effective_maf(variation: dict) -> float | None:

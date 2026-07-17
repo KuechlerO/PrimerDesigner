@@ -26,7 +26,7 @@ function clearStructuralVariantInputs() {
 
 function parsePos(value) {
     if (value == null) return null;
-    const cleaned = String(value).trim().replaceAll(",", "").replaceAll("_", "");
+    const cleaned = String(value).trim().replaceAll(",", "").replaceAll(".", "").replaceAll("_", "");
     if (!cleaned) return null;
     const n = Number(cleaned);
     return Number.isFinite(n) ? n : null;
@@ -34,7 +34,7 @@ function parsePos(value) {
 
 function formatInt(n) {
     try {
-        return new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(n);
+        return new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 }).format(n);
     } catch {
         return String(n);
     }

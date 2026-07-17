@@ -76,6 +76,72 @@ class VcfUtilsTests(unittest.TestCase):
         self.assertEqual(start, 700)
         self.assertEqual(end, 1300)
 
+    def test_parse_vcf_skips_structural_alleles(self):
+        vcf = """##fileformat=VCFv4.2
+#CHROM\tPOS\tID\tREF\tALT
+7\t100\t.\tA\t<DEL>
+7\t200\t.\t<INS>\tA
+7\t300\trs5\tG\tT
+7\t400\t.\tG\t*
+"""
+        records = parse_vcf_upload(io.BytesIO(vcf.encode()), "7")
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0].pos, 300)
+        self.assertEqual(records[0].rsid, "rs5")
+
+    def test_parse_vcf_skips_non_nucleotide_alleles(self):
+        vcf = """##fileformat=VCFv4.2
+#CHROM\tPOS\tID\tREF\tALT
+7\t100\t.\tACGTRYK\tA
+7\t200\t.\tA\tACGTRYK
+7\t300\t.\tA\tG
+"""
+        records = parse_vcf_upload(io.BytesIO(vcf.encode()), "7")
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0].pos, 300)
+
+    def test_spike_skips_on_ref_mismatch(self):
+        ref = "AAAACCCCTTTT"
+        records = [VcfRecord(chrom="7", pos=5, ref="G", alt="T", rsid="rsMismatch")]
+        spiked, applied, deltas = spike_vcf_variants(ref, 1, records)
+        self.assertEqual(spiked, ref)
+        self.assertEqual(applied, [])
+        self.assertEqual(deltas, [])
+
+    def test_spike_skips_outside_fetched_window(self):
+        ref = "AAAA"
+        records = [VcfRecord(chrom="7", pos=100, ref="A", alt="G", rsid="rsFar")]
+        spiked, applied, _ = spike_vcf_variants(ref, 1, records)
+        self.assertEqual(spiked, ref)
+        self.assertEqual(applied, [])
+
+    def test_multiple_indels_compound_offset(self):
+        # Two upstream insertions before a downstream SNV: template offset for the
+        # SNV must account for both insertions' net length changes.
+        ref = "A" * 5 + "C" * 5 + "T" * 5  # positions 1-15
+        records = [
+            VcfRecord(chrom="7", pos=2, ref="A", alt="AAA", rsid="ins1"),  # +2
+            VcfRecord(chrom="7", pos=6, ref="C", alt="CC", rsid="ins2"),  # +1
+            VcfRecord(chrom="7", pos=11, ref="T", alt="G", rsid="snv"),
+        ]
+        spiked, applied, deltas = spike_vcf_variants(ref, 1, records)
+        self.assertEqual(len(applied), 3)
+        t_start, t_end = template_range_for_genomic(1, 11, 11, deltas)
+        # Base index for pos 11 (0-based, no spikes) would be 10; +3 from upstream
+        # insertions (ins1 +2, ins2 +1) => 13.
+        self.assertEqual(t_start, 13)
+        self.assertEqual(t_end, 13)
+        self.assertEqual(spiked[13], "G")
+
+    def test_normalize_chromosome_variants(self):
+        from primer_designer_app.utils.vcf_utils import normalize_chromosome
+
+        self.assertEqual(normalize_chromosome("chr7"), "7")
+        self.assertEqual(normalize_chromosome("CHRX"), "X")
+        self.assertEqual(normalize_chromosome("MT"), "M")
+        self.assertEqual(normalize_chromosome(" chr1 "), "1")
+        self.assertEqual(normalize_chromosome(""), "")
+
 
 if __name__ == "__main__":
     unittest.main()

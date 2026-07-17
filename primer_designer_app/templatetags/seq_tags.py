@@ -1,4 +1,5 @@
 from django import template
+from primer_designer_app.utils.display_utils import DEFAULT_CHUNK_WIDTH
 from typing import List, Dict
 import re
 import logging
@@ -9,7 +10,7 @@ register = template.Library()
 
 
 @register.filter(name="chunk_seq")
-def chunk_seq(seq: str, width: int = 100) -> List[Dict]:
+def chunk_seq(seq: str, width: int = DEFAULT_CHUNK_WIDTH) -> List[Dict]:
     """
     Split a DNA sequence into chunks of `width` characters.
     Returns list of dicts: {'start': int, 'chunk': str}
@@ -20,7 +21,7 @@ def chunk_seq(seq: str, width: int = 100) -> List[Dict]:
     try:
         width = int(width)
     except Exception:
-        width = 100
+        width = DEFAULT_CHUNK_WIDTH
     chunks = []
     for i in range(0, len(seq), width):
         chunks.append({"start": i + 1, "chunk": seq[i : i + width]})
@@ -29,7 +30,7 @@ def chunk_seq(seq: str, width: int = 100) -> List[Dict]:
 
 # HTML-aware chunker: counts visible chars only, preserves tags and re-opens them across lines.
 @register.filter(name="chunk_html")
-def chunk_html(seq_html: str, width: int = 100) -> List[Dict]:
+def chunk_html(seq_html: str, width: int = DEFAULT_CHUNK_WIDTH) -> List[Dict]:
     """
     Split an HTML string into chunks of `width` visible characters.
     Returns list of dicts: {'start': int, 'chunk': str}
@@ -40,9 +41,9 @@ def chunk_html(seq_html: str, width: int = 100) -> List[Dict]:
     try:
         width = int(width)
         if width <= 0:
-            width = 100
+            width = DEFAULT_CHUNK_WIDTH
     except Exception:
-        width = 100
+        width = DEFAULT_CHUNK_WIDTH
 
     # Tokenize into tags and text
     # matches tags or text: 1. starts with '<' and ends with '>', or 2. any text not containing '<'

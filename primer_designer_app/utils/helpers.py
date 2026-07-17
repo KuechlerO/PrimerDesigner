@@ -17,6 +17,7 @@ from primer_designer_app.utils.hgvs_display import (
     normalize_indel_type,
 )
 from primer_designer_app.utils.display_utils import (
+    DEFAULT_CHUNK_WIDTH,
     compute_display_bounds,
     shift_template_hits_for_display,
 )
@@ -341,9 +342,9 @@ def build_allele_display_chunks(
     try:
         width = int(width)
     except Exception:
-        width = 50
+        width = DEFAULT_CHUNK_WIDTH
     if width <= 0:
-        width = 50
+        width = DEFAULT_CHUNK_WIDTH
 
     lo, hi = var_info.relative_pos
     indel_type = normalize_indel_type(var_info)
