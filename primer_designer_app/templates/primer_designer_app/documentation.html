@@ -16,7 +16,8 @@
         <section class="documentation-hero settings-container">
             <h1>Help & Documentation</h1>
             <p class="documentation-intro">
-                A practical guide for designing primers for SNVs/indels, allele-specific PCR, and structural variants —
+                A practical guide for designing primers for SNVs/indels, allele-specific PCR, and structural variants,
+                plus SilicoPCR for checking existing primer pairs —
                 including input formats, result interpretation, and reporting.
             </p>
         </section>
@@ -42,11 +43,11 @@
                     <h2>Design primers in 60 seconds</h2>
 
                     <ol class="documentation-steps">
-                        <li><strong>Choose a mode</strong>: SNV/Indel, Allele-specific PCR, or Structural variants.</li>
-                        <li><strong>Enter input</strong> (or use <strong>Load Example</strong>).</li>
-                        <li><strong>Generate primers</strong> and inspect highlighted binding sites.</li>
-                        <li><strong>Select a primer pair</strong> from the table (penalty score is a key ranking signal).</li>
-                        <li><strong>Download report</strong> for the selected primer pair.</li>
+                        <li><strong>Choose a mode</strong>: SNV/Indel, Allele-specific PCR, Structural variants, or SilicoPCR.</li>
+                        <li><strong>Enter input</strong> (or use <strong>Load Example</strong> where available).</li>
+                        <li><strong>Generate primers</strong> (or <strong>Run SilicoPCR</strong>) and inspect results.</li>
+                        <li><strong>Select a primer pair</strong> from the table when designing primers (penalty score is a key ranking signal).</li>
+                        <li><strong>Download report</strong> for the selected primer pair (design modes).</li>
                     </ol>
 
                 </section>
@@ -125,6 +126,15 @@
                             alt="SV input page">
                         <figcaption>SV input page</figcaption>
                     </figure>
+
+                    <h3 id="input-silico-pcr">SilicoPCR</h3>
+                    <p>
+                        Paste an existing <strong>forward</strong> and <strong>reverse</strong> primer sequence
+                        (DNA bases A/C/G/T/N, 10–60 bp each). Choose the reference genome (GRCh37/GRCh38) and
+                        search context (<strong>Genome</strong> or <strong>Transcriptome</strong>). SilicoPCR runs
+                        Dicey in-silico PCR and lists predicted amplicons with coordinates and product sequence —
+                        without designing new primers.
+                    </p>
                 </section>
 
                 <section id="results" class="documentation-card">

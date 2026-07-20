@@ -51,6 +51,11 @@
     height: 3em;
 }
 
+.button-cover.amplicon-button-cover--silico {
+    width: min(100%, 28em);
+    min-width: 20em;
+}
+
 #amplicon-button.button,
 #amplicon-button.button.r {
     overflow: hidden;
@@ -80,6 +85,10 @@
     transition: 0.4s cubic-bezier(0.18, 0.89, 0.35, 1.15) left;
 }
 
+#amplicon-button[data-silico-two-option="1"] .amplicon-pill {
+    width: calc((100% - 0.7em) / 2);
+}
+
 #amplicon-button[data-position="0"] .amplicon-pill {
     left: 0.35em;
 }
@@ -90,6 +99,10 @@
 
 #amplicon-button[data-position="2"] .amplicon-pill {
     left: calc(0.35em + 2 * (100% - 0.7em) / 3);
+}
+
+#amplicon-button[data-silico-two-option="1"][data-position="1"] .amplicon-pill {
+    left: calc(0.35em + (100% - 0.7em) / 2);
 }
 
 #amplicon-button .amplicon-opt {
@@ -113,6 +126,11 @@
     align-items: center;
     justify-content: center;
     transition: color 0.2s ease;
+}
+
+/* SilicoPCR search context: match Reference genome toggle label size (1.3em). */
+#amplicon-button[data-silico-two-option="1"] .amplicon-opt {
+    font-size: 1.3em;
 }
 
 #amplicon-button[data-position="0"] .amplicon-opt[data-idx="0"],

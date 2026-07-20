@@ -3,6 +3,7 @@ nav {
     align-items: center;
     justify-content: center;
     margin-bottom: 0.5em;
+    position: relative;
 }
 
 nav ul {
@@ -46,7 +47,7 @@ nav ul li.page-btn.page-btn--active {
     box-shadow: 0 0.6em 1.1em -0.9em rgba(39, 52, 56, 0.45);
 }
 
-/* BIH logo — top left; top right kept clear for primer overview on SNV index */
+/* BIH logo — top left */
 li.bih-logo-li {
     position: absolute;
     left: 2em;
@@ -64,6 +65,34 @@ li.bih-logo-li {
 li.bih-logo-li a {
     display: block;
     line-height: 0;
+}
+
+/* Documentation — bottom left; warm accent to separate help from app modes */
+li.page-btn.page-btn--docs,
+li.page-btn#nav-documentation {
+    position: fixed;
+    left: 1.1em;
+    bottom: 1.1em;
+    z-index: 9998;
+    margin: 0;
+    font-size: 1.05em;
+    background-color: #f6f0e8;
+    border-color: rgba(138, 90, 40, 0.35);
+    color: #8a5a28;
+    box-shadow: 0 0.7em 1.8em -1.3em rgba(80, 50, 20, 0.4);
+}
+
+li.page-btn.page-btn--docs:hover,
+li.page-btn#nav-documentation:hover {
+    background-color: rgba(138, 90, 40, 0.12);
+}
+
+li.page-btn.page-btn--docs.page-btn--active,
+li.page-btn#nav-documentation.page-btn--active {
+    background-color: #8a5a28;
+    border-color: #8a5a28;
+    color: white;
+    box-shadow: 0 0.6em 1.1em -0.9em rgba(80, 50, 20, 0.45);
 }
 
 .ui-scale-fab {
@@ -99,4 +128,14 @@ li.bih-logo-li a {
 .ui-scale-fab .ui-scale-btn {
     padding: 0.35em 0.75em;
     box-shadow: none;
+}
+
+@media (max-width: 900px) {
+    li.page-btn.page-btn--docs,
+    li.page-btn#nav-documentation {
+        left: 0.8em;
+        bottom: 0.8em;
+        font-size: 0.95em;
+        padding: 0.35em 0.65em;
+    }
 }

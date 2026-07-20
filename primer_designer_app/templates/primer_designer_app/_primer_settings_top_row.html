@@ -17,6 +17,24 @@
         <input type="hidden" id="reference-genome" name="reference-genome" value="{{ form_data.reference_genome|default:'GRCh37' }}" form="settings">
     </div>
 
+    {% if is_silico_pcr %}
+    <div class="settings-container settings-container--amplicon-check">
+        <h2 class="settings-heading-help" title="Search the primary genome assembly FASTA (Genome) or the transcriptome FASTA (Transcriptome) with Dicey. SilicoPCR always runs an amplicon search.">Search context</h2>
+        <div class="UseCaseDiv" style="display:flex; justify-content: center">
+            <div class="button-cover amplicon-button-cover amplicon-button-cover--silico">
+                <div class="button r" id="amplicon-button" data-position="{% if form_data.amplicon_check == 'transcriptome' %}1{% else %}0{% endif %}" data-silico-two-option="1" role="group" aria-label="Search context" tabindex="0">
+                    <div class="knobs amplicon-knobs">
+                        <span class="amplicon-pill"></span>
+                        <button type="button" class="amplicon-opt" data-idx="0" tabindex="-1" aria-pressed="{% if form_data.amplicon_check != 'transcriptome' %}true{% else %}false{% endif %}">Genome</button>
+                        <button type="button" class="amplicon-opt" data-idx="1" tabindex="-1" aria-pressed="{% if form_data.amplicon_check == 'transcriptome' %}true{% else %}false{% endif %}">Transcriptome</button>
+                    </div>
+                    <div class="layer"></div>
+                </div>
+            </div>
+        </div>
+        <input type="hidden" name="amplicon-check" id="amplicon-check-hidden" value="{% if form_data.amplicon_check == 'transcriptome' %}transcriptome{% else %}genome{% endif %}" form="settings">
+    </div>
+    {% else %}
     <div class="settings-container">
         <h2 class="settings-heading-help" title="Primer3 constraints (melting temperature, GC content, homopolymer limits,
         product size) use application defaults for the selected use case until you change them.
@@ -58,6 +76,7 @@
         </label>
     </div>
 
+    {% endif %}
     {% endif %}
 
 </div>

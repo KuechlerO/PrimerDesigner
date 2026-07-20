@@ -1,0 +1,189 @@
+{% load static %}
+{% load custom_filters %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% include "primer_designer_app/header.html" %}
+    <link rel="stylesheet" href="{% static 'primer_designer_app/primer_overview.css' %}">
+    <link rel="stylesheet" href="{% static 'primer_designer_app/indel_results.css' %}">
+    <link rel="stylesheet" href="{% static 'primer_designer_app/amplicon_modal.css' %}">
+</head>
+<body class="body-snv-indels" data-mode="silico-pcr">
+    {% include "primer_designer_app/body_nav.html" %}
+
+    <form method="post" id="settings">
+        {% csrf_token %}
+        {% include "primer_designer_app/_primer_settings_top_row.html" %}
+
+        <div style="max-width: 64em; margin: 0.5em auto 4em; padding: 0.7em 1em; background: rgb(240, 247, 250); border: 1px solid rgb(140, 184, 199); border-radius: var(--radius-md);">
+            <h2 style="margin: 0 0 0.25em;">SilicoPCR</h2>
+            <p style="margin: 0; line-height: 1.45;">
+                Paste an existing forward and reverse primer pair to search for PCR products
+                (Dicey) in the selected reference genome or transcriptome. No new primers are designed.
+            </p>
+        </div>
+
+        <div id="in">
+            <section id="Silico_PCR_Primers">
+                <div class="hover-label">Primer sequences</div>
+                <div class="info-icon">?</div>
+                <div class="info-overlay">
+                    <ul>
+                        <li class="info-li" style="list-style: none;"><strong>Format:</strong></li>
+                        <li class="info-li">Use DNA bases A, C, G, T, or N only (spaces are ignored).</li>
+                        <li class="info-li">Each primer must be 10–60 bp.</li>
+                        <li class="info-li">Choose Genome or Transcriptome under search context.</li>
+                    </ul>
+                </div>
+
+                <div class="dual_input" style="margin-bottom: 0.6em;">
+                    <div class="column">Forward</div>
+                    <div class="second_column" style="width: 80%;">
+                        <input
+                            type="text"
+                            id="forward_primer"
+                            name="forward_primer"
+                            placeholder="e.g. ATGCGATCGATCGATCGATC"
+                            value="{{ form_data.forward_primer|default:'' }}"
+                            autocomplete="off"
+                            spellcheck="false">
+                    </div>
+                </div>
+                <div class="dual_input">
+                    <div class="column">Reverse</div>
+                    <div class="second_column" style="width: 80%;">
+                        <input
+                            type="text"
+                            id="reverse_primer"
+                            name="reverse_primer"
+                            placeholder="e.g. TACGTAGCTAGCTAGCTAGC"
+                            value="{{ form_data.reverse_primer|default:'' }}"
+                            autocomplete="off"
+                            spellcheck="false">
+                    </div>
+                </div>
+            </section>
+        </div>
+    </form>
+
+    <div class="snv-submit-row">
+        <button type="button" class="reset-button" onclick="clearSilicoPcrInputs()">Reset</button>
+        <button type="submit" class="submit-button" form="settings">Run SilicoPCR</button>
+    </div>
+
+    {% include "primer_designer_app/_loading_overlay.html" %}
+
+    {% if show_results and primer_pair %}
+        <main>
+            <div style="display:flex; margin:0.5em; align-items: baseline; gap: 1em; flex-wrap: wrap;">
+                <h1 style="margin:0;">SilicoPCR Results</h1>
+                <p class="hgvs-info" style="margin:0;">
+                    Status:
+                    {% if primer_pair.insilico_status == 'ok' %}
+                        {{ primer_pair.amplicons|length }} amplicon{{ primer_pair.amplicons|length|pluralize }}
+                    {% elif primer_pair.insilico_status == 'ok_empty' %}
+                        No amplicons found
+                    {% elif primer_pair.insilico_status == 'error' %}
+                        Error
+                    {% else %}
+                        {{ primer_pair.insilico_status|default:"—" }}
+                    {% endif %}
+                </p>
+            </div>
+
+            {% if insilico_reference_note %}
+                <p class="amplicon-reference-note" style="margin: 0.5em 1em;">{{ insilico_reference_note }}</p>
+            {% endif %}
+
+            <div class="output-table-div" style="margin: 1em;">
+                <table style="width: 100%;" class="output-table">
+                    <thead>
+                        <tr>
+                            <th class="output-th">Forward</th>
+                            <th class="output-th">Reverse</th>
+                            <th class="output-th">Amplicons</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-family: ui-monospace, monospace; word-break: break-all;">{{ primer_pair.left_seq }}</td>
+                            <td style="font-family: ui-monospace, monospace; word-break: break-all;">{{ primer_pair.right_seq }}</td>
+                            <td class="{{ primer_pair.insilico_status|insilico_cell_class }} {{ primer_pair|insilico_ok_variant_class }}">
+                                {% if primer_pair.insilico_status == 'ok' %}
+                                    {{ primer_pair.amplicons|length }}
+                                    <button type="button" class="amplicon-show-details-btn"
+                                        onclick="document.getElementById('amplicon-modal-silico').showModal()">
+                                        Show details
+                                    </button>
+                                {% elif primer_pair.insilico_status == 'ok_empty' %}
+                                    0 (none found)
+                                {% elif primer_pair.insilico_status == 'error' %}
+                                    Error{% if primer_pair.insilico_error_detail %}: {{ primer_pair.insilico_error_detail }}{% endif %}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            {% if primer_pair.insilico_status == 'ok' and primer_pair.amplicons %}
+                <div class="output-table-div" style="margin: 1em;">
+                    <h2 style="margin: 0 0 0.5em;">Amplicons</h2>
+                    <table class="amplicon-detail-table" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Summary</th>
+                                <th>Length</th>
+                                <th>Penalty-Score</th>
+                                <th>Chrom / Gene &amp; Transcript</th>
+                                <th>ForPos</th>
+                                <th>ForEnd</th>
+                                <th>RevPos</th>
+                                <th>RevEnd</th>
+                                <th>Seq (product)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for amplicon in primer_pair.amplicons %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td class="amplicon-summary-cell">{{ amplicon|extract_amplicon_info }}</td>
+                                    <td>{{ amplicon.Length|default:"" }}</td>
+                                    <td>{{ amplicon.Penalty|penalty_two_decimals }}</td>
+                                    <td class="amplicon-chrom-cell">{{ amplicon|amplicon_chrom_display }}</td>
+                                    <td>{{ amplicon.ForPos|genomic_coord }}</td>
+                                    <td>{{ amplicon.ForEnd|genomic_coord }}</td>
+                                    <td>{{ amplicon.RevPos|genomic_coord }}</td>
+                                    <td>{{ amplicon.RevEnd|genomic_coord }}</td>
+                                    <td class="amplicon-seq-cell" title="{{ amplicon.Seq|default:'' }}">{{ amplicon.Seq|default:""|truncatechars:64 }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% include "primer_designer_app/_amplicon_modal.html" with modal_suffix="silico" amplicons=primer_pair.amplicons modal_title="SilicoPCR amplicons" insilico_reference_note=insilico_reference_note %}
+            {% endif %}
+        </main>
+    {% endif %}
+
+    <script src="{% static 'primer_designer_app/primer_params_utils.js' %}"></script>
+    <script>
+        function clearSilicoPcrInputs() {
+            const fwd = document.getElementById("forward_primer");
+            const rev = document.getElementById("reverse_primer");
+            if (fwd) fwd.value = "";
+            if (rev) rev.value = "";
+            if (typeof setAmpliconCheck === "function") {
+                setAmpliconCheck("genome");
+            } else {
+                const hidden = document.getElementById("amplicon-check-hidden");
+                if (hidden) hidden.value = "genome";
+            }
+        }
+    </script>
+</body>
+</html>

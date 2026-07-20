@@ -18,7 +18,10 @@
         <li class="page-btn" id="nav-allele-specific">
             <a class="page-btn-link" href="{% url 'primer_designer_app:allele_specific_index' %}">Allele-specific PCR</a>
         </li>
-        <li class="page-btn" id="nav-documentation">
+        <li class="page-btn" id="nav-silico-pcr">
+            <a class="page-btn-link" href="{% url 'primer_designer_app:silico_pcr_index' %}">SilicoPCR</a>
+        </li>
+        <li class="page-btn page-btn--docs" id="nav-documentation">
             <a class="page-btn-link" href="{% url 'primer_designer_app:documentation' %}">Documentation</a>
         </li>
     </ul>
@@ -33,10 +36,11 @@
         const snv = document.getElementById("nav-snv-indel");
         const sv = document.getElementById("nav-structural-variants");
         const aspcr = document.getElementById("nav-allele-specific");
+        const silico = document.getElementById("nav-silico-pcr");
         const docs = document.getElementById("nav-documentation");
 
         function setActive(el) {
-            [snv, sv, aspcr, docs].filter(Boolean).forEach((n) => n.classList.remove("page-btn--active"));
+            [snv, sv, aspcr, silico, docs].filter(Boolean).forEach((n) => n.classList.remove("page-btn--active"));
             if (el) el.classList.add("page-btn--active");
         }
 
@@ -44,6 +48,8 @@
             setActive(sv);
         } else if (path.includes("allele-specific")) {
             setActive(aspcr);
+        } else if (path.includes("silico-pcr")) {
+            setActive(silico);
         } else if (path.includes("documentation")) {
             setActive(docs);
         } else {
