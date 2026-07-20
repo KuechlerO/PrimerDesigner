@@ -14,48 +14,6 @@ def add_snp_awareness_columns(apps, schema_editor):
     settings_cols = _table_columns(schema_editor, settings_table)
     summary_cols = _table_columns(schema_editor, summary_table)
 
-    # #region agent log
-    try:
-        import json
-        import time
-        from pathlib import Path
-
-        for log_path in (
-            Path("/app/django_data/debug-migrate.ndjson"),
-            Path(".cursor/debug-5ef680.log"),
-        ):
-            try:
-                log_path.parent.mkdir(parents=True, exist_ok=True)
-                with log_path.open("a") as fh:
-                    fh.write(
-                        json.dumps(
-                            {
-                                "sessionId": "5ef680",
-                                "runId": "migrate-0005",
-                                "hypothesisId": "H4",
-                                "location": "0005_snp_awareness.py:add_snp_awareness_columns",
-                                "message": "Idempotent 0005 column check",
-                                "data": {
-                                    "has_check_known_snps": "check_known_snps"
-                                    in settings_cols,
-                                    "has_snp_analysis_data": "snp_analysis_data"
-                                    in summary_cols,
-                                    "will_add_check_known_snps": "check_known_snps"
-                                    not in settings_cols,
-                                    "will_add_snp_analysis_data": "snp_analysis_data"
-                                    not in summary_cols,
-                                },
-                                "timestamp": int(time.time() * 1000),
-                            }
-                        )
-                        + "\n"
-                    )
-            except OSError:
-                pass
-    except Exception:
-        pass
-    # #endregion
-
     if "check_known_snps" not in settings_cols:
         schema_editor.execute(
             "ALTER TABLE %s ADD COLUMN check_known_snps bool NOT NULL DEFAULT 0"
