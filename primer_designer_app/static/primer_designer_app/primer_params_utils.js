@@ -72,11 +72,30 @@ function syncAssayPresetButtonHighlight() {
 
 const AMP_CHECK_VALUES = ["none", "genome", "transcriptome"];
 const AMP_CHECK_LABELS = ["None", "Genome", "Transcriptome"];
+const AMP_CHECK_VALUES_SILICO = ["genome", "transcriptome"];
+const AMP_CHECK_LABELS_SILICO = ["Genome", "Transcriptome"];
+
+function getAmpliconCheckValues() {
+    const root = document.getElementById("amplicon-button");
+    if (root && root.dataset.silicoTwoOption === "1") {
+        return AMP_CHECK_VALUES_SILICO;
+    }
+    return AMP_CHECK_VALUES;
+}
+
+function getAmpliconCheckLabels() {
+    const root = document.getElementById("amplicon-button");
+    if (root && root.dataset.silicoTwoOption === "1") {
+        return AMP_CHECK_LABELS_SILICO;
+    }
+    return AMP_CHECK_LABELS;
+}
 
 // Update pressed state for the segmented control buttons.
 function updateAmpliconCheckAria() {
     const root = document.getElementById("amplicon-button");
     if (!root) return; // exit if no amplicon button found
+    const labels = getAmpliconCheckLabels();
     const i = parseInt(root.dataset.position, 10);
     const idx = Number.isNaN(i) ? 0 : i;
     root.querySelectorAll(".amplicon-opt").forEach((btn) => {
@@ -88,19 +107,20 @@ function updateAmpliconCheckAria() {
     // Keep a readable label for assistive tech on the group.
     root.setAttribute(
         "aria-label",
-        `Amplicon check: ${AMP_CHECK_LABELS[idx] || "None"}`
+        `Amplicon check: ${labels[idx] || labels[0]}`
     );
 }
 
 // Set the amplicon check value and update the aria-valuenow
 // and aria-valuetext attributes of the amplicon button
 function setAmpliconCheck(value) {
-    const idx = AMP_CHECK_VALUES.indexOf(value);
+    const values = getAmpliconCheckValues();
+    const idx = values.indexOf(value);
     const i = idx >= 0 ? idx : 0;
     const root = document.getElementById("amplicon-button");
     const hidden = document.getElementById("amplicon-check-hidden");
     if (root) root.dataset.position = String(i);
-    if (hidden) hidden.value = AMP_CHECK_VALUES[i];
+    if (hidden) hidden.value = values[i];
     updateAmpliconCheckAria();
     document.dispatchEvent(new Event("ampliconcheckchange"));
 }
@@ -109,12 +129,13 @@ function setAmpliconCheck(value) {
 function initAmpliconToggle() {
     const root = document.getElementById("amplicon-button");
     if (!root) return;
+    const values = getAmpliconCheckValues();
     root.querySelectorAll(".amplicon-opt").forEach((btn) => {
         btn.addEventListener("click", (e) => {
             e.preventDefault();
             const idx = parseInt(btn.dataset.idx, 10);
-            if (!Number.isNaN(idx) && idx >= 0 && idx < AMP_CHECK_VALUES.length) {
-                setAmpliconCheck(AMP_CHECK_VALUES[idx]);
+            if (!Number.isNaN(idx) && idx >= 0 && idx < values.length) {
+                setAmpliconCheck(values[idx]);
             }
         });
     });
@@ -122,10 +143,10 @@ function initAmpliconToggle() {
         const cur = parseInt(root.dataset.position, 10) || 0;
         if (e.key === "ArrowLeft" && cur > 0) {
             e.preventDefault();
-            setAmpliconCheck(AMP_CHECK_VALUES[cur - 1]);
-        } else if (e.key === "ArrowRight" && cur < AMP_CHECK_VALUES.length - 1) {
+            setAmpliconCheck(values[cur - 1]);
+        } else if (e.key === "ArrowRight" && cur < values.length - 1) {
             e.preventDefault();
-            setAmpliconCheck(AMP_CHECK_VALUES[cur + 1]);
+            setAmpliconCheck(values[cur + 1]);
         }
     });
 }
@@ -140,9 +161,10 @@ function syncAllTopSettingsFromUi() {
     // user edits before submit.
     const root = document.getElementById("amplicon-button");
     if (root) {
+        const values = getAmpliconCheckValues();
         const pos = parseInt(root.dataset.position, 10);
-        if (!Number.isNaN(pos) && pos >= 0 && pos < AMP_CHECK_VALUES.length) {
-            setAmpliconCheck(AMP_CHECK_VALUES[pos]);
+        if (!Number.isNaN(pos) && pos >= 0 && pos < values.length) {
+            setAmpliconCheck(values[pos]);
         }
     }
 }
@@ -211,9 +233,13 @@ function openPrimerCustomDialog() {
 function initAmpliconCheckFromHidden() {
     const hidden = document.getElementById("amplicon-check-hidden");
     if (!hidden || !document.getElementById("amplicon-button")) return;
-    const v = (hidden.value || "none").trim().toLowerCase();
-    if (AMP_CHECK_VALUES.includes(v)) {
+    const values = getAmpliconCheckValues();
+    const fallback = values[0] || "none";
+    const v = (hidden.value || fallback).trim().toLowerCase();
+    if (values.includes(v)) {
         setAmpliconCheck(v);
+    } else {
+        setAmpliconCheck(fallback);
     }
 }
 

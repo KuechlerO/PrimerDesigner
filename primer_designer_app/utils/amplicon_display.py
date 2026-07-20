@@ -1,27 +1,27 @@
 """Shared formatting for in-silico amplicons (UI templates and Word reports)."""
 
+from primer_designer_app.utils.display_utils import format_genomic_range
+
 
 def _chrom_parts(amplicon_dict: dict) -> list[str]:
-    chrom = amplicon_dict.get('Chrom') or ''
-    return chrom.split('|')
+    chrom = amplicon_dict.get("Chrom") or ""
+    return chrom.split("|")
 
 
 def extract_amplicon_summary(amplicon_dict: dict) -> str:
     """Same semantics as template filter extract_amplicon_info."""
     parts = _chrom_parts(amplicon_dict)
+    pos_range = format_genomic_range(
+        amplicon_dict.get("ForPos"),
+        amplicon_dict.get("RevEnd"),
+    )
     if len(parts) == 1:
-        return (
-            f"{amplicon_dict['Chrom']}: {amplicon_dict['ForPos']} - "
-            f"{amplicon_dict['RevEnd']}"
-        )
+        return f"{amplicon_dict['Chrom']}: {pos_range}"
     if len(parts) > 1:
         transcript_id = parts[0]
         gene_symbol = parts[-4]
-        return (
-            f"{gene_symbol} ({transcript_id}): {amplicon_dict['ForPos']} - "
-            f"{amplicon_dict['RevEnd']}"
-        )
-    return 'Invalid amplicon information'
+        return f"{gene_symbol} ({transcript_id}): {pos_range}"
+    return "Invalid amplicon information"
 
 
 def amplicon_chrom_label(amplicon_dict: dict) -> str:
@@ -33,12 +33,12 @@ def amplicon_chrom_label(amplicon_dict: dict) -> str:
         transcript_id = parts[0]
         gene_symbol = parts[-4]
         return f"{gene_symbol} ({transcript_id})"
-    return ''
+    return ""
 
 
 def format_penalty_score(value) -> str:
-    if value is None or value == '':
-        return ''
+    if value is None or value == "":
+        return ""
     try:
         return f"{float(value):.2f}"
     except (TypeError, ValueError):
@@ -47,8 +47,8 @@ def format_penalty_score(value) -> str:
 
 def truncate_product_seq(seq, max_len: int = 64) -> str:
     if seq is None:
-        return ''
+        return ""
     s = str(seq)
     if len(s) <= max_len:
         return s
-    return s[: max_len - 1] + '…'
+    return s[: max_len - 1] + "…"

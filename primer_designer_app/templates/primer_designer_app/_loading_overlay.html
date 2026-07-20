@@ -12,6 +12,9 @@
     (function () {
         const overlay = document.getElementById("loading-overlay");
         const stepsList = document.getElementById("loader-steps");
+        const titleEl = document.getElementById("loader-title");
+        const leadEl = overlay ? overlay.querySelector(".loader-lead") : null;
+        const isSilicoPcr = Boolean(document.body && document.body.dataset.mode === "silico-pcr");
 
         function addStep(text) {
             const item = document.createElement("li");
@@ -22,6 +25,23 @@
 
         function populateLoaderSteps() {
             stepsList.innerHTML = "";
+            if (isSilicoPcr) {
+                if (titleEl) titleEl.textContent = "Running SilicoPCR";
+                if (leadEl) leadEl.textContent = "Searching for amplicons with your primer pair.";
+                const ampliconHidden = document.getElementById("amplicon-check-hidden");
+                const ampliconMode = ampliconHidden ? ampliconHidden.value : "genome";
+                const scope =
+                    ampliconMode === "transcriptome" ? "transcriptome" : "genome";
+                addStep(
+                    "Running in-silico amplicon check (" +
+                        scope +
+                        ") — can take up to 30 s"
+                );
+                return;
+            }
+
+            if (titleEl) titleEl.textContent = "Designing your primers";
+            if (leadEl) leadEl.textContent = "Finding optimal primer pairs for your variant.";
             addStep("Running Primer3…");
 
             const snpCheck = document.getElementById("snp-check");

@@ -10,6 +10,7 @@ from .exceptions import (
     ExonExonJunctionError,
     InvalidReferenceSequenceError,
     NoPrimerPairsFoundError,
+    InvalidInputError,
 )
 
 
@@ -101,6 +102,19 @@ class PrimerDesignerErrorMiddleware:
                         "Relax primer constraints (length, Tm, GC), widen the product size "
                         "range, or increase target padding in the primer settings."
                     ),
+                    "status_code": 400,
+                },
+                status=400,
+            )
+
+        if isinstance(exception, InvalidInputError):
+            return render(
+                request,
+                "primer_designer_app/error_handling.html",
+                {
+                    "title": "Invalid input",
+                    "message": str(exception),
+                    "hint": "Please review the highlighted fields and try again.",
                     "status_code": 400,
                 },
                 status=400,

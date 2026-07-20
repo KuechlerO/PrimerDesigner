@@ -12,6 +12,9 @@ from primer_designer_app.utils.variant_info import (
 from primer_designer_app.utils.display_utils import (
     REPORT_DISPLAY_FLANK,
     compute_report_display_bounds,
+    format_genomic_coord,
+    format_genomic_range,
+    intervals_overlap,
     shift_template_hits_for_display,
 )
 from primer_designer_app.utils.hgvs_display import (
@@ -73,7 +76,7 @@ def _set_run_highlight(run, color: Optional[HighlightColor]) -> None:
 
 
 def _intervals_overlap(a0: int, a1: int, b0: int, b1: int) -> bool:
-    return a0 <= b1 and b0 <= a1
+    return intervals_overlap(a0, a1, b0, b1)
 
 
 def _apply_highlight_range(
@@ -541,10 +544,10 @@ def add_amplicon_detail_table_to_doc(doc, primer_pair: PrimerPairResult, prim_se
             str(amp.get("Length", "") or ""),
             format_penalty_score(amp.get("Penalty")),
             amplicon_chrom_label(amp),
-            str(amp.get("ForPos", "") or ""),
-            str(amp.get("ForEnd", "") or ""),
-            str(amp.get("RevPos", "") or ""),
-            str(amp.get("RevEnd", "") or ""),
+            format_genomic_coord(amp.get("ForPos", "") or ""),
+            format_genomic_coord(amp.get("ForEnd", "") or ""),
+            format_genomic_coord(amp.get("RevPos", "") or ""),
+            format_genomic_coord(amp.get("RevEnd", "") or ""),
             truncate_product_seq(amp.get("Seq")),
         ]
         for j, val in enumerate(values):
@@ -772,7 +775,7 @@ def create_primer_report(
             cells = table.rows[i + 1].cells
             values = [
                 row.get("id", ""),
-                f"chr{row.get('chrom', '')}:{row.get('pos', '')}",
+                f"chr{row.get('chrom', '')}:{format_genomic_coord(row.get('pos', ''))}",
                 f"{row.get('ref', '')} → {row.get('alt', '')}",
             ]
             for j, val in enumerate(values):
@@ -786,7 +789,8 @@ def create_primer_report(
             region = snp_analysis["region"]
             doc.add_paragraph(
                 f"Design region: chr{region.get('chromosome')}:"
-                f"{region.get('start')}-{region.get('end')}",
+                f"{format_genomic_coord(region.get('start'))}-"
+                f"{format_genomic_coord(region.get('end'))}",
                 style="List Bullet",
             )
         pair_status = getattr(primer_pair, "snp_status", None)
@@ -808,7 +812,11 @@ def create_primer_report(
                 maf_str = f"{maf_val:.4f}" if maf_val is not None else ""
                 values = [
                     hit.get("id", ""),
-                    f"{hit.get('genomic_start')}–{hit.get('genomic_end')}",
+                    format_genomic_range(
+                        hit.get("genomic_start"),
+                        hit.get("genomic_end"),
+                        sep="–",
+                    ),
                     hit.get("alleles", ""),
                     maf_str,
                     hit.get("primer", "-- no primer overlap --"),
@@ -1001,8 +1009,12 @@ def _add_sv_primer_pairs_table(doc: Document, primer_rows: list) -> None:
             str(pair.product_size),
             tm_text,
             gc_text,
-            f"{genomic['forward_start']}–{genomic['forward_end']}",
-            f"{genomic['reverse_start']}–{genomic['reverse_end']}",
+            format_genomic_range(
+                genomic["forward_start"], genomic["forward_end"], sep="–"
+            ),
+            format_genomic_range(
+                genomic["reverse_start"], genomic["reverse_end"], sep="–"
+            ),
         ]
         for j, val in enumerate(values):
             _set_cell_run(table.rows[i + 1].cells[j], val, size_pt=8)
@@ -1027,17 +1039,17 @@ def create_structural_variant_primer_report(
     end_pos = sv_info.get("end_position", "")
     _add_bullet_field(doc, "Reference genome", sv_info.get("reference_genome", ""))
     _add_bullet_field(doc, "Chromosome", f"chr{chromosome}")
-    _add_bullet_field(doc, "Start position", str(start_pos))
-    _add_bullet_field(doc, "End position", str(end_pos))
+    _add_bullet_field(doc, "Start position", format_genomic_coord(start_pos))
+    _add_bullet_field(doc, "End position", format_genomic_coord(end_pos))
     if start_pos and end_pos:
         span = int(end_pos) - int(start_pos) + 1
-        _add_bullet_field(doc, "Span", f"{span} bp")
+        _add_bullet_field(doc, "Span", f"{format_genomic_coord(span)} bp")
 
     doc.add_heading("Design windows", level=2)
     for window in sv_info.get("windows", []):
         doc.add_paragraph(
             f"{window.get('label', '').replace('_', ' ').title()}: "
-            f"{window.get('window_start_genomic')}–{window.get('window_end_genomic')} "
+            f"{format_genomic_range(window.get('window_start_genomic'), window.get('window_end_genomic'), sep='–')} "
             f"(chr{chromosome})",
             style="List Bullet",
         )
@@ -1076,7 +1088,7 @@ def create_structural_variant_primer_report(
         doc.add_heading(window_title, level=2)
         doc.add_paragraph(
             f"Window coordinates (chr{chromosome}): "
-            f"{window['window_start_genomic']}–{window['window_end_genomic']}"
+            f"{format_genomic_range(window['window_start_genomic'], window['window_end_genomic'], sep='–')}"
         )
         _add_sv_primer_pairs_table(doc, window_result.get("primer_rows", []))
         doc.add_paragraph()

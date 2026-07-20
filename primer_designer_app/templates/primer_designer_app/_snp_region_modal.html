@@ -1,3 +1,4 @@
+{% load custom_filters %}
 <dialog id="snp-region-modal" class="amplicon-dialog">
     <div class="amplicon-dialog-panel">
         <h3 class="amplicon-dialog-title">Known variants in design region</h3>
@@ -7,7 +8,7 @@
         </p>
         {% if snp_analysis.region %}
             <p class="amplicon-reference-note">
-                chr{{ snp_analysis.region.chromosome }}:{{ snp_analysis.region.start }}-{{ snp_analysis.region.end }}
+                chr{{ snp_analysis.region.chromosome }}:{{ snp_analysis.region.start|genomic_coord }}-{{ snp_analysis.region.end|genomic_coord }}
             </p>
         {% endif %}
         {% if snp_analysis.hits %}
@@ -26,7 +27,7 @@
                         {% for hit in snp_analysis.hits %}
                             <tr>
                                 <td>{{ hit.id }}</td>
-                                <td>{{ hit.genomic_start }}–{{ hit.genomic_end }}</td>
+                                <td>{{ hit.genomic_start|genomic_range:hit.genomic_end }}</td>
                                 <td>{{ hit.alleles }}</td>
                                 <td>{% if hit.maf %}{{ hit.maf|floatformat:4 }}{% else %}—{% endif %}</td>
                                 <td>{{ hit.consequence_type }}</td>

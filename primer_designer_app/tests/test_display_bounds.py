@@ -7,6 +7,8 @@ from primer_designer_app.utils.display_utils import (
     REPORT_DISPLAY_FLANK,
     compute_display_bounds,
     compute_report_display_bounds,
+    format_genomic_coord,
+    format_genomic_range,
 )
 
 
@@ -43,6 +45,25 @@ class DisplayBoundsTests(unittest.TestCase):
         self.assertGreater(rep_end, ui_end)
         self.assertGreaterEqual(
             ui_start - rep_start, REPORT_DISPLAY_FLANK - DISPLAY_FLANK
+        )
+
+
+class GenomicCoordFormatTests(unittest.TestCase):
+    def test_period_thousands_separator(self):
+        self.assertEqual(format_genomic_coord(19997582), "19.997.582")
+        self.assertEqual(format_genomic_coord("19997601"), "19.997.601")
+        self.assertEqual(format_genomic_coord(42), "42")
+        self.assertEqual(format_genomic_coord(None), "")
+        self.assertEqual(format_genomic_coord(""), "")
+
+    def test_range_formatting(self):
+        self.assertEqual(
+            format_genomic_range(19997582, 19997601),
+            "19.997.582 - 19.997.601",
+        )
+        self.assertEqual(
+            format_genomic_range(19997582, 19997601, sep="–"),
+            "19.997.582–19.997.601",
         )
 
 

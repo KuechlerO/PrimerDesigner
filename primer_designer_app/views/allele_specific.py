@@ -5,12 +5,11 @@ import logging
 
 from primer_designer_app.models import DesignResultsSummary
 from primer_designer_app.utils.doc_utils import create_primer_report
-from primer_designer_app.utils.primer_utils import PrimerSearchResults
-from primer_designer_app.exceptions import NoPrimerPairsFoundError
+from primer_designer_app.exceptions import InvalidInputError, NoPrimerPairsFoundError
 from primer_designer_app.views.view_utils import (
-    _get_post,
     build_form_data_from_request,
     build_primer_settings,
+    download_docx_report,
     handle_allele_specific_input,
 )
 
@@ -45,14 +44,14 @@ def primers_overview(request, uuid=None):
 
     try:
         new_uuid = handle_allele_specific_input(request, primer_settings_obj)
-    except Exception as exc:
-        return HttpResponse(str(exc), status=400)
+    except ValueError as exc:
+        raise InvalidInputError(str(exc)) from exc
 
     designResults_obj = DesignResultsSummary.objects.get(id=new_uuid)
     var_info = designResults_obj.get_variant_info()
     as_res = designResults_obj.get_primer_search_results()
     if not isinstance(as_res, dict) or as_res.get("design_type") != "allele_specific":
-        return HttpResponse("AS-PCR design data missing or invalid.", status=500)
+        raise InvalidInputError("AS-PCR design data missing or invalid.")
 
     wt_results = as_res["wt"]
     mut_results = as_res["mut"]
@@ -124,23 +123,12 @@ def primers_overview(request, uuid=None):
     )
 
 
-def primer_details(request, uuid):
-    return HttpResponse(
-        "Allele-specific PCR details view not implemented yet.", status=501
-    )
-
-
 def generate_report(request, uuid, selected_primer_index: int):
     """
     View to generate the final report after the user has decided on a primer pair.
     """
     designResults_obj = DesignResultsSummary.objects.get(id=uuid)
     doc_buffer = create_primer_report(designResults_obj, selected_primer_index)
-    response = HttpResponse(
-        doc_buffer,
-        content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    return download_docx_report(
+        doc_buffer, f"report_{uuid}_{selected_primer_index}.docx"
     )
-    response["Content-Disposition"] = (
-        f"attachment; filename=report_{uuid}_{selected_primer_index}.docx"
-    )
-    return response

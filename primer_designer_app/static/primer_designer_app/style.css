@@ -365,6 +365,22 @@ input#sv_start_position, input#sv_end_position {
     padding-top: 0.4em;
 }
 
+/* SilicoPCR primer fields: no inner underline (dual_input already provides the box). */
+input#forward_primer, input#reverse_primer {
+    width: 100%;
+    border: none;
+    outline: none;
+    box-sizing: border-box;
+    padding: 0.4em;
+    font-family: var(--font-main);
+    /* Match Reference genome toggle labels (#genome-button .knobs → 1.3em). */
+    font-size: 1.3em;
+}
+
+#Silico_PCR_Primers div.column {
+    font-size: 1.3em;
+}
+
 input#Position, input#genom_pos {
     width: 65%;
     border: none;
@@ -467,7 +483,7 @@ select#primer-settings:hover {
     font-size: 1.1em;
 }
 
-#Identifier, #Genomic_Position, #Sequence, #Structural_Variant {
+#Identifier, #Genomic_Position, #Sequence, #Structural_Variant, #Silico_PCR_Primers {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -1254,7 +1270,7 @@ p.output-legend {
         grid-template-columns: 1fr;
     }
 
-    #Identifier, #Genomic_Position, #Sequence, #Structural_Variant {
+    #Identifier, #Genomic_Position, #Sequence, #Structural_Variant, #Silico_PCR_Primers {
         width: 100%;
     }
 

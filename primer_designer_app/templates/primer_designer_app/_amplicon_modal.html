@@ -38,10 +38,10 @@
                             <td>{{ amplicon.Length|default:"" }}</td>
                             <td>{{ amplicon.Penalty|penalty_two_decimals }}</td>
                             <td class="amplicon-chrom-cell">{{ amplicon|amplicon_chrom_display }}</td>
-                            <td>{{ amplicon.ForPos|default:"" }}</td>
-                            <td>{{ amplicon.ForEnd|default:"" }}</td>
-                            <td>{{ amplicon.RevPos|default:"" }}</td>
-                            <td>{{ amplicon.RevEnd|default:"" }}</td>
+                            <td>{{ amplicon.ForPos|genomic_coord }}</td>
+                            <td>{{ amplicon.ForEnd|genomic_coord }}</td>
+                            <td>{{ amplicon.RevPos|genomic_coord }}</td>
+                            <td>{{ amplicon.RevEnd|genomic_coord }}</td>
                             <td class="amplicon-seq-cell" title="{{ amplicon.Seq|default:'' }}">{{ amplicon.Seq|default:""|truncatechars:64 }}</td>
                         </tr>
                     {% endfor %}

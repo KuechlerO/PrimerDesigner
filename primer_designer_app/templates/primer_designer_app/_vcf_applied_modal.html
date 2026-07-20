@@ -1,3 +1,4 @@
+{% load custom_filters %}
 <dialog id="vcf-applied-modal" class="amplicon-dialog">
     <div class="amplicon-dialog-panel">
         <h3 class="amplicon-dialog-title">Variants spiked from VCF</h3>
@@ -17,7 +18,7 @@
                     {% for v in result_sum_obj.variant_info_data.vcf_applied_variants %}
                         <tr>
                             <td>{{ v.id }}</td>
-                            <td>chr{{ v.chrom }}:{{ v.pos }}</td>
+                            <td>chr{{ v.chrom }}:{{ v.pos|genomic_coord }}</td>
                             <td>{{ v.ref }} → {{ v.alt }}</td>
                         </tr>
                     {% endfor %}

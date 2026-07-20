@@ -1,5 +1,15 @@
 *.DS_Store
 staticfiles
+staticfiles.tar.gz
+*.tar.gz
+codebase_visualization.html
+
+# Large reference / index blobs (keep out of git; use REFERENCE_DATA_DIR)
+reference_data/*.fa.gz
+reference_data/*.fm9
+reference_data/*.fm9_check
+reference_data/*.fai
+reference_data/*.gzi
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

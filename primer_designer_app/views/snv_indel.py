@@ -16,14 +16,16 @@ from primer_designer_app.utils.insilico_analysis import insilico_reference_descr
 from primer_designer_app.utils.design_validation import validate_primer_search_results
 from primer_designer_app.utils.variant_info import SequenceVariantInfo
 from primer_designer_app.views.view_utils import (
-    _get_post,
     build_form_data_from_request,
     build_primer_settings,
+    download_docx_report,
     handle_transcript_input,
     handle_genomic_snv,
     handle_genomic_indel,
     handle_sequence_input,
+    resolve_input_type,
 )
+from primer_designer_app.exceptions import InvalidInputError
 
 logger = logging.getLogger(__name__)
 
@@ -51,31 +53,26 @@ def primers_overview(request, uuid=None):
         primer_settings_obj = build_primer_settings(request)
 
         try:
-            # --- Handle transcript ID input first ---
-            if _get_post(request, "Transcript-ID", None):
+            input_type = resolve_input_type(request)
+            if input_type in ("transcript_snv", "transcript_indel"):
                 new_uuid = handle_transcript_input(request, primer_settings_obj)
-
-            # --- Handle genomic input next ---
-            # SNV (genomic) path
-            elif _get_post(request, "genom_pos", None):
+            elif input_type == "genomic_snv":
                 new_uuid = handle_genomic_snv(request, primer_settings_obj)
-
-            elif all(
-                _get_post(request, input, None)
-                for input in ["IndelChrom", "IndelStart", "IndelEnd", "IndelIns"]
-            ):
+            elif input_type == "genomic_indel":
                 new_uuid = handle_genomic_indel(request, primer_settings_obj)
-
-            # --- Handle sequence input last ---
-            elif _get_post(request, "sequence", None):
+            elif input_type == "sequence_input":
                 new_uuid = handle_sequence_input(request, primer_settings_obj)
+            elif input_type == "transcript_incomplete":
+                raise InvalidInputError(
+                    "The transcript input is incomplete or invalid."
+                )
             else:
-                return HttpResponse(
-                    "Invalid input: No recognizable input field found.", status=400
+                raise InvalidInputError(
+                    "Invalid input: No recognizable input field found."
                 )
         except ValueError as exc:
             logger.warning("Invalid primer design input: %s", exc)
-            return HttpResponse(str(exc), status=400)
+            raise InvalidInputError(str(exc)) from exc
 
         designResults_obj = DesignResultsSummary.objects.get(id=new_uuid)
 
@@ -241,11 +238,6 @@ def generate_report(request, uuid, selected_primer_index):
     """
     designResults_obj = DesignResultsSummary.objects.get(id=uuid)
     doc_buffer = create_primer_report(designResults_obj, selected_primer_index)
-    response = HttpResponse(
-        doc_buffer,
-        content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    return download_docx_report(
+        doc_buffer, f"report_{uuid}_{selected_primer_index}.docx"
     )
-    response["Content-Disposition"] = (
-        f"attachment; filename=report_{uuid}_{selected_primer_index}.docx"
-    )
-    return response

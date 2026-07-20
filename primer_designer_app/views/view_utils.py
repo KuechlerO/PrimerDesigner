@@ -3,6 +3,7 @@ import logging
 from enum import Enum
 from typing import Tuple
 
+from django.http import HttpResponse
 
 from primer_designer_app.models import PrimerSettingsModel, DesignResultsSummary
 from primer_designer_app.utils.variant_info import (
@@ -26,9 +27,48 @@ from primer_designer_app.exceptions import (
     InvalidTranscriptIdError,
     InvalidTranscriptInputError,
     ExonExonJunctionError,
+    InvalidInputError,
 )
 
 LOGGER = logging.getLogger(__name__)
+
+DOCX_CONTENT_TYPE = (
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+)
+
+
+def download_docx_report(doc_buffer, filename: str) -> HttpResponse:
+    """Wrap an in-memory DOCX buffer as a file-download HttpResponse."""
+    response = HttpResponse(doc_buffer, content_type=DOCX_CONTENT_TYPE)
+    response["Content-Disposition"] = f"attachment; filename={filename}"
+    return response
+
+
+def resolve_input_type(request) -> str:
+    """
+    Classify SNV/Indel or AS-PCR POST input into a canonical type string.
+
+    Returns one of: transcript_snv, transcript_indel, genomic_snv, genomic_indel,
+    sequence_input, transcript_incomplete, unknown.
+    """
+    if _get_post(request, "Transcript-ID", None):
+        if _get_post(request, "Position", ""):
+            return "transcript_snv"
+        if _get_post(request, "IdIndelStart", "") and _get_post(
+            request, "IdIndelEnd", ""
+        ):
+            return "transcript_indel"
+        return "transcript_incomplete"
+    if _get_post(request, "genom_pos", None):
+        return "genomic_snv"
+    if all(
+        _get_post(request, field, None)
+        for field in ["IndelChrom", "IndelStart", "IndelEnd", "IndelIns"]
+    ):
+        return "genomic_indel"
+    if _get_post(request, "sequence", None):
+        return "sequence_input"
+    return "unknown"
 
 
 def _process_genome_pos_snv_input(input_pos: str, end_offset=0) -> dict:
@@ -334,24 +374,14 @@ def handle_allele_specific_input(request, primer_settings: PrimerSettingsModel):
     """
     from primer_designer_app.utils.primer_utils import primer3_design_allele_specific
 
-    # Determine input type using the same rules as SNV/Indel index
-    if _get_post(request, "Transcript-ID", None):
-        if _get_post(request, "Position", ""):
-            variantInfo = _build_variant_info(request, "transcript_snv")
-        elif _get_post(request, "IdIndelStart", "") and _get_post(
-            request, "IdIndelEnd", ""
-        ):
-            variantInfo = _build_variant_info(request, "transcript_indel")
-        else:
-            raise InvalidTranscriptInputError(
-                "The transcript input is incomplete or invalid."
-            )
-    elif _get_post(request, "genom_pos", None):
-        variantInfo = _build_variant_info(request, "genomic_snv")
-    elif _get_post(request, "IndelChrom", None):
-        variantInfo = _build_variant_info(request, "genomic_indel")
-    else:
-        variantInfo = _build_variant_info(request, "sequence_input")
+    input_type = resolve_input_type(request)
+    if input_type == "transcript_incomplete":
+        raise InvalidTranscriptInputError(
+            "The transcript input is incomplete or invalid."
+        )
+    if input_type == "unknown":
+        raise InvalidInputError("Invalid input: No recognizable input field found.")
+    variantInfo = _build_variant_info(request, input_type)
 
     primer_settings.set_target(variantInfo.relative_pos)
     primer_settings.do_insilico_pcr = False

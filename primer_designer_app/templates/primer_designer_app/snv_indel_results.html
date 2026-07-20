@@ -167,7 +167,7 @@
                                     {% for hit in pair_res.snp_conflicts %}
                                         <tr>
                                             <td>{{ hit.id }}</td>
-                                            <td>{{ hit.genomic_start }}–{{ hit.genomic_end }}</td>
+                                            <td>{{ hit.genomic_start|genomic_range:hit.genomic_end }}</td>
                                             <td>{{ hit.alleles }}</td>
                                             <td>{% if hit.maf %}{{ hit.maf|floatformat:4 }}{% else %}—{% endif %}</td>
                                             <td>{{ hit.primer }}</td>

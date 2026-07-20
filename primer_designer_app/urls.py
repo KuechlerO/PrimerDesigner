@@ -4,6 +4,7 @@ from .views import snv_indel
 from .views import structural_variant
 from .views import documentation_view
 from .views import allele_specific
+from .views import silico_pcr
 
 app_name = "primer_designer_app"
 
@@ -59,15 +60,12 @@ urlpatterns = [
         name="allele_specific_primers_overview_with_uuid",
     ),
     path(
-        "allele-specific/primer-details/<uuid:uuid>/",
-        allele_specific.primer_details,
-        name="allele_specific_primer_details",
-    ),
-    path(
         "allele-specific/generate-report/<uuid:uuid>/<int:selected_primer_index>/",
         allele_specific.generate_report,
         name="allele_specific_generate_report",
     ),
+    # ---- SilicoPCR (user-supplied primers → Dicey) ----
+    path("silico-pcr/", silico_pcr.index, name="silico_pcr_index"),
     # Documentation
     path(
         "documentation/",

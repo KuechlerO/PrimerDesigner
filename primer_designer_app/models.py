@@ -103,12 +103,6 @@ class DesignResultsSummary(models.Model):
 
         # Save references to the related objects
         self.primer_settings = prim_settings
-        self.variant_info_data = (
-            var_info.__dict__
-        )  # Serialize AllelicVariantInfo to a dictionary
-        self.primer_search_results = (
-            prim_search_res.__dict__
-        )  # Serialize PrimerSearchResults to a dictionary
 
         # Serialize AllelicVariantInfo to a dictionary and convert non-serializable fields
         variant_info_dict = var_info.__dict__.copy()
