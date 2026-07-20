@@ -71,6 +71,7 @@
     line-height: 1.45;
     color: #444;
     max-width: 55em;
+    text-align: left;
 }
 
 .amplicon-dialog-scroll {

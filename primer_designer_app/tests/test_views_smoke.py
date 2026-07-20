@@ -135,3 +135,7 @@ class SilicoPcrIndexViewTests(TestCase):
         self.assertContains(response, "SilicoPCR Results")
         self.assertContains(response, "Show details")
         self.assertContains(response, "ATGCGATCGATCGATCGATC")
+        self.assertNotContains(
+            response, '<h2 style="margin: 0 0 0.5em;">Amplicons</h2>'
+        )
+        self.assertContains(response, "amplicon-modal-silico")

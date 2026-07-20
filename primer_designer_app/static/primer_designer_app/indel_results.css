@@ -294,6 +294,12 @@ p {
     line-height: 1.45;
     color: #444;
     max-width: 55em;
+    text-align: left;
+}
+
+/* Clearance so fixed Documentation / UI-size controls do not cover results */
+.silico-pcr-results {
+    padding-bottom: 5.5em;
 }
 
 .amplicon-dialog-scroll {
