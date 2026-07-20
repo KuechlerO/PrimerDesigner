@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/li
 # 3. Setup App Directory and PERMISSIONS (as root)
 WORKDIR /app
 # We create the data folder AND ensure mambauser owns /app so pip can write temp files
-RUN mkdir -p /app/data && chown -R $MAMBA_USER:$MAMBA_USER /app
+RUN mkdir -p /app/data /app/django_data && chown -R $MAMBA_USER:$MAMBA_USER /app
 
 # 4. Setup App
 WORKDIR /app
@@ -19,16 +19,12 @@ COPY --chown=$MAMBA_USER:$MAMBA_USER environment.yml .
 RUN micromamba install -y -n base -f environment.yml && \
     micromamba clean --all --yes
 
-# 6. Copy Code
+# 6. Copy Code (django_data excluded via .dockerignore — migrate at runtime only)
 COPY --chown=$MAMBA_USER:$MAMBA_USER . .
-
-# 7. Run Migrations
-# We ensure the DB is created in the /app/data folder (see Settings change below)
-RUN micromamba run -n base python manage.py migrate
 
 EXPOSE 8000
 
-# 8. Start the server; apply committed migrations only (do not makemigrations at runtime)
+# 7. Start the server; apply committed migrations only (do not makemigrations at runtime)
 CMD ["micromamba", "run", "-n", "base", \
      "bash", "-c", "python manage.py collectstatic --noinput && \
      python manage.py migrate --noinput && \
