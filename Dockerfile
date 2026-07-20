@@ -24,8 +24,8 @@ COPY --chown=$MAMBA_USER:$MAMBA_USER . .
 
 EXPOSE 8000
 
-# 7. Start the server; apply committed migrations only (do not makemigrations at runtime)
+# 7. Start with Gunicorn; apply committed migrations only (never makemigrations)
 CMD ["micromamba", "run", "-n", "base", \
      "bash", "-c", "python manage.py collectstatic --noinput && \
      python manage.py migrate --noinput && \
-     python manage.py runserver 0.0.0.0:8000"]
+     gunicorn --bind 0.0.0.0:8000 --workers 8 --timeout 120 main_project.wsgi:application"]

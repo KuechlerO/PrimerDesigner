@@ -132,9 +132,10 @@ See [Reference files](#reference-files). File names are fixed in `primer_designe
 
 ## Running the application
 
-### Docker Compose (development)
+### Docker Compose
 
-Uses the default [Dockerfile](Dockerfile), which runs Django’s development server (`runserver`).
+Uses the default [Dockerfile](Dockerfile), which serves the app with **Gunicorn**
+(`main_project.wsgi:application`, `--workers 8 --timeout 120`).
 
 ```bash
 mkdir -p django_data
@@ -148,7 +149,7 @@ Visit **http://localhost:8000/primer-designer/**. To change the host port, edit 
 
 Persistent SQLite data is stored in `./django_data` on the host (mounted to `/app/django_data` in the container).
 
-### Local development
+### Local development (without Docker)
 
 After [Prerequisites](#prerequisites):
 
@@ -165,12 +166,12 @@ python manage.py runserver
 
 Visit **http://127.0.0.1:8000/primer-designer/**.
 
-### Production Docker (Gunicorn)
+### Production Docker
 
-For production-style deployment, use [Dockerfile-production](Dockerfile-production). It serves the app with **Gunicorn** using the Django WSGI entry point `main_project.wsgi:application` (the Python package is `main_project`, not the repository folder name `PrimerDesigner`).
+Same image as Compose. Example without Compose:
 
 ```bash
-docker build -f Dockerfile-production -t primerdesigner:prod .
+docker build -t primerdesigner:prod .
 docker run -p 8000:8000 \
   --env-file .env \
   -v "$(pwd)/django_data:/app/django_data" \
@@ -180,9 +181,7 @@ docker run -p 8000:8000 \
 
 Adjust volume mounts and environment variables for your deployment. The SQLite database path is `django_data/db.sqlite3` relative to the project root ([settings.py](main_project/settings.py)); mount `django_data` persistently so data survives container restarts.
 
-Gunicorn is started with `--workers 8 --timeout 120` as defined in `Dockerfile-production`.
-
-**Note:** [docker-compose.yml](docker-compose.yml) builds the development `Dockerfile` by default. Use `Dockerfile-production` explicitly for production unless you change the compose build configuration.
+If your Ansible/server `docker-compose.yaml` still sets `dockerfile: Dockerfile-production`, change it to `Dockerfile` (or omit `dockerfile` so Compose uses the default).
 
 ---
 
@@ -325,7 +324,7 @@ Hooks are defined in [.pre-commit-config.yaml](.pre-commit-config.yaml) (formatt
 | [Django](https://www.djangoproject.com/) | Web framework |
 | [python-docx](https://python-docx.readthedocs.io/) | Word (DOCX) reports |
 | Ensembl REST API | SNP / variation overlap when SNP checking is enabled |
-| [Gunicorn](https://gunicorn.org/) | Production HTTP server (`Dockerfile-production`) |
+| [Gunicorn](https://gunicorn.org/) | HTTP server in the Docker image (`Dockerfile`) |
 | [pytest](https://docs.pytest.org/) / pytest-django | Automated tests |
 
 System tools from Conda/bioconda include `samtools`, `pandoc`, and `dicey` (see [environment.yml](environment.yml)).
