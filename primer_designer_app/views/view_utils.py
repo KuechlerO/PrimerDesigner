@@ -316,14 +316,14 @@ def _build_variant_info(request, input_type: str) -> AllelicVariantInfo:
 
 def handle_genomic_snv(request, primer_settings: PrimerSettingsModel):
     variantInfo = _build_variant_info(request, "genomic_snv")
-    primer_settings.set_target(variantInfo.relative_pos)
+    primer_settings.set_target(variantInfo.relative_pos, len(variantInfo.ref_seq))
     return _design_primers_and_return_searchID(variantInfo, primer_settings)
 
 
 def handle_genomic_indel(request, primer_settings):
     # Replace INDEL input with HGVS and VCF input format
     variantInfo = _build_variant_info(request, "genomic_indel")
-    primer_settings.set_target(variantInfo.relative_pos)
+    primer_settings.set_target(variantInfo.relative_pos, len(variantInfo.ref_seq))
     return _design_primers_and_return_searchID(variantInfo, primer_settings)
 
 
@@ -348,7 +348,7 @@ def handle_transcript_input(request, primer_settings):
         raise ExonExonJunctionError("The variant affects an exon-exon junction.")
 
     # --- 2. Design primers (context / insilico flags come from build_primer_settings) ---
-    primer_settings.set_target(variantInfo.relative_pos)
+    primer_settings.set_target(variantInfo.relative_pos, len(variantInfo.ref_seq))
     LOGGER.debug(
         "Transcript input: context=%s do_insilico_pcr=%s target=%s",
         primer_settings.context,
@@ -361,7 +361,7 @@ def handle_transcript_input(request, primer_settings):
 
 def handle_sequence_input(request, primer_settings):
     variantInfo = _build_variant_info(request, "sequence_input")
-    primer_settings.set_target(variantInfo.relative_pos)
+    primer_settings.set_target(variantInfo.relative_pos, len(variantInfo.ref_seq))
     return _design_primers_and_return_searchID(variantInfo, primer_settings)
 
 
@@ -383,7 +383,7 @@ def handle_allele_specific_input(request, primer_settings: PrimerSettingsModel):
         raise InvalidInputError("Invalid input: No recognizable input field found.")
     variantInfo = _build_variant_info(request, input_type)
 
-    primer_settings.set_target(variantInfo.relative_pos)
+    primer_settings.set_target(variantInfo.relative_pos, len(variantInfo.ref_seq))
     primer_settings.do_insilico_pcr = False
     primer_settings.check_known_snps = False
 

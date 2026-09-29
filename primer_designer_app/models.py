@@ -46,20 +46,29 @@ class PrimerSettingsModel(models.Model):
     # Query Ensembl for common gnomAD variants (MAF > 1%) in the design sequence
     check_known_snps = models.BooleanField(default=False)
 
-    def set_target(self, rel_pos):
+    def set_target(self, rel_pos, template_len: int):
+        """Set Primer3 SEQUENCE_TARGET [start, length], clamped to the template bounds."""
         LOGGER.debug(
-            "Reference genome: %s, target_padding: %s, relative position: %s",
+            "Reference genome: %s, target_padding: %s, relative position: %s, template_len: %s",
             self.reference_genome,
             self.target_padding,
             rel_pos,
+            template_len,
         )
-        """Set Primer3 SEQUENCE_TARGET from variant interval and per-side padding (bp)."""
         offset = int(self.target_padding)
         if offset < 1 or offset > 500:
             raise ValueError(f"Invalid target_padding: {offset}")
 
         nr_deleted_bases = rel_pos[1] - rel_pos[0]
-        self.target = [rel_pos[0] - offset, nr_deleted_bases + 2 * offset]
+        start = rel_pos[0] - offset
+        length = nr_deleted_bases + 2 * offset
+        # Clamp start to template; keep length so enough of the window remains
+        # for Primer3 (shrinking length at CDS/cDNA starts can leave 0 valid left primers).
+        if start < 0:
+            start = 0
+        if start + length > template_len:
+            length = template_len - start
+        self.target = [start, max(1, length)]
         self.save()
 
     def set_context(self, context):

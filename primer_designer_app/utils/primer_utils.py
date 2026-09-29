@@ -318,6 +318,18 @@ def primer3_design_primers(
 
     LOGGER.debug(f"Primer3 output: {primer3_obj}")
 
+    pair_count = int(primer3_obj.get("PRIMER_PAIR_NUM_RETURNED", 0))
+    if pair_count == 0:
+        LOGGER.warning(
+            "Primer3 returned 0 primer pairs. warning=%s left_explain=%s "
+            "right_explain=%s pair_explain=%s target=%s",
+            primer3_obj.get("PRIMER_WARNING"),
+            primer3_obj.get("PRIMER_LEFT_EXPLAIN"),
+            primer3_obj.get("PRIMER_RIGHT_EXPLAIN"),
+            primer3_obj.get("PRIMER_PAIR_EXPLAIN"),
+            primSet_obj.target,
+        )
+
     # Extract primer information
     prim3_res = PrimerSearchResults(primer3_obj=primer3_obj)
 

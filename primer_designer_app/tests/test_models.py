@@ -24,22 +24,28 @@ def _make_primer_settings(**overrides) -> PrimerSettingsModel:
 class PrimerSettingsModelSetTargetTests(TestCase):
     def test_set_target_computes_padded_window_and_saves(self):
         primer_settings = _make_primer_settings(target_padding=50)
-        primer_settings.set_target((100, 150))
+        primer_settings.set_target((100, 150), template_len=1000)
 
         self.assertEqual(primer_settings.target, [50, 150])
 
         reloaded = PrimerSettingsModel.objects.get(pk=primer_settings.pk)
         self.assertEqual(reloaded.target, [50, 150])
 
+    def test_set_target_clamps_to_template_start(self):
+        primer_settings = _make_primer_settings(target_padding=30)
+        primer_settings.set_target((5, 5), template_len=795)
+
+        self.assertEqual(primer_settings.target, [0, 60])
+
     def test_set_target_rejects_padding_below_one(self):
         primer_settings = _make_primer_settings(target_padding=0)
         with self.assertRaisesRegex(ValueError, "Invalid target_padding"):
-            primer_settings.set_target((100, 150))
+            primer_settings.set_target((100, 150), template_len=1000)
 
     def test_set_target_rejects_padding_above_500(self):
         primer_settings = _make_primer_settings(target_padding=501)
         with self.assertRaisesRegex(ValueError, "Invalid target_padding"):
-            primer_settings.set_target((100, 150))
+            primer_settings.set_target((100, 150), template_len=1000)
 
 
 class PrimerSettingsModelSetContextTests(TestCase):
