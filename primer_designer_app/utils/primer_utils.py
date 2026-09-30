@@ -65,6 +65,7 @@ class PrimerSearchResults:
         # grouped per-pair results
         self.primer_pairs: List[PrimerPairResult] = []
         self.primer3_obj = primer3_obj
+        self.coverage_warning: Optional[str] = None
         if primer3_obj:
             # primer3_obj is the dict returned by primer3.bindings.design_primers
             self.primer_pairs = get_primers_from_primer3(primer3_obj)
@@ -78,6 +79,7 @@ class PrimerSearchResults:
         instance.mapped_primer_positions = data.get(
             "mapped_primer_positions", {"primerF_starts": [], "primerR_ends": []}
         )
+        instance.coverage_warning = data.get("coverage_warning")
 
         instance.primer_pairs = [
             primer_pair_from_dict(pair) for pair in data.get("primer_pairs", [])
@@ -114,6 +116,38 @@ class PrimerSearchResults:
                 gene_pos - VARIANT_FLANKING + pair.right_relPos_end
             )
         return self.mapped_primer_positions
+
+
+def primer_pair_covers_variant(
+    pair: PrimerPairResult, var_lo: int, var_hi: int
+) -> bool:
+    """True if the amplicon span (left start .. right end) includes the variant."""
+    if (
+        pair.left_relPos_start is None
+        or pair.right_relPos_end is None
+        or var_lo is None
+        or var_hi is None
+    ):
+        return False
+    return pair.left_relPos_start <= var_lo and var_hi <= pair.right_relPos_end
+
+
+VARIANT_NOT_COVERED_WARNING = (
+    "No primer pair’s amplicon covers the variant. This can happen for variants "
+    "very near the start or end of the transcript when there is insufficient "
+    "flanking sequence for primers on both sides. Try cDNA coordinates with more "
+    "UTR context, relax primer constraints, or choose a different transcript."
+)
+
+
+def filter_pairs_covering_variant(
+    pairs: List[PrimerPairResult], var_lo: int, var_hi: int
+) -> List[PrimerPairResult]:
+    """Keep only pairs whose amplicon span includes the variant; reindex survivors."""
+    kept = [p for p in pairs if primer_pair_covers_variant(p, var_lo, var_hi)]
+    for i, pair in enumerate(kept, start=1):
+        pair.index = i
+    return kept
 
 
 def _infer_legacy_insilico_status(pair_dict: dict) -> str:
@@ -344,8 +378,93 @@ def primer3_design_primers(
     LOGGER.info(
         f"Primer positions relative to variant: {[(res.right_relPos_start, res.right_relPos_end) for res in prim3_res.primer_pairs]}"
     )
+
+    relative_pos = getattr(varInfo_obj, "relative_pos", None)
+    had_pairs = bool(prim3_res.primer_pairs)
+    if relative_pos is not None and prim3_res.primer_pairs:
+        prim3_res.primer_pairs = filter_pairs_covering_variant(
+            prim3_res.primer_pairs, relative_pos[0], relative_pos[1]
+        )
+
+    needs_early_retry = relative_pos is not None and not prim3_res.primer_pairs and (
+        had_pairs or int(relative_pos[0]) < 100
+    )
+    if needs_early_retry:
+        LOGGER.warning(
+            "No covering primer pairs for variant at %s (had_pairs=%s); "
+            "retrying with forced left primer at template start",
+            relative_pos,
+            had_pairs,
+        )
+        retry_res = _design_primers_forced_left_cover(
+            primSet_obj, varInfo_obj, relative_pos, global_args
+        )
+        if retry_res is not None and retry_res.primer_pairs:
+            return retry_res
+        if had_pairs:
+            prim3_res.coverage_warning = VARIANT_NOT_COVERED_WARNING
+            return prim3_res
+
     validate_primer_search_results(prim3_res)
     return prim3_res
+
+
+def _design_primers_forced_left_cover(
+    primSet_obj,
+    varInfo_obj: PrimerDesignSequence,
+    relative_pos: tuple[int, int],
+    global_args: dict,
+) -> PrimerSearchResults | None:
+    """Retry design forcing the left primer to start at 0 so early variants are covered.
+
+    GC-rich short 5′ UTRs often make Primer3 place left primers downstream of an
+    early CDS variant under default GC-clamp / Tm limits.
+    """
+    if primer3 is None:
+        return None
+    var_lo, var_hi = int(relative_pos[0]), int(relative_pos[1])
+    if var_lo < 0:
+        return None
+    template = varInfo_obj.get_seq("mutated")
+    target_len = max(1, var_hi - var_lo + 1)
+    seq_args = {
+        "SEQUENCE_ID": "dummy_id",
+        "SEQUENCE_TEMPLATE": template,
+        "SEQUENCE_TARGET": [var_lo, target_len],
+        "SEQUENCE_FORCE_LEFT_START": 0,
+    }
+    retry_args = dict(global_args)
+    # Allow GC-rich UTR oligos that default GC-clamp / tight Tm would reject.
+    retry_args["PRIMER_GC_CLAMP"] = 0
+    retry_args["PRIMER_MAX_GC"] = max(float(retry_args.get("PRIMER_MAX_GC", 80.0)), 90.0)
+    retry_args["PRIMER_MAX_TM"] = max(float(retry_args.get("PRIMER_MAX_TM", 62.0)), 75.0)
+    retry_args["PRIMER_MIN_TM"] = min(float(retry_args.get("PRIMER_MIN_TM", 58.0)), 50.0)
+
+    primer3_obj = primer3.bindings.design_primers(
+        seq_args=seq_args,
+        global_args=retry_args,
+    )
+    pair_count = int(primer3_obj.get("PRIMER_PAIR_NUM_RETURNED", 0))
+    if pair_count == 0:
+        LOGGER.warning(
+            "Forced-left retry returned 0 pairs. left_explain=%s",
+            primer3_obj.get("PRIMER_LEFT_EXPLAIN"),
+        )
+        return None
+
+    retry_res = PrimerSearchResults(primer3_obj=primer3_obj)
+    _apply_insilico_or_mark_na(varInfo_obj, primSet_obj, retry_res)
+    retry_res.primer_pairs = filter_pairs_covering_variant(
+        retry_res.primer_pairs, var_lo, var_hi
+    )
+    if not retry_res.primer_pairs:
+        return None
+    LOGGER.info(
+        "Forced-left retry kept %s covering primer pairs for variant at %s",
+        len(retry_res.primer_pairs),
+        relative_pos,
+    )
+    return retry_res
 
 
 def _pick_common_reverse_from_primer3(

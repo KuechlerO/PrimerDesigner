@@ -76,6 +76,9 @@
                     <p>
                         Provide a transcript identifier and specify the variant relative to genome or transcript.
                         This mode supports substitutions and indels.
+                        Choosing <strong>CDS</strong> vs <strong>cDNA</strong> sets the coordinate numbering;
+                        primer design always uses the full cDNA sequence (including UTRs) so early coding variants
+                        still have upstream sequence for left primers.
                     </p>
                     <figure class="doc-figure">
                         <img class="doc-figure-image doc-figure-image--contain doc-figure-image--max-h-lg"
@@ -253,7 +256,8 @@
                     <ul class="documentation-list">
                         <li>Try relaxing constraints (primer length, Tm range, GC limits).</li>
                         <li>Adjust product size range.</li>
-                        <li>In transcript mode: verify transcript ID and the selected reference type (cDNA/CDS).</li>
+                        <li>In transcript mode: verify transcript ID and the selected reference type (cDNA/CDS). CDS numbering still designs on full cDNA (with UTRs).</li>
+                        <li>If a warning says no amplicon covers the variant, the site may be too close to a transcript end for flanking primers.</li>
                         <li>In SV mode: double-check chromosome and coordinate range.</li>
                     </ul>
 

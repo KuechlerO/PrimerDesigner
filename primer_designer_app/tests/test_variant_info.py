@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import MagicMock, patch
 
 from primer_designer_app.utils.variant_info import (
     AllelicVariantInfo,
@@ -320,6 +321,191 @@ class AllelicVariantInfoTests(unittest.TestCase):
         # Should not raise even though AS_seq is not a dataclass field.
         var = AllelicVariantInfo(ref_seq="AAAA", relative_pos=(0, 0), AS_seq="ignored")
         self.assertFalse(hasattr(var, "AS_seq"))
+
+
+class CdsOffsetOnCdnaTests(unittest.TestCase):
+    def test_finds_cds_within_cdna(self):
+        from primer_designer_app.utils.variant_info import cds_offset_on_cdna
+
+        cdna = "aaaatttATGCGTAAAggg"
+        cds = "ATGCGTAAA"
+        self.assertEqual(cds_offset_on_cdna(cdna, cds), 7)
+
+    def test_case_insensitive(self):
+        from primer_designer_app.utils.variant_info import cds_offset_on_cdna
+
+        self.assertEqual(cds_offset_on_cdna("nnnATG", "atg"), 3)
+
+    def test_missing_cds_raises(self):
+        from primer_designer_app.utils.variant_info import cds_offset_on_cdna
+
+        with self.assertRaisesRegex(ValueError, "Could not locate CDS"):
+            cds_offset_on_cdna("AAAA", "TTTT")
+
+
+class TranscriptVariantInfoCdsRemapTests(unittest.TestCase):
+    def _mock_client(self):
+        client = MagicMock()
+        client.get_gene_symbol_for_transcriptID.return_value = (
+            "PPAPDC1B",
+            "ENSG00000147535",
+            "ENST00000424479.2",
+        )
+        # 5' UTR length 100, then CDS
+        cds = "ATG" + ("C" * 200) + "TAA"
+        cdna = ("a" * 100) + cds + ("g" * 50)
+        client.get_transcript_sequence.side_effect = (
+            lambda tid, seq_type, mask_feature=None: (
+                cdna if seq_type == "cdna" else cds
+            )
+        )
+        client.map_coordinates.return_value = {
+            "mappings": [
+                {
+                    "start": 1000,
+                    "end": 1000,
+                    "seq_region_name": "8",
+                    "strand": 1,
+                }
+            ]
+        }
+        client.get_overlapped_genes_details_for_region.return_value = {
+            "ENSG1": "PPAPDC1B"
+        }
+        return client
+
+    @patch("primer_designer_app.utils.variant_info.EnsemblClient")
+    def test_cds_input_remaps_onto_cdna_template(self, mock_cls):
+        from primer_designer_app.utils.variant_info import (
+            ReferenceType,
+            TranscriptVariantInfo,
+        )
+
+        mock_cls.return_value = self._mock_client()
+        # c.5 → 0-based CDS index 4
+        var = TranscriptVariantInfo(
+            transcript_id="ENST00000424479.2",
+            ref_genome="GRCh37",
+            reference_type=ReferenceType.CDS,
+            new_bases="T",
+            relative_pos=(4, 4),
+        )
+        self.assertEqual(var.input_relative_pos, (4, 4))
+        self.assertEqual(var.relative_pos, (104, 104))
+        self.assertEqual(len(var.ref_seq), 100 + 206 + 50)
+        self.assertTrue(var.ref_seq.startswith("a" * 100))
+        # Genomic map uses remapped cDNA coords (Ensembl /map/cdna/ is faster than /map/cds/)
+        mock_cls.return_value.map_coordinates.assert_called_with(
+            "ENST00000424479.2", 104, 104, "cdna"
+        )
+
+    @patch("primer_designer_app.utils.variant_info.EnsemblClient")
+    def test_cds_remap_is_idempotent_on_reload(self, mock_cls):
+        from primer_designer_app.utils.variant_info import (
+            ReferenceType,
+            TranscriptVariantInfo,
+        )
+
+        mock_cls.return_value = self._mock_client()
+        first = TranscriptVariantInfo(
+            transcript_id="ENST00000424479.2",
+            ref_genome="GRCh37",
+            reference_type=ReferenceType.CDS,
+            new_bases="T",
+            relative_pos=(4, 4),
+        )
+        # Simulate deserialize with stored fields (including remapped relative_pos).
+        # Must NOT call Ensembl again when stored ref_seq/genomic_pos/ref_bases exist.
+        mock_cls.return_value = self._mock_client()
+        second = TranscriptVariantInfo(
+            transcript_id=first.transcript_id,
+            ref_genome=first.ref_genome,
+            reference_type=ReferenceType.CDS,
+            new_bases=first.new_bases,
+            relative_pos=first.relative_pos,
+            input_relative_pos=first.input_relative_pos,
+            ref_bases=first.ref_bases,
+            ref_seq=first.ref_seq,
+            gene_ID=first.gene_ID,
+            gene_symbol=first.gene_symbol,
+            genomic_pos=first.genomic_pos,
+            indel_type=first.indel_type,
+        )
+        self.assertEqual(second.input_relative_pos, (4, 4))
+        self.assertEqual(second.relative_pos, (104, 104))
+        self.assertEqual(second.relative_pos, first.relative_pos)
+        mock_cls.return_value.get_transcript_sequence.assert_not_called()
+        mock_cls.return_value.get_gene_symbol_for_transcriptID.assert_not_called()
+
+    @patch("primer_designer_app.utils.variant_info.EnsemblClient")
+    def test_cdna_mode_keeps_input_coords(self, mock_cls):
+        from primer_designer_app.utils.variant_info import (
+            ReferenceType,
+            TranscriptVariantInfo,
+        )
+
+        mock_cls.return_value = self._mock_client()
+        var = TranscriptVariantInfo(
+            transcript_id="ENST00000424479.2",
+            ref_genome="GRCh37",
+            reference_type=ReferenceType.CDNA,
+            new_bases="T",
+            relative_pos=(50, 50),
+        )
+        self.assertEqual(var.input_relative_pos, (50, 50))
+        self.assertEqual(var.relative_pos, (50, 50))
+        mock_cls.return_value.map_coordinates.assert_called_with(
+            "ENST00000424479.2", 50, 50, "cdna"
+        )
+
+
+class TranscriptHgvsTests(unittest.TestCase):
+    @patch("primer_designer_app.utils.variant_info.EnsemblClient")
+    def test_hgvs_uses_one_based_input_relative_pos(self, mock_cls):
+        from primer_designer_app.utils.helpers import create_hgvs_notation
+        from primer_designer_app.utils.variant_info import (
+            ReferenceType,
+            TranscriptVariantInfo,
+        )
+
+        client = MagicMock()
+        client.get_gene_symbol_for_transcriptID.return_value = (
+            "PPAPDC1B",
+            "ENSG00000147535",
+            "ENST00000424479.2",
+        )
+        cds = "ATGCG" + ("C" * 100)
+        cdna = ("a" * 100) + cds
+        client.get_transcript_sequence.side_effect = (
+            lambda tid, seq_type, mask_feature=None: (
+                cdna if seq_type == "cdna" else cds
+            )
+        )
+        client.map_coordinates.return_value = {
+            "mappings": [
+                {
+                    "start": 1000,
+                    "end": 1000,
+                    "seq_region_name": "8",
+                    "strand": 1,
+                }
+            ]
+        }
+        client.get_overlapped_genes_details_for_region.return_value = {
+            "ENSG1": "PPAPDC1B"
+        }
+        mock_cls.return_value = client
+
+        var = TranscriptVariantInfo(
+            transcript_id="ENST00000424479.2",
+            ref_genome="GRCh37",
+            reference_type=ReferenceType.CDS,
+            new_bases="T",
+            relative_pos=(4, 4),
+        )
+        hgvs = create_hgvs_notation(var)
+        self.assertIn("c.5G>T", hgvs)
+        self.assertIn("PPAPDC1B(ENST00000424479.2)", hgvs)
 
 
 if __name__ == "__main__":

@@ -1,16 +1,22 @@
 import unittest
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from primer_designer_app.utils.primer_utils import (
     INSILICO_NOT_APPLICABLE,
     INSILICO_OK,
     INSILICO_OK_EMPTY,
+    VARIANT_NOT_COVERED_WARNING,
     PrimerPairResult,
+    PrimerSearchResults,
     _infer_legacy_insilico_status,
     _pick_common_reverse_from_primer3,
     build_primer3_global_args,
+    filter_pairs_covering_variant,
     get_primers_from_primer3,
+    primer_pair_covers_variant,
     primer_pair_from_dict,
+    primer3_design_primers,
 )
 
 
@@ -209,6 +215,149 @@ class PickCommonReverseFromPrimer3Tests(unittest.TestCase):
         self.assertIsNone(
             _pick_common_reverse_from_primer3(raw, min_left_end=100, min_gap=80)
         )
+
+
+class PrimerCoverageFilterTests(unittest.TestCase):
+    def _pair(self, index, left_start, left_end, right_start, right_end):
+        return PrimerPairResult(
+            index=index,
+            left_seq="A" * 20,
+            right_seq="T" * 20,
+            penalty=0.1 * index,
+            product_size=right_end - left_start + 1,
+            left_relPos_start=left_start,
+            left_relPos_end=left_end,
+            right_relPos_start=right_start,
+            right_relPos_end=right_end,
+        )
+
+    def test_covers_when_variant_inside_amplicon(self):
+        pair = self._pair(1, 10, 29, 80, 99)
+        self.assertTrue(primer_pair_covers_variant(pair, 50, 50))
+        self.assertTrue(primer_pair_covers_variant(pair, 10, 99))
+
+    def test_rejects_when_variant_before_left_primer(self):
+        pair = self._pair(1, 10, 29, 80, 99)
+        self.assertFalse(primer_pair_covers_variant(pair, 4, 4))
+
+    def test_filter_keeps_covering_and_reindexes(self):
+        pairs = [
+            self._pair(1, 20, 39, 100, 119),  # misses var at 5
+            self._pair(2, 0, 19, 100, 119),  # covers
+            self._pair(3, 1, 20, 80, 99),  # covers
+        ]
+        kept = filter_pairs_covering_variant(pairs, 5, 5)
+        self.assertEqual(len(kept), 2)
+        self.assertEqual([p.index for p in kept], [1, 2])
+        self.assertEqual(kept[0].left_relPos_start, 0)
+        self.assertEqual(kept[1].left_relPos_start, 1)
+
+    def test_filter_all_drop_yields_empty(self):
+        pairs = [self._pair(1, 20, 39, 100, 119)]
+        self.assertEqual(filter_pairs_covering_variant(pairs, 5, 5), [])
+
+    @patch("primer_designer_app.utils.primer_utils._apply_insilico_or_mark_na")
+    @patch("primer_designer_app.utils.primer_utils.primer3")
+    def test_primer3_design_sets_coverage_warning_when_none_cover(
+        self, mock_primer3, _mock_insilico
+    ):
+        # First design: pair that does not cover variant at 4.
+        # Forced-left retry: also returns a non-covering pair → coverage warning.
+        non_covering = {
+            "PRIMER_PAIR_NUM_RETURNED": 1,
+            "PRIMER_LEFT_0": [20, 20],
+            "PRIMER_LEFT_0_SEQUENCE": "A" * 20,
+            "PRIMER_RIGHT_0": [100, 20],
+            "PRIMER_RIGHT_0_SEQUENCE": "T" * 20,
+            "PRIMER_LEFT_0_GC_PERCENT": 50.0,
+            "PRIMER_RIGHT_0_GC_PERCENT": 50.0,
+            "PRIMER_LEFT_0_TM": 60.0,
+            "PRIMER_RIGHT_0_TM": 60.0,
+            "PRIMER_PAIR_0_PENALTY": 0.5,
+            "PRIMER_PAIR_0_PRODUCT_SIZE": 100,
+            "PRIMER_PAIR_0_PRODUCT_TM": 75.0,
+        }
+        mock_primer3.bindings.design_primers.side_effect = [
+            non_covering,
+            non_covering,
+        ]
+        prim_set = SimpleNamespace(
+            target=[0, 60],
+            context="genomic",
+            do_insilico_pcr=False,
+            tm=60,
+            gc=50,
+            max_poly_x=4,
+            productsize_range=[80, 300],
+            primer3_overrides={},
+        )
+        var_info = SimpleNamespace(
+            relative_pos=(4, 4),
+            get_seq=lambda output_type: "A" * 200,
+        )
+        result = primer3_design_primers(prim_set, var_info)
+        self.assertEqual(result.primer_pairs, [])
+        self.assertEqual(result.coverage_warning, VARIANT_NOT_COVERED_WARNING)
+        self.assertEqual(mock_primer3.bindings.design_primers.call_count, 2)
+
+    @patch("primer_designer_app.utils.primer_utils._apply_insilico_or_mark_na")
+    @patch("primer_designer_app.utils.primer_utils.primer3")
+    def test_primer3_design_forced_left_retry_keeps_covering_pairs(
+        self, mock_primer3, _mock_insilico
+    ):
+        non_covering = {
+            "PRIMER_PAIR_NUM_RETURNED": 1,
+            "PRIMER_LEFT_0": [20, 20],
+            "PRIMER_LEFT_0_SEQUENCE": "A" * 20,
+            "PRIMER_RIGHT_0": [100, 20],
+            "PRIMER_RIGHT_0_SEQUENCE": "T" * 20,
+            "PRIMER_LEFT_0_GC_PERCENT": 50.0,
+            "PRIMER_RIGHT_0_GC_PERCENT": 50.0,
+            "PRIMER_LEFT_0_TM": 60.0,
+            "PRIMER_RIGHT_0_TM": 60.0,
+            "PRIMER_PAIR_0_PENALTY": 0.5,
+            "PRIMER_PAIR_0_PRODUCT_SIZE": 100,
+            "PRIMER_PAIR_0_PRODUCT_TM": 75.0,
+        }
+        covering = {
+            "PRIMER_PAIR_NUM_RETURNED": 1,
+            "PRIMER_LEFT_0": [0, 20],
+            "PRIMER_LEFT_0_SEQUENCE": "A" * 20,
+            "PRIMER_RIGHT_0": [100, 20],
+            "PRIMER_RIGHT_0_SEQUENCE": "T" * 20,
+            "PRIMER_LEFT_0_GC_PERCENT": 50.0,
+            "PRIMER_RIGHT_0_GC_PERCENT": 50.0,
+            "PRIMER_LEFT_0_TM": 60.0,
+            "PRIMER_RIGHT_0_TM": 60.0,
+            "PRIMER_PAIR_0_PENALTY": 0.5,
+            "PRIMER_PAIR_0_PRODUCT_SIZE": 100,
+            "PRIMER_PAIR_0_PRODUCT_TM": 75.0,
+        }
+        mock_primer3.bindings.design_primers.side_effect = [non_covering, covering]
+        prim_set = SimpleNamespace(
+            target=[0, 60],
+            context="genomic",
+            do_insilico_pcr=False,
+            tm=60,
+            gc=50,
+            max_poly_x=4,
+            productsize_range=[80, 300],
+            primer3_overrides={},
+        )
+        var_info = SimpleNamespace(
+            relative_pos=(4, 4),
+            get_seq=lambda output_type: "A" * 200,
+        )
+        result = primer3_design_primers(prim_set, var_info)
+        self.assertEqual(len(result.primer_pairs), 1)
+        self.assertEqual(result.primer_pairs[0].left_relPos_start, 0)
+        self.assertIsNone(result.coverage_warning)
+
+    def test_coverage_warning_roundtrips_via_dict(self):
+        results = PrimerSearchResults()
+        results.coverage_warning = VARIANT_NOT_COVERED_WARNING
+        restored = PrimerSearchResults.from_dict(results.to_dict())
+        self.assertEqual(restored.coverage_warning, VARIANT_NOT_COVERED_WARNING)
 
 
 if __name__ == "__main__":

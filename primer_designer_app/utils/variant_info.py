@@ -61,6 +61,9 @@ class AllelicVariantInfo:
     )
     genomic_pos: Optional[dict] = None
     reference_type: ReferenceType = ReferenceType.NONE
+    # User-entered coords in the selected reference_type system (0-based).
+    # Design template coords live in relative_pos (always on cDNA for transcript mode).
+    input_relative_pos: Optional[Tuple[int, int]] = None
     # Optional VCF spiking (genomic input)
     sequence_region_start: Optional[int] = None
     vcf_applied_variants: Optional[list] = None
@@ -358,6 +361,18 @@ class GenomicVariantInfo(AllelicVariantInfo):
         return seq
 
 
+def cds_offset_on_cdna(cdna: str, cds: str) -> int:
+    """Return 0-based index where CDS starts within cDNA (case-insensitive)."""
+    if not cdna or not cds:
+        raise ValueError("cDNA and CDS sequences are required to compute CDS offset.")
+    offset = cdna.upper().find(cds.upper())
+    if offset < 0:
+        raise ValueError(
+            "Could not locate CDS sequence within the cDNA transcript sequence."
+        )
+    return offset
+
+
 class TranscriptVariantInfo(AllelicVariantInfo):
     """Information for a variant when gene or transcript ID is provided"""
 
@@ -367,25 +382,128 @@ class TranscriptVariantInfo(AllelicVariantInfo):
         super().__init__(*args, **kwargs)
         self.transcript_id = transcript_id
 
+        # Preserve user-entered coords (CDS or cDNA numbering); always remap from these.
+        if self.input_relative_pos is None:
+            self.input_relative_pos = tuple(self.relative_pos)
+        else:
+            self.input_relative_pos = tuple(self.input_relative_pos)
+
         LOGGER.debug(
-            f"2. Relative position: {self.relative_pos}, "
+            f"2. Input relative position: {self.input_relative_pos}, "
             f"Reference type: {self.reference_type}"
         )
 
+        # Restore from DB/JSON without re-hitting Ensembl (avoids GRCh38 500 storms).
+        if (
+            self.ref_seq
+            and self.relative_pos is not None
+            and self.genomic_pos
+            and self.ref_bases
+        ):
+            self.relative_pos = tuple(self.relative_pos)
+            # #region agent log
+            import json as _json
+            import time as _time
+
+            try:
+                with open(
+                    "/Users/oliverkuchler/Programming/git_projects/PrimerDesigner/.cursor/debug-e4e356.log",
+                    "a",
+                    encoding="utf-8",
+                ) as _fh:
+                    _fh.write(
+                        _json.dumps(
+                            {
+                                "sessionId": "e4e356",
+                                "hypothesisId": "D",
+                                "location": "variant_info.py:TranscriptVariantInfo.__init__",
+                                "message": "Skipping Ensembl reload; using stored transcript fields",
+                                "data": {
+                                    "ref_genome": self.ref_genome,
+                                    "transcript_id": self.transcript_id,
+                                    "ref_seq_len": len(self.ref_seq),
+                                    "relative_pos": list(self.relative_pos),
+                                },
+                                "timestamp": int(_time.time() * 1000),
+                                "runId": "post-fix",
+                            }
+                        )
+                        + "\n"
+                    )
+            except Exception:
+                pass
+            # #endregion
+            if not self.indel_type or self.indel_type == IndelType.NONE:
+                self.indel_type = self._determine_indel_type()
+            return
+
         # Fetch data from Ensembl
+        # #region agent log
+        import json as _json
+        import time as _time
+
+        try:
+            with open(
+                "/Users/oliverkuchler/Programming/git_projects/PrimerDesigner/.cursor/debug-e4e356.log",
+                "a",
+                encoding="utf-8",
+            ) as _fh:
+                _fh.write(
+                    _json.dumps(
+                        {
+                            "sessionId": "e4e356",
+                            "hypothesisId": "D",
+                            "location": "variant_info.py:TranscriptVariantInfo.__init__",
+                            "message": "Starting transcript variant Ensembl loads",
+                            "data": {
+                                "ref_genome": self.ref_genome,
+                                "transcript_id": self.transcript_id,
+                                "reference_type": getattr(
+                                    self.reference_type, "value", str(self.reference_type)
+                                ),
+                                "input_relative_pos": list(self.input_relative_pos)
+                                if self.input_relative_pos
+                                else None,
+                                "has_stored_ref_seq": bool(self.ref_seq),
+                            },
+                            "timestamp": int(_time.time() * 1000),
+                            "runId": "post-fix",
+                        }
+                    )
+                    + "\n"
+                )
+        except Exception:
+            pass
+        # #endregion
         ensembl_client = EnsemblClient(ref_genome=self.ref_genome)
-        self.gene_symbol, used_transcript_id = (
+        self.gene_symbol, self.gene_ID, used_transcript_id = (
             ensembl_client.get_gene_symbol_for_transcriptID(self.transcript_id)
         )
         self.transcript_id = used_transcript_id
 
-        self.ref_seq = ensembl_client.get_transcript_sequence(
-            self.transcript_id, self.reference_type.value
-        )
+        # Always design on full cDNA (with UTRs). CDS is only a coordinate system.
+        # Do not pass mask_feature for cdna/cds — it 500s on current rest.ensembl.org.
+        self.ref_seq = ensembl_client.get_transcript_sequence(self.transcript_id, "cdna")
         validate_reference_sequence_for_design(self.ref_seq)
 
+        if self.reference_type == ReferenceType.CDS:
+            cds_seq = ensembl_client.get_transcript_sequence(self.transcript_id, "cds")
+            offset = cds_offset_on_cdna(self.ref_seq, cds_seq)
+            self.relative_pos = (
+                self.input_relative_pos[0] + offset,
+                self.input_relative_pos[1] + offset,
+            )
+            LOGGER.debug(
+                "Remapped CDS input %s onto cDNA with offset %s -> %s",
+                self.input_relative_pos,
+                offset,
+                self.relative_pos,
+            )
+        else:
+            self.relative_pos = tuple(self.input_relative_pos)
+
         LOGGER.debug(
-            f"Before extracting ref_bases, ref_seq: {self.ref_seq}, "
+            f"Before extracting ref_bases, ref_seq length: {len(self.ref_seq)}, "
             f"relative_pos: {self.relative_pos}, ref_bases: {self.ref_bases}"
         )
         if not self.ref_bases or self.ref_bases == "":
@@ -401,7 +519,7 @@ class TranscriptVariantInfo(AllelicVariantInfo):
             )
         self.genomic_pos = self._get_genomic_pos(ensembl_client)
 
-        # Load gene details if genomic position is provided
+        # Parent gene from transcript lookup is preferred; overlap lookup is a fallback.
         if self.genomic_pos and not self.gene_ID:
             self.gene_ID, self.gene_symbol = self._load_geneDetails(ensembl_client)
 
@@ -411,13 +529,16 @@ class TranscriptVariantInfo(AllelicVariantInfo):
     def _get_genomic_pos(self, ensembl_client: EnsemblClient) -> dict:
         """Get genomic position given the transcript ID and relative positions
 
+        Always map via cDNA coordinates (``relative_pos``). CDS input is remapped
+        onto cDNA first; Ensembl ``/map/cds/`` is much slower than ``/map/cdna/``.
+
         Returns:
             genomic_pos (dict): chromosome, position, strand_type
         """
-        LOGGER.info(f"self.relative_pos: {self.relative_pos}")
-        LOGGER.info(f"self.reference_type: {self.reference_type}")
+        LOGGER.info(f"self.relative_pos (cDNA): {self.relative_pos}")
+        LOGGER.info(f"self.reference_type (input numbering): {self.reference_type}")
         LOGGER.info(
-            f"Mapping transcript coordinates to genomic coordinates "
+            f"Mapping cDNA coordinates to genomic coordinates "
             f"for transcript ID: {self.transcript_id}"
         )
 
@@ -425,7 +546,7 @@ class TranscriptVariantInfo(AllelicVariantInfo):
             self.transcript_id,
             self.relative_pos[0],
             self.relative_pos[1],
-            self.reference_type.value,
+            "cdna",
         )
 
         if len(data["mappings"]) == 1:

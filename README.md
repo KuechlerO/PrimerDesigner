@@ -10,7 +10,6 @@ PrimerDesigner is a web application for designing PCR primers around human varia
 
 **In-app user guide:** On the live site or after local install, open [Help & Documentation](https://genometaster.charite.de/primer-designer/documentation/) (`/primer-designer/documentation/`) for input formats, result interpretation, screenshots, and FAQ.
 
-
 ---
 
 ## Table of Contents
@@ -58,7 +57,7 @@ Additional capabilities:
 
 3. Set `REFERENCE_DATA_DIR` in `.env` to that directory (absolute path).
 
-4. Start with Docker Compose (development):
+4. Start with Docker Compose:
 
    ```bash
    mkdir -p django_data
@@ -112,21 +111,21 @@ conda activate django_primer_designer_env
 
 ### 2. Environment variables (`.env`)
 
-Copy `.env.example` to `.env` and configure:
+Copy [`.env.example`](.env.example) to `.env` and configure:
 
 | Variable | Description |
 |----------|-------------|
 | `DJANGO_SECRET_KEY` | Django secret key. Generate with: `python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'` |
 | `DEBUG` | `True` for development, `False` for production |
 | `ALLOWED_HOSTS` | Comma-separated hosts, e.g. `127.0.0.1,localhost` or your production domain |
-| `REFERENCE_DATA_DIR` | Absolute path to the directory containing indexed reference FASTA files (see below) |
+| `REFERENCE_DATA_DIR` | Absolute path to the directory containing indexed reference FASTA files (see [Reference files](#reference-files)) |
 | `WEB_APP_HOST` | Base URL users use to reach the app (e.g. `http://localhost:8000` locally, or `https://genometaster.charite.de` for the Charité deployment). Used for hyperlinks embedded in DOCX reports |
 
-**Docker:** `docker-compose.yml` mounts `${REFERENCE_DATA_DIR}` from your host to `/app/references` (read-only) inside the container. The compose file also sets `REFERENCE_DATA_DIR=/app/references` for the app process.
+**Docker:** [`docker-compose.yml`](docker-compose.yml) mounts `${REFERENCE_DATA_DIR}` from your host to `/app/references` (read-only) inside the container. The compose file also sets `REFERENCE_DATA_DIR=/app/references` for the app process.
 
 ### 3. Reference files
 
-See [Reference files](#reference-files). File names are fixed in `primer_designer_app/utils/insilico_analysis.py`; use the exact names listed there or update the code if you use different references.
+See [Reference files](#reference-files). File names are fixed in [`primer_designer_app/utils/insilico_analysis.py`](primer_designer_app/utils/insilico_analysis.py); use the exact names listed there or update the code if you use different references.
 
 ---
 
@@ -134,8 +133,7 @@ See [Reference files](#reference-files). File names are fixed in `primer_designe
 
 ### Docker Compose
 
-Uses the default [Dockerfile](Dockerfile), which serves the app with **Gunicorn**
-(`main_project.wsgi:application`, `--workers 8 --timeout 120`).
+Uses the default [`Dockerfile`](Dockerfile), which serves the app with **Gunicorn** (`main_project.wsgi:application`, `--workers 8 --timeout 120`).
 
 ```bash
 mkdir -p django_data
@@ -145,7 +143,7 @@ docker compose build
 docker compose up -d
 ```
 
-Visit **http://localhost:8000/primer-designer/**. To change the host port, edit `ports` in [docker-compose.yml](docker-compose.yml).
+Visit **http://localhost:8000/primer-designer/**. To change the host port, edit `ports` in [`docker-compose.yml`](docker-compose.yml).
 
 Persistent SQLite data is stored in `./django_data` on the host (mounted to `/app/django_data` in the container).
 
@@ -179,7 +177,7 @@ docker run -p 8000:8000 \
   primerdesigner:prod
 ```
 
-Adjust volume mounts and environment variables for your deployment. The SQLite database path is `django_data/db.sqlite3` relative to the project root ([settings.py](main_project/settings.py)); mount `django_data` persistently so data survives container restarts.
+Adjust volume mounts and environment variables for your deployment. The SQLite database path is `django_data/db.sqlite3` relative to the project root ([`main_project/settings.py`](main_project/settings.py)); mount `django_data` persistently so data survives container restarts.
 
 If your Ansible/server `docker-compose.yaml` still sets `dockerfile: Dockerfile-production`, change it to `Dockerfile` (or omit `dockerfile` so Compose uses the default).
 
@@ -289,10 +287,10 @@ Set `WEB_APP_HOST` in `.env` to the URL users use to open the app so report hype
 
 | Path | Role |
 |------|------|
-| `main_project/` | Django project: settings, root URLconf, WSGI (`main_project.wsgi`) |
-| `primer_designer_app/` | Application code: views, utils, templates, static assets, tests |
-| `environment.yml` | Conda environment definition |
-| `pytest.ini` | Pytest / Django test configuration |
+| [`main_project/`](main_project/) | Django project: settings, root URLconf, WSGI (`main_project.wsgi`) |
+| [`primer_designer_app/`](primer_designer_app/) | Application code: views, utils, templates, static assets, tests |
+| [`environment.yml`](environment.yml) | Conda environment definition |
+| [`pytest.ini`](pytest.ini) | Pytest / Django test configuration |
 
 ### Run tests
 
@@ -301,7 +299,7 @@ conda activate django_primer_designer_env
 pytest
 ```
 
-Tests live under `primer_designer_app/tests/`.
+Tests live under [`primer_designer_app/tests/`](primer_designer_app/tests/).
 
 ### Pre-commit (optional)
 
@@ -311,7 +309,7 @@ pre-commit install
 pre-commit run --all-files
 ```
 
-Hooks are defined in [.pre-commit-config.yaml](.pre-commit-config.yaml) (formatting, whitespace, JSON/YAML checks, etc.).
+Hooks are defined in [`.pre-commit-config.yaml`](.pre-commit-config.yaml) (formatting, whitespace, JSON/YAML checks, etc.).
 
 ---
 
@@ -324,10 +322,10 @@ Hooks are defined in [.pre-commit-config.yaml](.pre-commit-config.yaml) (formatt
 | [Django](https://www.djangoproject.com/) | Web framework |
 | [python-docx](https://python-docx.readthedocs.io/) | Word (DOCX) reports |
 | Ensembl REST API | SNP / variation overlap when SNP checking is enabled |
-| [Gunicorn](https://gunicorn.org/) | HTTP server in the Docker image (`Dockerfile`) |
+| [Gunicorn](https://gunicorn.org/) | HTTP server in the Docker image ([`Dockerfile`](Dockerfile)) |
 | [pytest](https://docs.pytest.org/) / pytest-django | Automated tests |
 
-System tools from Conda/bioconda include `samtools`, `pandoc`, and `dicey` (see [environment.yml](environment.yml)).
+System tools from Conda/bioconda include `samtools`, `pandoc`, and `dicey` (see [`environment.yml`](environment.yml)).
 
 ---
 

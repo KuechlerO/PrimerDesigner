@@ -119,10 +119,10 @@ def create_hgvs_notation(var_info: AllelicVariantInfo) -> str:
     elif isinstance(var_info, TranscriptVariantInfo):
         var_info.get_genomic_pos()
         prefix_coding = f"{var_info.gene_symbol}({var_info.transcript_id}): c."
-        prefix_genomic = f"chr{var_info.genomic_pos.get('chr')}: g."
-        # return f"""{get_final_hgvs_construct(var_info, prefix_coding, relative_var_position)} - \
-        #             {get_final_hgvs_construct(var_info, prefix_genomic, genomic_var_position)}"""
-        return f"{get_final_hgvs_construct(var_info, prefix_coding, var_info.relative_pos)}"
+        # Prefer user-entered coords (CDS/cDNA numbering); convert 0-based → 1-based HGVS.
+        raw_pos = getattr(var_info, "input_relative_pos", None) or var_info.relative_pos
+        hgvs_pos = (raw_pos[0] + 1, raw_pos[1] + 1)
+        return f"{get_final_hgvs_construct(var_info, prefix_coding, hgvs_pos)}"
 
     elif isinstance(var_info, SequenceVariantInfo):
         prefix = ""

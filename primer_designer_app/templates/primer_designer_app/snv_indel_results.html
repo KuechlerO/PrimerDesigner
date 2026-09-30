@@ -23,6 +23,14 @@
             </div>
         {% endif %}
 
+        {% if coverage_warning %}
+            <div class="snp-banner snp-banner--warn">
+                <span class="snp-banner__message">
+                    <strong>Warning:</strong> {{ coverage_warning }}
+                </span>
+            </div>
+        {% endif %}
+
         {% if result_sum_obj.variant_info_data and result_sum_obj.variant_info_data.vcf_applied_variants %}
             <div class="snp-banner vcf-banner--active">
                 <span class="snp-banner__message">
@@ -43,7 +51,9 @@
             </div>
         {% endif %}
 
+        {% if has_primer_pairs %}
         {% include "primer_designer_app/_sequence_chunks.html" with container_id="sequence-container" display_chunks=display_chunks count_bracket_insertion=0 allele_specific=0 %}
+        {% endif %}
         <form id="primer_selection" method="post" action="{% url 'primer_designer_app:snv_indel_primer_details' uuid=result_sum_obj.id %}">
             {% csrf_token %}
             <div style="display:flex; align-items:center;">
@@ -137,6 +147,16 @@
                                 </td>
                             {% endif %}
                         </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="{% if snp_analysis and snp_analysis.enabled %}9{% else %}8{% endif %}" style="text-align: center; padding: 1.2em; font-size: 1.05em;">
+                                {% if coverage_warning %}
+                                    No primer pairs cover the variant. See the warning above for details.
+                                {% else %}
+                                    No primer pairs were returned.
+                                {% endif %}
+                            </td>
+                        </tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -191,7 +211,9 @@
 
         </form>
         <div style="display:flex; justify-content:center; gap: 3em; margin-top: 1em;">
+        {% if has_primer_pairs %}
         <button type="submit" class="submit-button" form="primer_selection" style="color: rgb(45, 133, 120); margin-top:0;background-color: #b4dfd9;">Submit</button>
+        {% endif %}
         <button type="button" class="reset-button"onclick="history.back()" style="margin-top:0;">Back</button>
         </div>
     </main>

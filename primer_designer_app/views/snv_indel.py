@@ -86,17 +86,24 @@ def primers_overview(request, uuid=None):
         logger.debug(f"DesignResultsSummary data2: {designResults_obj}")
 
     prim_search_results = designResults_obj.get_primer_search_results()
-    validate_primer_search_results(prim_search_results)
+    coverage_warning = getattr(prim_search_results, "coverage_warning", None)
+    if not coverage_warning:
+        validate_primer_search_results(prim_search_results)
     var_info = designResults_obj.get_variant_info()
 
-    highlighted_seq_snippet, display_offset, display_length, display_chunks = (
-        html_visualize_sequence(
-            designResults_obj.primer_settings,
-            var_info,
-            prim_search_results.primer_pairs[0],
-            all_primer_pairs=prim_search_results.primer_pairs,
+    highlighted_seq_snippet = ""
+    display_offset = 0
+    display_length = 0
+    display_chunks = []
+    if prim_search_results.primer_pairs:
+        highlighted_seq_snippet, display_offset, display_length, display_chunks = (
+            html_visualize_sequence(
+                designResults_obj.primer_settings,
+                var_info,
+                prim_search_results.primer_pairs[0],
+                all_primer_pairs=prim_search_results.primer_pairs,
+            )
         )
-    )
 
     primerF_sequences, primerR_sequences = (
         [primer_pair.left_seq for primer_pair in prim_search_results.primer_pairs],
@@ -113,7 +120,7 @@ def primers_overview(request, uuid=None):
 
     snp_analysis = designResults_obj.snp_analysis_data or {}
     snp_hits_json = "[]"
-    if snp_analysis.get("hits"):
+    if snp_analysis.get("hits") and prim_search_results.primer_pairs:
         snp_hits_json = snp_hits_json_for_display(
             snp_analysis["hits"], display_offset, display_length
         )
@@ -121,9 +128,11 @@ def primers_overview(request, uuid=None):
     vcf_applied = (designResults_obj.variant_info_data or {}).get(
         "vcf_applied_variants"
     ) or []
-    vcf_hits_json = vcf_hits_json_for_display(
-        vcf_applied, display_offset, display_length
-    )
+    vcf_hits_json = "[]"
+    if prim_search_results.primer_pairs:
+        vcf_hits_json = vcf_hits_json_for_display(
+            vcf_applied, display_offset, display_length
+        )
 
     is_sequence_only = isinstance(var_info, SequenceVariantInfo) and not getattr(
         var_info, "genomic_pos", None
@@ -149,6 +158,8 @@ def primers_overview(request, uuid=None):
             "vcf_hits_json": vcf_hits_json,
             "sequence_display_offset": display_offset,
             "show_snp_sequence_warning": show_snp_sequence_warning,
+            "coverage_warning": coverage_warning,
+            "has_primer_pairs": bool(prim_search_results.primer_pairs),
             "insilico_reference_note": insilico_reference_description(
                 designResults_obj.primer_settings
             ),
