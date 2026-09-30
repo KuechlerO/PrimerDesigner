@@ -4,6 +4,7 @@ import logging
 
 from enum import Enum
 from primer_designer_app.utils.ensembl_client import EnsemblClient
+from primer_designer_app.utils.transcript_fasta import fetch_transcript_sequence
 from primer_designer_app.utils.vcf_utils import (
     VcfRecord,
     compute_fetch_window,
@@ -393,7 +394,7 @@ class TranscriptVariantInfo(AllelicVariantInfo):
             f"Reference type: {self.reference_type}"
         )
 
-        # Restore from DB/JSON without re-hitting Ensembl (avoids GRCh38 500 storms).
+        # Restore from DB/JSON without re-fetching sequences or remapping.
         if (
             self.ref_seq
             and self.relative_pos is not None
@@ -401,93 +402,30 @@ class TranscriptVariantInfo(AllelicVariantInfo):
             and self.ref_bases
         ):
             self.relative_pos = tuple(self.relative_pos)
-            # #region agent log
-            import json as _json
-            import time as _time
-
-            try:
-                with open(
-                    "/Users/oliverkuchler/Programming/git_projects/PrimerDesigner/.cursor/debug-e4e356.log",
-                    "a",
-                    encoding="utf-8",
-                ) as _fh:
-                    _fh.write(
-                        _json.dumps(
-                            {
-                                "sessionId": "e4e356",
-                                "hypothesisId": "D",
-                                "location": "variant_info.py:TranscriptVariantInfo.__init__",
-                                "message": "Skipping Ensembl reload; using stored transcript fields",
-                                "data": {
-                                    "ref_genome": self.ref_genome,
-                                    "transcript_id": self.transcript_id,
-                                    "ref_seq_len": len(self.ref_seq),
-                                    "relative_pos": list(self.relative_pos),
-                                },
-                                "timestamp": int(_time.time() * 1000),
-                                "runId": "post-fix",
-                            }
-                        )
-                        + "\n"
-                    )
-            except Exception:
-                pass
-            # #endregion
+            LOGGER.debug(
+                "Using stored transcript fields for %s (skipping sequence reload)",
+                self.transcript_id,
+            )
             if not self.indel_type or self.indel_type == IndelType.NONE:
                 self.indel_type = self._determine_indel_type()
             return
 
-        # Fetch data from Ensembl
-        # #region agent log
-        import json as _json
-        import time as _time
-
-        try:
-            with open(
-                "/Users/oliverkuchler/Programming/git_projects/PrimerDesigner/.cursor/debug-e4e356.log",
-                "a",
-                encoding="utf-8",
-            ) as _fh:
-                _fh.write(
-                    _json.dumps(
-                        {
-                            "sessionId": "e4e356",
-                            "hypothesisId": "D",
-                            "location": "variant_info.py:TranscriptVariantInfo.__init__",
-                            "message": "Starting transcript variant Ensembl loads",
-                            "data": {
-                                "ref_genome": self.ref_genome,
-                                "transcript_id": self.transcript_id,
-                                "reference_type": getattr(
-                                    self.reference_type, "value", str(self.reference_type)
-                                ),
-                                "input_relative_pos": list(self.input_relative_pos)
-                                if self.input_relative_pos
-                                else None,
-                                "has_stored_ref_seq": bool(self.ref_seq),
-                            },
-                            "timestamp": int(_time.time() * 1000),
-                            "runId": "post-fix",
-                        }
-                    )
-                    + "\n"
-                )
-        except Exception:
-            pass
-        # #endregion
         ensembl_client = EnsemblClient(ref_genome=self.ref_genome)
         self.gene_symbol, self.gene_ID, used_transcript_id = (
             ensembl_client.get_gene_symbol_for_transcriptID(self.transcript_id)
         )
         self.transcript_id = used_transcript_id
 
-        # Always design on full cDNA (with UTRs). CDS is only a coordinate system.
-        # Do not pass mask_feature for cdna/cds — it 500s on current rest.ensembl.org.
-        self.ref_seq = ensembl_client.get_transcript_sequence(self.transcript_id, "cdna")
+        # Design on full cDNA from local Ensembl FASTA; CDS is only a coordinate system.
+        self.ref_seq = fetch_transcript_sequence(
+            self.transcript_id, "cdna", self.ref_genome
+        )
         validate_reference_sequence_for_design(self.ref_seq)
 
         if self.reference_type == ReferenceType.CDS:
-            cds_seq = ensembl_client.get_transcript_sequence(self.transcript_id, "cds")
+            cds_seq = fetch_transcript_sequence(
+                self.transcript_id, "cds", self.ref_genome
+            )
             offset = cds_offset_on_cdna(self.ref_seq, cds_seq)
             self.relative_pos = (
                 self.input_relative_pos[0] + offset,

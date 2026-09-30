@@ -1,5 +1,4 @@
 import logging
-import json
 import time
 
 import requests
@@ -26,28 +25,6 @@ TIMEOUT_OVERLAP = (5, 30)
 TIMEOUT_VARIATION = (5, 60)
 # rest.ensembl.org often returns sticky short-lived 500s; wait and retry.
 _SEQUENCE_RETRY_DELAYS_SEC = (0.0, 1.5, 3.0, 6.0, 12.0)
-
-# #region agent log
-_DEBUG_LOG_PATH = "/Users/oliverkuchler/Programming/git_projects/PrimerDesigner/.cursor/debug-e4e356.log"
-
-
-def _agent_log(hypothesis_id: str, location: str, message: str, data: dict | None = None):
-    try:
-        payload = {
-            "sessionId": "e4e356",
-            "hypothesisId": hypothesis_id,
-            "location": location,
-            "message": message,
-            "data": data or {},
-            "timestamp": int(time.time() * 1000),
-        }
-        with open(_DEBUG_LOG_PATH, "a", encoding="utf-8") as fh:
-            fh.write(json.dumps(payload) + "\n")
-    except Exception:
-        pass
-
-
-# #endregion
 
 
 class EnsemblClient:
@@ -106,57 +83,7 @@ class EnsemblClient:
             f"Fetching sequence for transcript_id: {transcript_id}, seq_type: {seq_type} from Ensembl API."
         )
         logger.debug(f"Request URL: {url}")
-        # #region agent log
-        _agent_log(
-            "A",
-            "ensembl_client.py:get_transcript_sequence:before",
-            "Starting transcript sequence GET",
-            {
-                "server": self.server,
-                "url": url,
-                "seq_type": seq_type,
-                "mask_feature": mask_feature,
-                "transcript_id": transcript_id,
-            },
-        )
-        # #endregion
-        t0 = time.time()
-        try:
-            seq = self._get_sequence_text(url)
-            elapsed_ms = int((time.time() - t0) * 1000)
-            # #region agent log
-            _agent_log(
-                "A",
-                "ensembl_client.py:get_transcript_sequence:after",
-                "Transcript sequence GET completed",
-                {
-                    "server": self.server,
-                    "url": url,
-                    "status_code": 200,
-                    "elapsed_ms": elapsed_ms,
-                    "body_len": len(seq or ""),
-                    "body_prefix": (seq or "")[:40],
-                },
-            )
-            # #endregion
-            return seq
-        except Exception as exc:
-            elapsed_ms = int((time.time() - t0) * 1000)
-            # #region agent log
-            _agent_log(
-                "A",
-                "ensembl_client.py:get_transcript_sequence:error",
-                "Transcript sequence GET failed",
-                {
-                    "server": self.server,
-                    "url": url,
-                    "elapsed_ms": elapsed_ms,
-                    "error_type": type(exc).__name__,
-                    "error": str(exc)[:500],
-                },
-            )
-            # #endregion
-            raise
+        return self._get_sequence_text(url)
 
     def _get_sequence_text(self, url: str) -> str:
         """Fetch a sequence endpoint with plain/JSON attempts and delayed 500 retries.
@@ -186,52 +113,19 @@ class EnsemblClient:
                         if mode == "plain":
                             text = r.text or ""
                             if text and not text.lstrip().startswith("<!"):
-                                # #region agent log
-                                _agent_log(
-                                    "A",
-                                    "ensembl_client.py:_get_sequence_text:success",
-                                    "Sequence fetch succeeded",
-                                    {
-                                        "url": url,
-                                        "mode": mode,
-                                        "attempt": attempt,
-                                        "body_len": len(text),
-                                    },
-                                )
-                                # #endregion
                                 return text
                         else:
                             payload = r.json()
                             if isinstance(payload, dict) and payload.get("seq"):
-                                # #region agent log
-                                _agent_log(
-                                    "A",
-                                    "ensembl_client.py:_get_sequence_text:success",
-                                    "Sequence fetch succeeded",
-                                    {
-                                        "url": url,
-                                        "mode": mode,
-                                        "attempt": attempt,
-                                        "body_len": len(payload["seq"]),
-                                    },
-                                )
-                                # #endregion
                                 return payload["seq"]
 
-                    # #region agent log
-                    _agent_log(
-                        "C",
-                        "ensembl_client.py:_get_sequence_text:attempt",
-                        "Sequence attempt failed",
-                        {
-                            "url": url,
-                            "mode": mode,
-                            "attempt": attempt,
-                            "status_code": r.status_code,
-                            "body_prefix": (r.text or "")[:50],
-                        },
+                    logger.debug(
+                        "Sequence attempt failed url=%s mode=%s attempt=%s status=%s",
+                        url,
+                        mode,
+                        attempt,
+                        r.status_code,
                     )
-                    # #endregion
                     if r.status_code >= 500:
                         last_error = requests.HTTPError(
                             f"{r.status_code} Server Error for url: {url}",
@@ -241,20 +135,13 @@ class EnsemblClient:
                     r.raise_for_status()
                 except Exception as exc:
                     last_error = exc
-                    # #region agent log
-                    _agent_log(
-                        "C",
-                        "ensembl_client.py:_get_sequence_text:attempt_exc",
-                        "Sequence attempt raised",
-                        {
-                            "url": url,
-                            "mode": mode,
-                            "attempt": attempt,
-                            "error_type": type(exc).__name__,
-                            "error": str(exc)[:300],
-                        },
+                    logger.debug(
+                        "Sequence attempt raised url=%s mode=%s attempt=%s: %s",
+                        url,
+                        mode,
+                        attempt,
+                        exc,
                     )
-                    # #endregion
                     continue
 
         if last_error is not None:
@@ -399,43 +286,12 @@ class EnsemblClient:
 
         ext = f"/lookup/id/{base_id}"
 
-        t0 = time.time()
-        try:
-            r = self.session.get(
-                self.server + ext,
-                headers={"Content-Type": "application/json"},
-                timeout=TIMEOUT_LOOKUP,
-            )
-            # #region agent log
-            _agent_log(
-                "B",
-                "ensembl_client.py:get_gene_symbol_for_transcriptID",
-                "Transcript lookup response",
-                {
-                    "server": self.server,
-                    "url": self.server + ext,
-                    "status_code": r.status_code,
-                    "elapsed_ms": int((time.time() - t0) * 1000),
-                },
-            )
-            # #endregion
-            r.raise_for_status()
-        except Exception as exc:
-            # #region agent log
-            _agent_log(
-                "B",
-                "ensembl_client.py:get_gene_symbol_for_transcriptID:error",
-                "Transcript lookup failed",
-                {
-                    "server": self.server,
-                    "url": self.server + ext,
-                    "elapsed_ms": int((time.time() - t0) * 1000),
-                    "error_type": type(exc).__name__,
-                    "error": str(exc)[:500],
-                },
-            )
-            # #endregion
-            raise
+        r = self.session.get(
+            self.server + ext,
+            headers={"Content-Type": "application/json"},
+            timeout=TIMEOUT_LOOKUP,
+        )
+        r.raise_for_status()
 
         data = r.json()
         returned_version = data.get("version")
@@ -459,20 +315,6 @@ class EnsemblClient:
                 if looked_up:
                     gene_symbol = looked_up
             except Exception as exc:
-                # #region agent log
-                _agent_log(
-                    "E",
-                    "ensembl_client.py:get_gene_symbol_for_transcriptID:gene_lookup",
-                    "Gene lookup failed; keeping transcript-derived symbol",
-                    {
-                        "server": self.server,
-                        "gene_id": gene_ID,
-                        "fallback_symbol": gene_symbol,
-                        "error_type": type(exc).__name__,
-                        "error": str(exc)[:300],
-                    },
-                )
-                # #endregion
                 logger.warning(
                     "Ensembl gene lookup failed for %s (%s); using transcript symbol %s",
                     gene_ID,

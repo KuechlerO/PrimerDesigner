@@ -351,14 +351,6 @@ class TranscriptVariantInfoCdsRemapTests(unittest.TestCase):
             "ENSG00000147535",
             "ENST00000424479.2",
         )
-        # 5' UTR length 100, then CDS
-        cds = "ATG" + ("C" * 200) + "TAA"
-        cdna = ("a" * 100) + cds + ("g" * 50)
-        client.get_transcript_sequence.side_effect = (
-            lambda tid, seq_type, mask_feature=None: (
-                cdna if seq_type == "cdna" else cds
-            )
-        )
         client.map_coordinates.return_value = {
             "mappings": [
                 {
@@ -374,14 +366,29 @@ class TranscriptVariantInfoCdsRemapTests(unittest.TestCase):
         }
         return client
 
+    def _local_seqs(self):
+        # 5' UTR length 100, then CDS
+        cds = "ATG" + ("C" * 200) + "TAA"
+        cdna = ("a" * 100) + cds + ("g" * 50)
+        return cdna, cds
+
+    def _fetch_side_effect(self, cdna, cds):
+        def _fetch(tid, seq_type, ref_genome):
+            return cdna if seq_type == "cdna" else cds
+
+        return _fetch
+
+    @patch("primer_designer_app.utils.variant_info.fetch_transcript_sequence")
     @patch("primer_designer_app.utils.variant_info.EnsemblClient")
-    def test_cds_input_remaps_onto_cdna_template(self, mock_cls):
+    def test_cds_input_remaps_onto_cdna_template(self, mock_cls, mock_fetch):
         from primer_designer_app.utils.variant_info import (
             ReferenceType,
             TranscriptVariantInfo,
         )
 
+        cdna, cds = self._local_seqs()
         mock_cls.return_value = self._mock_client()
+        mock_fetch.side_effect = self._fetch_side_effect(cdna, cds)
         # c.5 → 0-based CDS index 4
         var = TranscriptVariantInfo(
             transcript_id="ENST00000424479.2",
@@ -398,15 +405,20 @@ class TranscriptVariantInfoCdsRemapTests(unittest.TestCase):
         mock_cls.return_value.map_coordinates.assert_called_with(
             "ENST00000424479.2", 104, 104, "cdna"
         )
+        mock_fetch.assert_any_call("ENST00000424479.2", "cdna", "GRCh37")
+        mock_fetch.assert_any_call("ENST00000424479.2", "cds", "GRCh37")
 
+    @patch("primer_designer_app.utils.variant_info.fetch_transcript_sequence")
     @patch("primer_designer_app.utils.variant_info.EnsemblClient")
-    def test_cds_remap_is_idempotent_on_reload(self, mock_cls):
+    def test_cds_remap_is_idempotent_on_reload(self, mock_cls, mock_fetch):
         from primer_designer_app.utils.variant_info import (
             ReferenceType,
             TranscriptVariantInfo,
         )
 
+        cdna, cds = self._local_seqs()
         mock_cls.return_value = self._mock_client()
+        mock_fetch.side_effect = self._fetch_side_effect(cdna, cds)
         first = TranscriptVariantInfo(
             transcript_id="ENST00000424479.2",
             ref_genome="GRCh37",
@@ -415,8 +427,9 @@ class TranscriptVariantInfoCdsRemapTests(unittest.TestCase):
             relative_pos=(4, 4),
         )
         # Simulate deserialize with stored fields (including remapped relative_pos).
-        # Must NOT call Ensembl again when stored ref_seq/genomic_pos/ref_bases exist.
+        # Must NOT call Ensembl or local FASTA again when stored fields exist.
         mock_cls.return_value = self._mock_client()
+        mock_fetch.reset_mock()
         second = TranscriptVariantInfo(
             transcript_id=first.transcript_id,
             ref_genome=first.ref_genome,
@@ -434,17 +447,20 @@ class TranscriptVariantInfoCdsRemapTests(unittest.TestCase):
         self.assertEqual(second.input_relative_pos, (4, 4))
         self.assertEqual(second.relative_pos, (104, 104))
         self.assertEqual(second.relative_pos, first.relative_pos)
-        mock_cls.return_value.get_transcript_sequence.assert_not_called()
+        mock_fetch.assert_not_called()
         mock_cls.return_value.get_gene_symbol_for_transcriptID.assert_not_called()
 
+    @patch("primer_designer_app.utils.variant_info.fetch_transcript_sequence")
     @patch("primer_designer_app.utils.variant_info.EnsemblClient")
-    def test_cdna_mode_keeps_input_coords(self, mock_cls):
+    def test_cdna_mode_keeps_input_coords(self, mock_cls, mock_fetch):
         from primer_designer_app.utils.variant_info import (
             ReferenceType,
             TranscriptVariantInfo,
         )
 
+        cdna, cds = self._local_seqs()
         mock_cls.return_value = self._mock_client()
+        mock_fetch.side_effect = self._fetch_side_effect(cdna, cds)
         var = TranscriptVariantInfo(
             transcript_id="ENST00000424479.2",
             ref_genome="GRCh37",
@@ -460,8 +476,9 @@ class TranscriptVariantInfoCdsRemapTests(unittest.TestCase):
 
 
 class TranscriptHgvsTests(unittest.TestCase):
+    @patch("primer_designer_app.utils.variant_info.fetch_transcript_sequence")
     @patch("primer_designer_app.utils.variant_info.EnsemblClient")
-    def test_hgvs_uses_one_based_input_relative_pos(self, mock_cls):
+    def test_hgvs_uses_one_based_input_relative_pos(self, mock_cls, mock_fetch):
         from primer_designer_app.utils.helpers import create_hgvs_notation
         from primer_designer_app.utils.variant_info import (
             ReferenceType,
@@ -476,10 +493,8 @@ class TranscriptHgvsTests(unittest.TestCase):
         )
         cds = "ATGCG" + ("C" * 100)
         cdna = ("a" * 100) + cds
-        client.get_transcript_sequence.side_effect = (
-            lambda tid, seq_type, mask_feature=None: (
-                cdna if seq_type == "cdna" else cds
-            )
+        mock_fetch.side_effect = (
+            lambda tid, seq_type, ref_genome: cdna if seq_type == "cdna" else cds
         )
         client.map_coordinates.return_value = {
             "mappings": [
